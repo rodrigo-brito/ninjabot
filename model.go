@@ -1,4 +1,4 @@
-package main
+package ninjabot
 
 import "time"
 
@@ -13,12 +13,18 @@ type Balance struct {
 }
 
 type Dataframe struct {
-	Time     []time.Time
-	Close    []float64
-	Open     []float64
-	High     []float64
-	Low      []float64
-	Volume   []float64
+	Pair string
+
+	Close  []float64
+	Open   []float64
+	High   []float64
+	Low    []float64
+	Volume []float64
+
+	Time       []time.Time
+	LastUpdate time.Time
+
+	// Custom user metadata
 	Metadata map[string][]float64
 }
 

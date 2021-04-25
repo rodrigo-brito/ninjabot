@@ -1,4 +1,4 @@
-package main
+package ninjabot
 
 import (
 	"context"
@@ -38,23 +38,31 @@ func WithLogger(logger *log.Logger) BinanceOption {
 	}
 }
 
-func (b *Binance) Buy(pair string, size float64) Order {
-	panic("implement me")
+func (b *Binance) OrderLimit(kind OrderKind, tick string, size float64, limit float64) Order {
+	// TODO: implement me
+	return Order{}
 }
 
-func (b *Binance) Sell(pair string, size float64) Order {
-	panic("implement me")
+func (b *Binance) OrderMarket(kind OrderKind, tick string, size float64) Order {
+	// TODO: implement me
+	return Order{}
+}
+
+func (b *Binance) Stop(tick string, size float64) Order {
+	// TODO: implement me
+	return Order{}
 }
 
 func (b *Binance) Cancel(order Order) {
-	panic("implement me")
+	// TODO: implement me
 }
 
 func (b *Binance) Account() (Account, error) {
-	panic("implement me")
+	// TODO: implement me
+	return Account{}, nil
 }
 
-func (b *Binance) SubscribeCandles(pair, period string) (<-chan Candle, <-chan error) {
+func (b *Binance) SubscribeCandles(pair, period string) (chan Candle, chan error) {
 	ccandle := make(chan Candle)
 	cerr := make(chan error)
 
@@ -78,7 +86,27 @@ func (b *Binance) SubscribeCandles(pair, period string) (<-chan Candle, <-chan e
 	return ccandle, cerr
 }
 
-func (b *Binance) LoadCandles(ctx context.Context, pair, period string, start, end time.Time) ([]Candle, error) {
+func (b *Binance) LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]Candle, error) {
+	candles := make([]Candle, 0)
+	klineService := b.client.NewKlinesService()
+
+	data, err := klineService.Symbol(pair).
+		Interval(period).
+		Limit(limit).
+		Do(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, d := range data {
+		candles = append(candles, CandleFromKline(*d))
+	}
+
+	return candles, nil
+}
+
+func (b *Binance) LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]Candle, error) {
 	candles := make([]Candle, 0)
 	klineService := b.client.NewKlinesService()
 

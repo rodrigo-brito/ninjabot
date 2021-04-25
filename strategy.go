@@ -1,6 +1,4 @@
-package main
-
-import "time"
+package ninjabot
 
 type Strategy interface {
 	Init(settings Settings)
@@ -14,30 +12,39 @@ type strategyController struct {
 	strategy  Strategy
 	dataframe *Dataframe
 	broker    Broker
-	live      bool
+	started   bool
 }
 
-func NewStrategyController(settings Settings, strategy Strategy, broker Broker) strategyController {
+func NewStrategyController(settings Settings, strategy Strategy, broker Broker) *strategyController {
 	strategy.Init(settings)
-	return strategyController{
-		strategy: strategy,
-		broker:   broker,
+	dataframe := &Dataframe{
+		Metadata: make(map[string][]float64),
+	}
+
+	return &strategyController{
+		dataframe: dataframe,
+		strategy:  strategy,
+		broker:    broker,
 	}
 }
 
-func (s *strategyController) Live() {
-	s.live = true
+func (s *strategyController) Start() {
+	s.started = true
 }
 
-func (s strategyController) OnCandle(candle Candle) {
-	s.dataframe.Time = append([]time.Time{candle.Time}, s.dataframe.Time...)
-	s.dataframe.Close = append([]float64{candle.Close}, s.dataframe.Close...)
-	s.dataframe.Open = append([]float64{candle.Open}, s.dataframe.Open...)
-	s.dataframe.High = append([]float64{candle.High}, s.dataframe.High...)
-	s.dataframe.Low = append([]float64{candle.Low}, s.dataframe.Low...)
-	s.dataframe.Volume = append([]float64{candle.Volume}, s.dataframe.Volume...)
-	s.strategy.Indicators(s.dataframe)
-	if s.live {
-		s.strategy.OnCandle(s.dataframe, s.broker)
+func (s *strategyController) OnCandle(candle Candle) {
+	s.dataframe.Close = append(s.dataframe.Close, candle.Close)
+	s.dataframe.Open = append(s.dataframe.Open, candle.Open)
+	s.dataframe.High = append(s.dataframe.High, candle.High)
+	s.dataframe.Low = append(s.dataframe.Low, candle.Low)
+	s.dataframe.Volume = append(s.dataframe.Volume, candle.Volume)
+	s.dataframe.Time = append(s.dataframe.Time, candle.Time)
+	s.dataframe.LastUpdate = candle.Time
+
+	if len(s.dataframe.Close) > s.strategy.WarmupPeriod() {
+		s.strategy.Indicators(s.dataframe)
+		if s.started {
+			s.strategy.OnCandle(s.dataframe, s.broker)
+		}
 	}
 }
