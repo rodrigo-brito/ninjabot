@@ -5,8 +5,27 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 )
+
+type Example struct{}
+
+func (e Example) Init(settings Settings) {}
+
+func (e Example) Timeframe() string {
+	return "1m"
+}
+
+func (e Example) WarmupPeriod() int {
+	return 10
+}
+
+func (e Example) Indicators(dataframe *Dataframe) {
+	dataframe.Metadata["rsi"] = dataframe.Close
+}
+
+func (e Example) OnCandle(dataframe *Dataframe, broker Broker) {
+	fmt.Println(dataframe.Time, dataframe.Close[0])
+}
 
 func main() {
 	var (
@@ -16,20 +35,13 @@ func main() {
 	)
 
 	binance := NewBinance(apiKey, secretKey)
-	candles, err := binance.LoadCandles(ctx, "BTCUSDT", "1h", time.Now().AddDate(0, 0, -1), time.Now())
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(candles)
+	strategy := Example{}
+	bot := NewBot(Settings{
+		Pairs: []string{"BTCUSDT"},
+	}, binance, strategy)
 
-	fmt.Println("-- live --")
-	ccandle, cerr := binance.SubscribeCandles("BTCUSDT", "1m")
-	for {
-		select {
-		case candle := <-ccandle:
-			fmt.Println(candle)
-		case err := <-cerr:
-			log.Fatal(err)
-		}
+	err := bot.Run(ctx)
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
