@@ -28,7 +28,7 @@ func (e Example) Indicators(dataframe *ninjabot.Dataframe) {
 }
 
 func (e Example) OnCandle(dataframe *ninjabot.Dataframe, broker ninjabot.Broker) {
-	fmt.Println("New Candle = ", dataframe.LastUpdate, ninjabot.Last(dataframe.Close, 0))
+	fmt.Println("New Candle = ", dataframe.Pair, dataframe.LastUpdate, ninjabot.Last(dataframe.Close, 0))
 
 	if ninjabot.Last(dataframe.Metadata["rsi"], 0) < 30 {
 		broker.OrderMarket(ninjabot.BuyOrder, dataframe.Pair, 1)
@@ -49,6 +49,7 @@ func main() {
 	settings := ninjabot.Settings{
 		Pairs: []string{
 			"BTCUSDT",
+			"ETHUSDT",
 		},
 	}
 	binance := ninjabot.NewBinance(apiKey, secretKey)

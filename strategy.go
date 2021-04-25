@@ -15,9 +15,10 @@ type strategyController struct {
 	started   bool
 }
 
-func NewStrategyController(settings Settings, strategy Strategy, broker Broker) *strategyController {
+func NewStrategyController(pair string, settings Settings, strategy Strategy, broker Broker) *strategyController {
 	strategy.Init(settings)
 	dataframe := &Dataframe{
+		Pair:     pair,
 		Metadata: make(map[string][]float64),
 	}
 
