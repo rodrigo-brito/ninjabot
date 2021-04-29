@@ -1,23 +1,30 @@
-package ninjabot
+package strategy
+
+import (
+	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
+	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/order"
+)
 
 type Strategy interface {
-	Init(settings Settings)
+	Init(settings model.Settings)
 	Timeframe() string
 	WarmupPeriod() int
-	Indicators(dataframe *Dataframe)
-	OnCandle(dataframe *Dataframe, broker Broker)
+	Indicators(dataframe *model.Dataframe)
+	OnCandle(dataframe *model.Dataframe, broker exchange.Broker)
 }
 
 type strategyController struct {
-	strategy  Strategy
-	dataframe *Dataframe
-	broker    Broker
-	started   bool
+	strategy        Strategy
+	dataframe       *model.Dataframe
+	broker          exchange.Broker
+	orderController order.Controller
+	started         bool
 }
 
-func NewStrategyController(pair string, settings Settings, strategy Strategy, broker Broker) *strategyController {
+func NewStrategyController(pair string, settings model.Settings, strategy Strategy, orderController order.Controller) *strategyController {
 	strategy.Init(settings)
-	dataframe := &Dataframe{
+	dataframe := &model.Dataframe{
 		Pair:     pair,
 		Metadata: make(map[string][]float64),
 	}
@@ -25,7 +32,7 @@ func NewStrategyController(pair string, settings Settings, strategy Strategy, br
 	return &strategyController{
 		dataframe: dataframe,
 		strategy:  strategy,
-		broker:    broker,
+		broker:    orderController,
 	}
 }
 
@@ -33,7 +40,7 @@ func (s *strategyController) Start() {
 	s.started = true
 }
 
-func (s *strategyController) OnCandle(candle Candle) {
+func (s *strategyController) OnCandle(candle model.Candle) {
 	s.dataframe.Close = append(s.dataframe.Close, candle.Close)
 	s.dataframe.Open = append(s.dataframe.Open, candle.Open)
 	s.dataframe.High = append(s.dataframe.High, candle.High)

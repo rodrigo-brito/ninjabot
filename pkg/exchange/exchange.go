@@ -1,4 +1,4 @@
-package ninjabot
+package exchange
 
 import (
 	"context"
@@ -8,34 +8,36 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rodrigo-brito/ninjabot/pkg/model"
+
 	"github.com/gorilla/websocket"
 )
 
-type DataFeed struct {
-	Data chan Candle
-	Err  chan error
-}
+type OrderSide string
+
+var (
+	SellOrder OrderSide = "SELL"
+	BuyOrder  OrderSide = "BUY"
+)
 
 type Exchange interface {
 	Broker
-	Account() (Account, error)
-	LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]Candle, error)
-	LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]Candle, error)
-	SubscribeCandles(pair, timeframe string) (chan Candle, chan error)
+	Account() (model.Account, error)
+	LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
+	LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
+	SubscribeCandles(pair, timeframe string) (chan model.Candle, chan error)
 }
 
-type OrderKind string
-
-var (
-	SellOrder OrderKind = "sell"
-	BuyOrder  OrderKind = "buy"
-)
-
 type Broker interface {
-	OrderLimit(kind OrderKind, tick string, size float64, limit float64) Order
-	OrderMarket(kind OrderKind, tick string, size float64) Order
-	Stop(tick string, size float64) Order
-	Cancel(Order)
+	OrderOCO(side OrderSide, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error)
+	OrderLimit(side OrderSide, symbol string, size float64, limit float64) (model.Order, error)
+	OrderMarket(side OrderSide, symbol string, size float64) (model.Order, error)
+	Cancel(model.Order) error
+}
+
+type DataFeed struct {
+	Data chan model.Candle
+	Err  chan error
 }
 
 type DataFeedSubscription struct {
@@ -50,7 +52,7 @@ type Subscription struct {
 	consumer      DataFeedConsumer
 }
 
-type DataFeedConsumer func(Candle)
+type DataFeedConsumer func(model.Candle)
 
 func NewDataFeed(exchange Exchange) DataFeedSubscription {
 	return DataFeedSubscription{
@@ -78,7 +80,7 @@ func (d *DataFeedSubscription) Register(pair, timeframe string, consumer DataFee
 	})
 }
 
-func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []Candle) {
+func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.Candle) {
 	fmt.Printf("[SETUP] preloading %d candles for %s--%s\n", len(candles), pair, timeframe)
 	key := d.feedKey(pair, timeframe)
 	for _, candle := range candles {
