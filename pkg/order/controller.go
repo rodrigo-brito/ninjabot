@@ -10,16 +10,18 @@ import (
 )
 
 type Controller struct {
-	ctx      context.Context
-	exchange exchange.Exchange
-	storage  *ent.Client
+	ctx       context.Context
+	exchange  exchange.Exchange
+	storage   *ent.Client
+	orderFeed FeedSubscription
 }
 
-func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client) Controller {
+func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client, orderFeed FeedSubscription) Controller {
 	return Controller{
-		ctx:      ctx,
-		storage:  storage,
-		exchange: exchange,
+		ctx:       ctx,
+		storage:   storage,
+		exchange:  exchange,
+		orderFeed: orderFeed,
 	}
 }
 
@@ -39,6 +41,7 @@ func (c Controller) createOrder(order *model.Order) error {
 		return fmt.Errorf("error on save order: %w", err)
 	}
 	order.ID = register.ID
+	go c.orderFeed.Publish(*order, true)
 	return nil
 }
 

@@ -52,13 +52,14 @@ func WithStorage(storage *ent.Client) Option {
 }
 
 func (n *NinjaBot) Run(ctx context.Context) error {
-	orderController := order.NewController(ctx, n.exchange, n.storage)
+	oderFeed := order.NewOrderFeed()
 	dataFeed := exchange.NewDataFeed(n.exchange)
+	orderController := order.NewController(ctx, n.exchange, n.storage, oderFeed)
 
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
 		strategyController := strategy.NewStrategyController(pair, n.settings, n.strategy, orderController)
-		dataFeed.Register(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)
+		dataFeed.Subscribe(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)
 
 		// preload candles to warmup strategy
 		candles, err := n.exchange.LoadCandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
@@ -69,6 +70,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		strategyController.Start()
 	}
 
+	oderFeed.Start()
 	<-dataFeed.Start(ctx)
 	return nil
 }

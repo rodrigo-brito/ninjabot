@@ -71,7 +71,7 @@ func (d *DataFeedSubscription) PairTimeframeFromKey(key string) (pair, timeframe
 	return parts[0], parts[1]
 }
 
-func (d *DataFeedSubscription) Register(pair, timeframe string, consumer DataFeedConsumer, onCandleClose bool) {
+func (d *DataFeedSubscription) Subscribe(pair, timeframe string, consumer DataFeedConsumer, onCandleClose bool) {
 	key := d.feedKey(pair, timeframe)
 	d.Feeds = append(d.Feeds, key)
 	d.SubscriptionsByDataFeed[key] = append(d.SubscriptionsByDataFeed[key], Subscription{
