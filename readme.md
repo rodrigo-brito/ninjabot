@@ -4,16 +4,6 @@ A fast cryptocurrency bot implemented in Go
 
 :warning: **Caution:** Working in progress :construction:
 
-Features:
-- [x] Exchange Feed Data
-- [x] Custom Strategy
-- [ ] Order Management
-- [ ] Strategy Backtesting
-
-Exchanges:
-- [x] Binance
-- [ ] FTX
-
 ## Instalation
 
 `go get -u github.com/rodrigo-brito/ninjabot`
@@ -26,33 +16,26 @@ Check example folder for a complete example:
 go run example/main.go
 ```
 
-```go
-type Example struct{}
+### CLI
 
-func (e Example) Init(settings ninjabot.Settings) {}
+- `ninjabot download` - Download historical data
+    - Example: `ninjabot download --symbol BTCUSDT --timeframe 1h --limit 100 --output ./btc.csv`
 
-func (e Example) Timeframe() string {
-	return "1m"
-}
 
-func (e Example) WarmupPeriod() int {
-	return 14
-}
+## Roadmap
 
-func (e Example) Indicators(dataframe *ninjabot.Dataframe) {
-	dataframe.Metadata["rsi"] = talib.Rsi(dataframe.Close, 14)
-	dataframe.Metadata["ema"] = talib.Ema(dataframe.Close, 9)
-}
+### Features:
+- [x] Exchange Feed Data
+- [x] Custom Strategy
+- [x] Order Management
+    - [ ] Update Status
+    - [ ] Order report
+- [ ] Strategy Backtesting
+- [ ] Strategy Backtesting
+- [x] Bot CLI
+  - [x] Download
+  - [ ] Plot
 
-func (e Example) OnCandle(dataframe *ninjabot.Dataframe, broker ninjabot.Broker) {
-	fmt.Println("New Candle = ", dataframe.LastUpdate, ninjabot.Last(dataframe.Close, 0))
-
-	if ninjabot.Last(dataframe.Metadata["rsi"], 0) < 30 {
-		broker.OrderMarket(ninjabot.BuyOrder, dataframe.Pair, 1)
-	}
-
-	if ninjabot.Last(dataframe.Metadata["rsi"], 0) > 70 {
-		broker.OrderMarket(ninjabot.SellOrder, dataframe.Pair, 1)
-	}
-}
-```
+### Exchanges:
+- [x] Binance
+- [ ] FTX

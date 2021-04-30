@@ -200,6 +200,7 @@ func CandleFromKline(k binance.Kline) model.Candle {
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
 	candle.Low, _ = strconv.ParseFloat(k.Low, 64)
 	candle.Volume, _ = strconv.ParseFloat(k.Volume, 64)
+	candle.Trades = k.TradeNum
 	candle.Complete = true
 	return candle
 }
@@ -211,6 +212,7 @@ func CandleFromWsKline(k binance.WsKline) model.Candle {
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
 	candle.Low, _ = strconv.ParseFloat(k.Low, 64)
 	candle.Volume, _ = strconv.ParseFloat(k.Volume, 64)
+	candle.Trades = k.TradeNum
 	candle.Complete = k.IsFinal
 	return candle
 }

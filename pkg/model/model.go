@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type SideType string
 type OrderType string
@@ -57,10 +60,23 @@ type Candle struct {
 	Time     time.Time
 	Open     float64
 	Close    float64
-	High     float64
 	Low      float64
+	High     float64
 	Volume   float64
+	Trades   int64
 	Complete bool
+}
+
+func (c Candle) ToSlice() []string {
+	return []string{
+		fmt.Sprintf("%d", c.Time.Unix()),
+		fmt.Sprintf("%f", c.Open),
+		fmt.Sprintf("%f", c.Close),
+		fmt.Sprintf("%f", c.Low),
+		fmt.Sprintf("%f", c.High),
+		fmt.Sprintf("%.1f", c.Volume),
+		fmt.Sprintf("%d", c.Trades),
+	}
 }
 
 type Order struct {
