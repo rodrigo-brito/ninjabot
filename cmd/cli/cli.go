@@ -41,7 +41,10 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			exc := exchange.NewBinance("", "")
+			exc, err := exchange.NewBinance(c.Context, "", "")
+			if err != nil {
+				return err
+			}
 			return data.NewDownloader(exc).Download(c.Context, c.String("symbol"),
 				c.String("timeframe"), c.Int("limit"), c.String("output"))
 		},
