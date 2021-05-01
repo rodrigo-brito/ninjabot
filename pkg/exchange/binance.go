@@ -11,7 +11,10 @@ import (
 	"github.com/adshao/go-binance/v2"
 )
 
-type TradeLimit struct {
+type AssetInfo struct {
+	BaseAsset  string
+	QuoteAsset string
+
 	MinPrice    float64
 	MaxPrice    float64
 	MinQuantity float64
@@ -25,9 +28,10 @@ type TradeLimit struct {
 }
 
 type Binance struct {
-	ctx    context.Context
-	client *binance.Client
-	limits map[string]TradeLimit
+	ctx       context.Context
+	client    *binance.Client
+	baseAsset string
+	info      map[string]AssetInfo
 }
 
 type BinanceOption func(*Binance)
@@ -39,15 +43,18 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 		return nil, fmt.Errorf("binance ping fail: %w", err)
 	}
 
-	info, err := client.NewExchangeInfoService().Do(ctx)
+	results, err := client.NewExchangeInfoService().Do(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Initialize with orders precision and assets limits
-	limits := make(map[string]TradeLimit)
-	for _, info := range info.Symbols {
-		tradeLimits := TradeLimit{}
+	assetsInfo := make(map[string]AssetInfo)
+	for _, info := range results.Symbols {
+		tradeLimits := AssetInfo{
+			BaseAsset:  info.BaseAsset,
+			QuoteAsset: info.QuoteAsset,
+		}
 		for _, filter := range info.Filters {
 			if typ, ok := filter["filterType"]; ok {
 				if typ == string(binance.SymbolFilterTypeLotSize) {
@@ -65,13 +72,13 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 				}
 			}
 		}
-		limits[info.Symbol] = tradeLimits
+		assetsInfo[info.Symbol] = tradeLimits
 	}
 
 	exchange := &Binance{
 		ctx:    ctx,
 		client: client,
-		limits: limits,
+		info:   assetsInfo,
 	}
 	for _, option := range options {
 		option(exchange)
@@ -79,38 +86,81 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 	return exchange, nil
 }
 
-func Debug() BinanceOption {
-	return func(b *Binance) {
-		b.client.Debug = true
+func (b *Binance) validate(side model.SideType, symbol string, quantity float64, value *float64) error {
+	info, ok := b.info[symbol]
+	if !ok {
+		return ErrInvalidAsset
 	}
+
+	if quantity > info.MaxQuantity || quantity < info.MinQuantity {
+		return fmt.Errorf("%w: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity)
+	}
+
+	account, err := b.Account()
+	if err != nil {
+		return err
+	}
+
+	if side == model.SideTypeBuy {
+		if value == nil {
+			candles, err := b.LoadCandlesByLimit(b.ctx, symbol, "1m", 1)
+			if err != nil {
+				return err
+			}
+			value = &candles[0].Close
+		}
+
+		if value != nil && account.Balance(info.QuoteAsset).Free < quantity*(*value) {
+			return ErrInsufficientFunds
+		}
+	}
+
+	if side == model.SideTypeSell && account.Balance(info.BaseAsset).Free < quantity {
+		return ErrInsufficientFunds
+	}
+
+	return nil
 }
 
-func (b *Binance) OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error) {
-	order, err := b.client.NewCreateOCOService().
+func (b *Binance) OrderOCO(side model.SideType, symbol string, quantity, price, stop, stopLimit float64) ([]model.Order, error) {
+	// validate stop
+	err := b.validate(side, symbol, quantity, &stopLimit)
+	if err != nil {
+		return nil, err
+	}
+
+	// validate take profit
+	err = b.validate(side, symbol, quantity, &price)
+	if err != nil {
+		return nil, err
+	}
+
+	ocoOrder, err := b.client.NewCreateOCOService().
 		Side(binance.SideType(side)).
-		StopPrice(fmt.Sprintf("%f", stop)).
-		StopLimitPrice(fmt.Sprintf("%f", stopLimit)).
+		Quantity(b.formatQuantity(symbol, quantity)).
+		Price(b.formatPrice(symbol, price)).
+		StopPrice(b.formatPrice(symbol, stop)).
+		StopLimitPrice(b.formatPrice(symbol, stopLimit)).
 		StopLimitTimeInForce(binance.TimeInForceTypeGTC).
-		Price(fmt.Sprintf("%f", price)).
-		Quantity(fmt.Sprintf("%f", size)).
 		Symbol(symbol).
 		Do(b.ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	orders := make([]model.Order, 0, len(order.Orders))
-	for _, order := range order.OrderReports {
+	orders := make([]model.Order, 0, len(ocoOrder.Orders))
+	for _, order := range ocoOrder.OrderReports {
 		price, _ := strconv.ParseFloat(order.Price, 64)
+		quantity, _ := strconv.ParseFloat(order.OrigQuantity, 64)
 		item := model.Order{
 			ExchangeID: order.OrderID,
-			Date:       time.Unix(0, order.TransactionTime*int64(time.Millisecond)),
+			Date:       time.Unix(0, ocoOrder.TransactionTime*int64(time.Millisecond)),
 			Symbol:     symbol,
 			Side:       model.SideType(order.Side),
 			Type:       model.OrderType(order.Type),
 			Status:     model.OrderStatusType(order.Status),
 			Price:      price,
-			Quantity:   size,
+			Quantity:   quantity,
 			GroupID:    &order.OrderListID,
 		}
 
@@ -126,7 +176,7 @@ func (b *Binance) OrderOCO(side model.SideType, symbol string, size, price, stop
 
 func (b *Binance) formatPrice(symbol string, value float64) string {
 	precision := -1
-	if limits, ok := b.limits[symbol]; ok {
+	if limits, ok := b.info[symbol]; ok {
 		precision = int(limits.PriceDecimalPrecision)
 	}
 	return strconv.FormatFloat(value, 'f', precision, 64)
@@ -134,13 +184,18 @@ func (b *Binance) formatPrice(symbol string, value float64) string {
 
 func (b *Binance) formatQuantity(symbol string, value float64) string {
 	precision := -1
-	if limits, ok := b.limits[symbol]; ok {
+	if limits, ok := b.info[symbol]; ok {
 		precision = int(limits.QtyDecimalPrecision)
 	}
 	return strconv.FormatFloat(value, 'f', precision, 64)
 }
 
 func (b *Binance) OrderLimit(side model.SideType, symbol string, quantity float64, limit float64) (model.Order, error) {
+	err := b.validate(side, symbol, quantity, &limit)
+	if err != nil {
+		return model.Order{}, err
+	}
+
 	order, err := b.client.NewCreateOrderService().
 		Symbol(symbol).
 		Type(binance.OrderTypeLimit).
@@ -169,6 +224,11 @@ func (b *Binance) OrderLimit(side model.SideType, symbol string, quantity float6
 }
 
 func (b *Binance) OrderMarket(side model.SideType, symbol string, quantity float64) (model.Order, error) {
+	err := b.validate(side, symbol, quantity, nil)
+	if err != nil {
+		return model.Order{}, err
+	}
+
 	order, err := b.client.NewCreateOrderService().
 		Symbol(symbol).
 		Type(binance.OrderTypeMarket).
@@ -213,9 +273,9 @@ func (b *Binance) Account() (model.Account, error) {
 		free, _ := strconv.ParseFloat(balance.Free, 64)
 		locked, _ := strconv.ParseFloat(balance.Locked, 64)
 		balances = append(balances, model.Balance{
-			Tick:  balance.Asset,
-			Value: free + locked,
-			Lock:  locked,
+			Tick: balance.Asset,
+			Free: free,
+			Lock: locked,
 		})
 	}
 
@@ -311,28 +371,4 @@ func CandleFromWsKline(k binance.WsKline) model.Candle {
 	candle.Trades = k.TradeNum
 	candle.Complete = k.IsFinal
 	return candle
-}
-
-func AccountFromBinance(binanceAccount *binance.Account) (*model.Account, error) {
-	var account model.Account
-	for _, balance := range binanceAccount.Balances {
-
-		free, err := strconv.ParseFloat(balance.Free, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		lock, err := strconv.ParseFloat(balance.Free, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		account.Balances = append(account.Balances, model.Balance{
-			Tick:  balance.Asset,
-			Value: free + lock,
-			Lock:  lock,
-		})
-	}
-
-	return &account, nil
 }

@@ -35,9 +35,9 @@ type Settings struct {
 }
 
 type Balance struct {
-	Tick  string
-	Value float64
-	Lock  float64
+	Tick string
+	Free float64
+	Lock float64
 }
 
 type Dataframe struct {
