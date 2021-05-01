@@ -9,8 +9,6 @@ const (
 	FieldID = "id"
 	// FieldExchangeID holds the string denoting the exchange_id field in the database.
 	FieldExchangeID = "exchange_id"
-	// FieldGroupID holds the string denoting the group_id field in the database.
-	FieldGroupID = "group_id"
 	// FieldDate holds the string denoting the date field in the database.
 	FieldDate = "date"
 	// FieldSymbol holds the string denoting the symbol field in the database.
@@ -23,10 +21,12 @@ const (
 	FieldStatus = "status"
 	// FieldPrice holds the string denoting the price field in the database.
 	FieldPrice = "price"
-	// FieldPriceLimit holds the string denoting the price_limit field in the database.
-	FieldPriceLimit = "price_limit"
 	// FieldQuantity holds the string denoting the quantity field in the database.
 	FieldQuantity = "quantity"
+	// FieldGroupID holds the string denoting the group_id field in the database.
+	FieldGroupID = "group_id"
+	// FieldStop holds the string denoting the stop field in the database.
+	FieldStop = "stop"
 	// Table holds the table name of the order in the database.
 	Table = "orders"
 )
@@ -35,15 +35,15 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldExchangeID,
-	FieldGroupID,
 	FieldDate,
 	FieldSymbol,
 	FieldSide,
 	FieldType,
 	FieldStatus,
 	FieldPrice,
-	FieldPriceLimit,
 	FieldQuantity,
+	FieldGroupID,
+	FieldStop,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

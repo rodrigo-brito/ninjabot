@@ -31,7 +31,6 @@ go run example/main.go
     - [ ] Update Status
     - [ ] Order report
 - [ ] Strategy Backtesting
-- [ ] Strategy Backtesting
 - [x] Bot CLI
   - [x] Download
   - [ ] Plot

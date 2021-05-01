@@ -11,21 +11,72 @@ import (
 	"github.com/adshao/go-binance/v2"
 )
 
+type TradeLimit struct {
+	MinPrice    float64
+	MaxPrice    float64
+	MinQuantity float64
+	MaxQuantity float64
+	StepSize    float64
+	TickSize    float64
+
+	// Number of decimal places
+	QtyDecimalPrecision   int64
+	PriceDecimalPrecision int64
+}
+
 type Binance struct {
+	ctx    context.Context
 	client *binance.Client
+	limits map[string]TradeLimit
 }
 
 type BinanceOption func(*Binance)
 
-func NewBinance(apiKey, secretKey string, options ...BinanceOption) *Binance {
+func NewBinance(ctx context.Context, apiKey, secretKey string, options ...BinanceOption) (*Binance, error) {
 	client := binance.NewClient(apiKey, secretKey)
+	err := client.NewPingService().Do(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("binance ping fail: %w", err)
+	}
+
+	info, err := client.NewExchangeInfoService().Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize with orders precision and assets limits
+	limits := make(map[string]TradeLimit)
+	for _, info := range info.Symbols {
+		tradeLimits := TradeLimit{}
+		for _, filter := range info.Filters {
+			if typ, ok := filter["filterType"]; ok {
+				if typ == string(binance.SymbolFilterTypeLotSize) {
+					tradeLimits.MinQuantity, _ = strconv.ParseFloat(filter["minQty"].(string), 64)
+					tradeLimits.MaxQuantity, _ = strconv.ParseFloat(filter["maxQty"].(string), 64)
+					tradeLimits.StepSize, _ = strconv.ParseFloat(filter["stepSize"].(string), 64)
+					tradeLimits.QtyDecimalPrecision = model.NumDecPlaces(tradeLimits.StepSize)
+				}
+
+				if typ == string(binance.SymbolFilterTypePriceFilter) {
+					tradeLimits.MinPrice, _ = strconv.ParseFloat(filter["minPrice"].(string), 64)
+					tradeLimits.MaxPrice, _ = strconv.ParseFloat(filter["maxPrice"].(string), 64)
+					tradeLimits.TickSize, _ = strconv.ParseFloat(filter["tickSize"].(string), 64)
+					tradeLimits.PriceDecimalPrecision = model.NumDecPlaces(tradeLimits.TickSize)
+				}
+			}
+		}
+		limits[info.Symbol] = tradeLimits
+	}
+
 	exchange := &Binance{
+		ctx:    ctx,
 		client: client,
+		limits: limits,
 	}
 	for _, option := range options {
 		option(exchange)
 	}
-	return exchange
+	return exchange, nil
 }
 
 func Debug() BinanceOption {
@@ -34,76 +85,103 @@ func Debug() BinanceOption {
 	}
 }
 
-func (b *Binance) OrderOCO(side OrderSide, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error) {
+func (b *Binance) OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error) {
 	order, err := b.client.NewCreateOCOService().
 		Side(binance.SideType(side)).
-		StopPrice(fmt.Sprintf("%.f", stop)).
-		StopLimitPrice(fmt.Sprintf("%.f", stopLimit)).
-		Price(fmt.Sprintf("%.f", price)).
-		Quantity(fmt.Sprintf("%.f", size)).
+		StopPrice(fmt.Sprintf("%f", stop)).
+		StopLimitPrice(fmt.Sprintf("%f", stopLimit)).
+		StopLimitTimeInForce(binance.TimeInForceTypeGTC).
+		Price(fmt.Sprintf("%f", price)).
+		Quantity(fmt.Sprintf("%f", size)).
 		Symbol(symbol).
-		Do(context.Background())
+		Do(b.ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	orders := make([]model.Order, 0, len(order.Orders))
-	for _, o := range order.Orders {
-		orders = append(orders, model.Order{
-			ExchangeID: o.OrderID,
+	for _, order := range order.OrderReports {
+		price, _ := strconv.ParseFloat(order.Price, 64)
+		item := model.Order{
+			ExchangeID: order.OrderID,
 			Date:       time.Unix(0, order.TransactionTime*int64(time.Millisecond)),
 			Symbol:     symbol,
-			Side:       model.SideType(side),
-			Status:     model.OrderStatusTypeNew,
-			Type:       "",
-			Price:      0,
+			Side:       model.SideType(order.Side),
+			Type:       model.OrderType(order.Type),
+			Status:     model.OrderStatusType(order.Status),
+			Price:      price,
 			Quantity:   size,
 			GroupID:    &order.OrderListID,
-		})
+		}
+
+		if item.Type == model.OrderTypeStopLossLimit || item.Type == model.OrderTypeStopLoss {
+			item.Stop = &stop
+		}
+
+		orders = append(orders, item)
 	}
 
 	return orders, nil
 }
 
-func (b *Binance) OrderLimit(side OrderSide, symbol string, size float64, limit float64) (model.Order, error) {
+func (b *Binance) formatPrice(symbol string, value float64) string {
+	precision := -1
+	if limits, ok := b.limits[symbol]; ok {
+		precision = int(limits.PriceDecimalPrecision)
+	}
+	return strconv.FormatFloat(value, 'f', precision, 64)
+}
+
+func (b *Binance) formatQuantity(symbol string, value float64) string {
+	precision := -1
+	if limits, ok := b.limits[symbol]; ok {
+		precision = int(limits.QtyDecimalPrecision)
+	}
+	return strconv.FormatFloat(value, 'f', precision, 64)
+}
+
+func (b *Binance) OrderLimit(side model.SideType, symbol string, quantity float64, limit float64) (model.Order, error) {
 	order, err := b.client.NewCreateOrderService().
 		Symbol(symbol).
 		Type(binance.OrderTypeLimit).
 		TimeInForce(binance.TimeInForceTypeGTC).
 		Side(binance.SideType(side)).
-		Quantity(fmt.Sprintf("%.f", size)).
-		Price(fmt.Sprintf("%.f", limit)).
-		Do(context.Background())
+		Quantity(b.formatQuantity(symbol, quantity)).
+		Price(b.formatPrice(symbol, limit)).
+		Do(b.ctx)
 	if err != nil {
 		return model.Order{}, err
 	}
 
 	price, _ := strconv.ParseFloat(order.Price, 64)
+	quantity, _ = strconv.ParseFloat(order.OrigQuantity, 64)
+
 	return model.Order{
-		ID:       order.OrderID,
-		Symbol:   order.Symbol,
-		Date:     time.Unix(0, order.TransactTime*int64(time.Millisecond)),
-		Side:     model.SideType(order.Side),
-		Type:     model.OrderType(order.Type),
-		Status:   model.OrderStatusType(order.Status),
-		Price:    price,
-		Quantity: size,
+		ExchangeID: order.OrderID,
+		Date:       time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		Symbol:     symbol,
+		Side:       model.SideType(order.Side),
+		Type:       model.OrderType(order.Type),
+		Status:     model.OrderStatusType(order.Status),
+		Price:      price,
+		Quantity:   quantity,
 	}, nil
 }
 
-func (b *Binance) OrderMarket(side OrderSide, symbol string, size float64) (model.Order, error) {
+func (b *Binance) OrderMarket(side model.SideType, symbol string, quantity float64) (model.Order, error) {
 	order, err := b.client.NewCreateOrderService().
 		Symbol(symbol).
 		Type(binance.OrderTypeMarket).
-		TimeInForce(binance.TimeInForceTypeGTC).
 		Side(binance.SideType(side)).
-		Quantity(fmt.Sprintf("%.f", size)).
-		Do(context.Background())
+		Quantity(b.formatQuantity(symbol, quantity)).
+		NewOrderRespType(binance.NewOrderRespTypeFULL).
+		Do(b.ctx)
 	if err != nil {
 		return model.Order{}, err
 	}
 
-	price, _ := strconv.ParseFloat(order.Price, 64)
+	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+	quantity, _ = strconv.ParseFloat(order.ExecutedQuantity, 64)
 	return model.Order{
 		ExchangeID: order.OrderID,
 		Date:       time.Unix(0, order.TransactTime*int64(time.Millisecond)),
@@ -111,21 +189,39 @@ func (b *Binance) OrderMarket(side OrderSide, symbol string, size float64) (mode
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
 		Status:     model.OrderStatusType(order.Status),
-		Price:      price,
-		Quantity:   size,
+		Price:      cost / quantity,
+		Quantity:   quantity,
 	}, nil
 }
 
 func (b *Binance) Cancel(order model.Order) error {
 	_, err := b.client.NewCancelOrderService().
 		Symbol(order.Symbol).
-		OrderID(order.ID).Do(context.Background())
+		OrderID(order.ExchangeID).
+		Do(b.ctx)
 	return err
 }
 
 func (b *Binance) Account() (model.Account, error) {
-	// TODO: implement me
-	return model.Account{}, nil
+	acc, err := b.client.NewGetAccountService().Do(b.ctx)
+	if err != nil {
+		return model.Account{}, err
+	}
+
+	balances := make([]model.Balance, 0)
+	for _, balance := range acc.Balances {
+		free, _ := strconv.ParseFloat(balance.Free, 64)
+		locked, _ := strconv.ParseFloat(balance.Locked, 64)
+		balances = append(balances, model.Balance{
+			Tick:  balance.Asset,
+			Value: free + locked,
+			Lock:  locked,
+		})
+	}
+
+	return model.Account{
+		Balances: balances,
+	}, nil
 }
 
 func (b *Binance) SubscribeCandles(pair, period string) (chan model.Candle, chan error) {

@@ -34,8 +34,6 @@ type OrderMutation struct {
 	id             *int64
 	exchange_id    *int64
 	addexchange_id *int64
-	group_id       *int64
-	addgroup_id    *int64
 	date           *time.Time
 	symbol         *string
 	side           *string
@@ -43,10 +41,12 @@ type OrderMutation struct {
 	status         *string
 	price          *float64
 	addprice       *float64
-	price_limit    *float64
-	addprice_limit *float64
 	quantity       *float64
 	addquantity    *float64
+	group_id       *int64
+	addgroup_id    *int64
+	stop           *float64
+	addstop        *float64
 	clearedFields  map[string]struct{}
 	done           bool
 	oldValue       func(context.Context) (*Order, error)
@@ -192,76 +192,6 @@ func (m *OrderMutation) AddedExchangeID() (r int64, exists bool) {
 func (m *OrderMutation) ResetExchangeID() {
 	m.exchange_id = nil
 	m.addexchange_id = nil
-}
-
-// SetGroupID sets the "group_id" field.
-func (m *OrderMutation) SetGroupID(i int64) {
-	m.group_id = &i
-	m.addgroup_id = nil
-}
-
-// GroupID returns the value of the "group_id" field in the mutation.
-func (m *OrderMutation) GroupID() (r int64, exists bool) {
-	v := m.group_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldGroupID returns the old "group_id" field's value of the Order entity.
-// If the Order object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OrderMutation) OldGroupID(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldGroupID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldGroupID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
-	}
-	return oldValue.GroupID, nil
-}
-
-// AddGroupID adds i to the "group_id" field.
-func (m *OrderMutation) AddGroupID(i int64) {
-	if m.addgroup_id != nil {
-		*m.addgroup_id += i
-	} else {
-		m.addgroup_id = &i
-	}
-}
-
-// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
-func (m *OrderMutation) AddedGroupID() (r int64, exists bool) {
-	v := m.addgroup_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearGroupID clears the value of the "group_id" field.
-func (m *OrderMutation) ClearGroupID() {
-	m.group_id = nil
-	m.addgroup_id = nil
-	m.clearedFields[order.FieldGroupID] = struct{}{}
-}
-
-// GroupIDCleared returns if the "group_id" field was cleared in this mutation.
-func (m *OrderMutation) GroupIDCleared() bool {
-	_, ok := m.clearedFields[order.FieldGroupID]
-	return ok
-}
-
-// ResetGroupID resets all changes to the "group_id" field.
-func (m *OrderMutation) ResetGroupID() {
-	m.group_id = nil
-	m.addgroup_id = nil
-	delete(m.clearedFields, order.FieldGroupID)
 }
 
 // SetDate sets the "date" field.
@@ -500,76 +430,6 @@ func (m *OrderMutation) ResetPrice() {
 	m.addprice = nil
 }
 
-// SetPriceLimit sets the "price_limit" field.
-func (m *OrderMutation) SetPriceLimit(f float64) {
-	m.price_limit = &f
-	m.addprice_limit = nil
-}
-
-// PriceLimit returns the value of the "price_limit" field in the mutation.
-func (m *OrderMutation) PriceLimit() (r float64, exists bool) {
-	v := m.price_limit
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPriceLimit returns the old "price_limit" field's value of the Order entity.
-// If the Order object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OrderMutation) OldPriceLimit(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldPriceLimit is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldPriceLimit requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPriceLimit: %w", err)
-	}
-	return oldValue.PriceLimit, nil
-}
-
-// AddPriceLimit adds f to the "price_limit" field.
-func (m *OrderMutation) AddPriceLimit(f float64) {
-	if m.addprice_limit != nil {
-		*m.addprice_limit += f
-	} else {
-		m.addprice_limit = &f
-	}
-}
-
-// AddedPriceLimit returns the value that was added to the "price_limit" field in this mutation.
-func (m *OrderMutation) AddedPriceLimit() (r float64, exists bool) {
-	v := m.addprice_limit
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearPriceLimit clears the value of the "price_limit" field.
-func (m *OrderMutation) ClearPriceLimit() {
-	m.price_limit = nil
-	m.addprice_limit = nil
-	m.clearedFields[order.FieldPriceLimit] = struct{}{}
-}
-
-// PriceLimitCleared returns if the "price_limit" field was cleared in this mutation.
-func (m *OrderMutation) PriceLimitCleared() bool {
-	_, ok := m.clearedFields[order.FieldPriceLimit]
-	return ok
-}
-
-// ResetPriceLimit resets all changes to the "price_limit" field.
-func (m *OrderMutation) ResetPriceLimit() {
-	m.price_limit = nil
-	m.addprice_limit = nil
-	delete(m.clearedFields, order.FieldPriceLimit)
-}
-
 // SetQuantity sets the "quantity" field.
 func (m *OrderMutation) SetQuantity(f float64) {
 	m.quantity = &f
@@ -626,6 +486,146 @@ func (m *OrderMutation) ResetQuantity() {
 	m.addquantity = nil
 }
 
+// SetGroupID sets the "group_id" field.
+func (m *OrderMutation) SetGroupID(i int64) {
+	m.group_id = &i
+	m.addgroup_id = nil
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *OrderMutation) GroupID() (r int64, exists bool) {
+	v := m.group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldGroupID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (m *OrderMutation) AddGroupID(i int64) {
+	if m.addgroup_id != nil {
+		*m.addgroup_id += i
+	} else {
+		m.addgroup_id = &i
+	}
+}
+
+// AddedGroupID returns the value that was added to the "group_id" field in this mutation.
+func (m *OrderMutation) AddedGroupID() (r int64, exists bool) {
+	v := m.addgroup_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGroupID clears the value of the "group_id" field.
+func (m *OrderMutation) ClearGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+	m.clearedFields[order.FieldGroupID] = struct{}{}
+}
+
+// GroupIDCleared returns if the "group_id" field was cleared in this mutation.
+func (m *OrderMutation) GroupIDCleared() bool {
+	_, ok := m.clearedFields[order.FieldGroupID]
+	return ok
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *OrderMutation) ResetGroupID() {
+	m.group_id = nil
+	m.addgroup_id = nil
+	delete(m.clearedFields, order.FieldGroupID)
+}
+
+// SetStop sets the "stop" field.
+func (m *OrderMutation) SetStop(f float64) {
+	m.stop = &f
+	m.addstop = nil
+}
+
+// Stop returns the value of the "stop" field in the mutation.
+func (m *OrderMutation) Stop() (r float64, exists bool) {
+	v := m.stop
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStop returns the old "stop" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldStop(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldStop is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldStop requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStop: %w", err)
+	}
+	return oldValue.Stop, nil
+}
+
+// AddStop adds f to the "stop" field.
+func (m *OrderMutation) AddStop(f float64) {
+	if m.addstop != nil {
+		*m.addstop += f
+	} else {
+		m.addstop = &f
+	}
+}
+
+// AddedStop returns the value that was added to the "stop" field in this mutation.
+func (m *OrderMutation) AddedStop() (r float64, exists bool) {
+	v := m.addstop
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearStop clears the value of the "stop" field.
+func (m *OrderMutation) ClearStop() {
+	m.stop = nil
+	m.addstop = nil
+	m.clearedFields[order.FieldStop] = struct{}{}
+}
+
+// StopCleared returns if the "stop" field was cleared in this mutation.
+func (m *OrderMutation) StopCleared() bool {
+	_, ok := m.clearedFields[order.FieldStop]
+	return ok
+}
+
+// ResetStop resets all changes to the "stop" field.
+func (m *OrderMutation) ResetStop() {
+	m.stop = nil
+	m.addstop = nil
+	delete(m.clearedFields, order.FieldStop)
+}
+
 // Op returns the operation name.
 func (m *OrderMutation) Op() Op {
 	return m.op
@@ -643,9 +643,6 @@ func (m *OrderMutation) Fields() []string {
 	fields := make([]string, 0, 10)
 	if m.exchange_id != nil {
 		fields = append(fields, order.FieldExchangeID)
-	}
-	if m.group_id != nil {
-		fields = append(fields, order.FieldGroupID)
 	}
 	if m.date != nil {
 		fields = append(fields, order.FieldDate)
@@ -665,11 +662,14 @@ func (m *OrderMutation) Fields() []string {
 	if m.price != nil {
 		fields = append(fields, order.FieldPrice)
 	}
-	if m.price_limit != nil {
-		fields = append(fields, order.FieldPriceLimit)
-	}
 	if m.quantity != nil {
 		fields = append(fields, order.FieldQuantity)
+	}
+	if m.group_id != nil {
+		fields = append(fields, order.FieldGroupID)
+	}
+	if m.stop != nil {
+		fields = append(fields, order.FieldStop)
 	}
 	return fields
 }
@@ -681,8 +681,6 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case order.FieldExchangeID:
 		return m.ExchangeID()
-	case order.FieldGroupID:
-		return m.GroupID()
 	case order.FieldDate:
 		return m.Date()
 	case order.FieldSymbol:
@@ -695,10 +693,12 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case order.FieldPrice:
 		return m.Price()
-	case order.FieldPriceLimit:
-		return m.PriceLimit()
 	case order.FieldQuantity:
 		return m.Quantity()
+	case order.FieldGroupID:
+		return m.GroupID()
+	case order.FieldStop:
+		return m.Stop()
 	}
 	return nil, false
 }
@@ -710,8 +710,6 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 	switch name {
 	case order.FieldExchangeID:
 		return m.OldExchangeID(ctx)
-	case order.FieldGroupID:
-		return m.OldGroupID(ctx)
 	case order.FieldDate:
 		return m.OldDate(ctx)
 	case order.FieldSymbol:
@@ -724,10 +722,12 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldStatus(ctx)
 	case order.FieldPrice:
 		return m.OldPrice(ctx)
-	case order.FieldPriceLimit:
-		return m.OldPriceLimit(ctx)
 	case order.FieldQuantity:
 		return m.OldQuantity(ctx)
+	case order.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case order.FieldStop:
+		return m.OldStop(ctx)
 	}
 	return nil, fmt.Errorf("unknown Order field %s", name)
 }
@@ -743,13 +743,6 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExchangeID(v)
-		return nil
-	case order.FieldGroupID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetGroupID(v)
 		return nil
 	case order.FieldDate:
 		v, ok := value.(time.Time)
@@ -793,19 +786,26 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPrice(v)
 		return nil
-	case order.FieldPriceLimit:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPriceLimit(v)
-		return nil
 	case order.FieldQuantity:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetQuantity(v)
+		return nil
+	case order.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case order.FieldStop:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStop(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)
@@ -818,17 +818,17 @@ func (m *OrderMutation) AddedFields() []string {
 	if m.addexchange_id != nil {
 		fields = append(fields, order.FieldExchangeID)
 	}
-	if m.addgroup_id != nil {
-		fields = append(fields, order.FieldGroupID)
-	}
 	if m.addprice != nil {
 		fields = append(fields, order.FieldPrice)
 	}
-	if m.addprice_limit != nil {
-		fields = append(fields, order.FieldPriceLimit)
-	}
 	if m.addquantity != nil {
 		fields = append(fields, order.FieldQuantity)
+	}
+	if m.addgroup_id != nil {
+		fields = append(fields, order.FieldGroupID)
+	}
+	if m.addstop != nil {
+		fields = append(fields, order.FieldStop)
 	}
 	return fields
 }
@@ -840,14 +840,14 @@ func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case order.FieldExchangeID:
 		return m.AddedExchangeID()
-	case order.FieldGroupID:
-		return m.AddedGroupID()
 	case order.FieldPrice:
 		return m.AddedPrice()
-	case order.FieldPriceLimit:
-		return m.AddedPriceLimit()
 	case order.FieldQuantity:
 		return m.AddedQuantity()
+	case order.FieldGroupID:
+		return m.AddedGroupID()
+	case order.FieldStop:
+		return m.AddedStop()
 	}
 	return nil, false
 }
@@ -864,13 +864,6 @@ func (m *OrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddExchangeID(v)
 		return nil
-	case order.FieldGroupID:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddGroupID(v)
-		return nil
 	case order.FieldPrice:
 		v, ok := value.(float64)
 		if !ok {
@@ -878,19 +871,26 @@ func (m *OrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddPrice(v)
 		return nil
-	case order.FieldPriceLimit:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddPriceLimit(v)
-		return nil
 	case order.FieldQuantity:
 		v, ok := value.(float64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddQuantity(v)
+		return nil
+	case order.FieldGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupID(v)
+		return nil
+	case order.FieldStop:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStop(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Order numeric field %s", name)
@@ -903,8 +903,8 @@ func (m *OrderMutation) ClearedFields() []string {
 	if m.FieldCleared(order.FieldGroupID) {
 		fields = append(fields, order.FieldGroupID)
 	}
-	if m.FieldCleared(order.FieldPriceLimit) {
-		fields = append(fields, order.FieldPriceLimit)
+	if m.FieldCleared(order.FieldStop) {
+		fields = append(fields, order.FieldStop)
 	}
 	return fields
 }
@@ -923,8 +923,8 @@ func (m *OrderMutation) ClearField(name string) error {
 	case order.FieldGroupID:
 		m.ClearGroupID()
 		return nil
-	case order.FieldPriceLimit:
-		m.ClearPriceLimit()
+	case order.FieldStop:
+		m.ClearStop()
 		return nil
 	}
 	return fmt.Errorf("unknown Order nullable field %s", name)
@@ -936,9 +936,6 @@ func (m *OrderMutation) ResetField(name string) error {
 	switch name {
 	case order.FieldExchangeID:
 		m.ResetExchangeID()
-		return nil
-	case order.FieldGroupID:
-		m.ResetGroupID()
 		return nil
 	case order.FieldDate:
 		m.ResetDate()
@@ -958,11 +955,14 @@ func (m *OrderMutation) ResetField(name string) error {
 	case order.FieldPrice:
 		m.ResetPrice()
 		return nil
-	case order.FieldPriceLimit:
-		m.ResetPriceLimit()
-		return nil
 	case order.FieldQuantity:
 		m.ResetQuantity()
+		return nil
+	case order.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case order.FieldStop:
+		m.ResetStop()
 		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)

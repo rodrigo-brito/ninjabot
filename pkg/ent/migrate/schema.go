@@ -12,15 +12,15 @@ var (
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "exchange_id", Type: field.TypeInt64},
-		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "date", Type: field.TypeTime},
 		{Name: "symbol", Type: field.TypeString},
 		{Name: "side", Type: field.TypeString},
 		{Name: "type", Type: field.TypeString},
 		{Name: "status", Type: field.TypeString},
 		{Name: "price", Type: field.TypeFloat64},
-		{Name: "price_limit", Type: field.TypeFloat64, Nullable: true},
 		{Name: "quantity", Type: field.TypeFloat64},
+		{Name: "group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "stop", Type: field.TypeFloat64, Nullable: true},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{

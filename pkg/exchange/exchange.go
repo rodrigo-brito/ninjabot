@@ -13,25 +13,24 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type OrderSide string
-
 var (
-	SellOrder OrderSide = "SELL"
-	BuyOrder  OrderSide = "BUY"
+	ErrInvalidQuantity   = errors.New("invalid quantity")
+	ErrInsufficientFunds = errors.New("insufficient funds")
+	ErrInvalidAsset      = errors.New("invalid asset")
 )
 
 type Exchange interface {
 	Broker
-	Account() (model.Account, error)
 	LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
 	LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
 	SubscribeCandles(pair, timeframe string) (chan model.Candle, chan error)
 }
 
 type Broker interface {
-	OrderOCO(side OrderSide, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error)
-	OrderLimit(side OrderSide, symbol string, size float64, limit float64) (model.Order, error)
-	OrderMarket(side OrderSide, symbol string, size float64) (model.Order, error)
+	Account() (model.Account, error)
+	OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error)
+	OrderLimit(side model.SideType, symbol string, size float64, limit float64) (model.Order, error)
+	OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error)
 	Cancel(model.Order) error
 }
 

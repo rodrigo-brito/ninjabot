@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/markcheno/go-talib"
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+
+	"github.com/markcheno/go-talib"
 )
 
 type Example struct{}
@@ -32,12 +33,13 @@ func (e Example) Indicators(dataframe *model.Dataframe) {
 func (e Example) OnCandle(dataframe *model.Dataframe, broker exchange.Broker) {
 	fmt.Println("New Candle = ", dataframe.Pair, dataframe.LastUpdate, model.Last(dataframe.Close, 0))
 
-	if model.Last(dataframe.Metadata["rsi"], 0) < 30 {
-		broker.OrderMarket(exchange.BuyOrder, dataframe.Pair, 1)
+	if model.Last(dataframe.Metadata["rsi"], 0) < 30 &&
+		model.Last(dataframe.Metadata["ema"], 0) > model.Last(dataframe.Metadata["ema"], 1) {
+		broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, 1)
 	}
 
 	if model.Last(dataframe.Metadata["rsi"], 0) > 70 {
-		broker.OrderMarket(exchange.SellOrder, dataframe.Pair, 1)
+		broker.OrderMarket(model.SideTypeSell, dataframe.Pair, 1)
 	}
 }
 
@@ -55,9 +57,12 @@ func main() {
 		},
 	}
 
-	binance := exchange.NewBinance(apiKey, secretKey)
-	strategy := Example{}
+	binance, err := exchange.NewBinance(ctx, apiKey, secretKey)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
+	strategy := Example{}
 	bot, err := ninjabot.NewBot(settings, binance, strategy)
 	if err != nil {
 		log.Fatalln(err)

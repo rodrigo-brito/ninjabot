@@ -13,15 +13,16 @@ func (Order) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("id"),
 		field.Int64("exchange_id"),
-		field.Int64("group_id").Optional(), // OCO orders
 		field.Time("date"),
 		field.String("symbol"),
 		field.String("side"),
 		field.String("type"),
 		field.String("status"),
 		field.Float("price"),
-		field.Float("price_limit").Optional(), // Limit orders
 		field.Float("quantity"),
+
+		field.Int64("group_id").Optional(), // OCO orders
+		field.Float("stop").Optional(),     // OCO / Stop limit orders
 	}
 }
 

@@ -18,8 +18,6 @@ type Order struct {
 	ID int64 `json:"id,omitempty"`
 	// ExchangeID holds the value of the "exchange_id" field.
 	ExchangeID int64 `json:"exchange_id,omitempty"`
-	// GroupID holds the value of the "group_id" field.
-	GroupID int64 `json:"group_id,omitempty"`
 	// Date holds the value of the "date" field.
 	Date time.Time `json:"date,omitempty"`
 	// Symbol holds the value of the "symbol" field.
@@ -32,10 +30,12 @@ type Order struct {
 	Status string `json:"status,omitempty"`
 	// Price holds the value of the "price" field.
 	Price float64 `json:"price,omitempty"`
-	// PriceLimit holds the value of the "price_limit" field.
-	PriceLimit float64 `json:"price_limit,omitempty"`
 	// Quantity holds the value of the "quantity" field.
 	Quantity float64 `json:"quantity,omitempty"`
+	// GroupID holds the value of the "group_id" field.
+	GroupID int64 `json:"group_id,omitempty"`
+	// Stop holds the value of the "stop" field.
+	Stop float64 `json:"stop,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -43,7 +43,7 @@ func (*Order) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case order.FieldPrice, order.FieldPriceLimit, order.FieldQuantity:
+		case order.FieldPrice, order.FieldQuantity, order.FieldStop:
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID, order.FieldExchangeID, order.FieldGroupID:
 			values[i] = new(sql.NullInt64)
@@ -77,12 +77,6 @@ func (o *Order) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field exchange_id", values[i])
 			} else if value.Valid {
 				o.ExchangeID = value.Int64
-			}
-		case order.FieldGroupID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field group_id", values[i])
-			} else if value.Valid {
-				o.GroupID = value.Int64
 			}
 		case order.FieldDate:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -120,17 +114,23 @@ func (o *Order) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				o.Price = value.Float64
 			}
-		case order.FieldPriceLimit:
-			if value, ok := values[i].(*sql.NullFloat64); !ok {
-				return fmt.Errorf("unexpected type %T for field price_limit", values[i])
-			} else if value.Valid {
-				o.PriceLimit = value.Float64
-			}
 		case order.FieldQuantity:
 			if value, ok := values[i].(*sql.NullFloat64); !ok {
 				return fmt.Errorf("unexpected type %T for field quantity", values[i])
 			} else if value.Valid {
 				o.Quantity = value.Float64
+			}
+		case order.FieldGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field group_id", values[i])
+			} else if value.Valid {
+				o.GroupID = value.Int64
+			}
+		case order.FieldStop:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field stop", values[i])
+			} else if value.Valid {
+				o.Stop = value.Float64
 			}
 		}
 	}
@@ -162,8 +162,6 @@ func (o *Order) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", o.ID))
 	builder.WriteString(", exchange_id=")
 	builder.WriteString(fmt.Sprintf("%v", o.ExchangeID))
-	builder.WriteString(", group_id=")
-	builder.WriteString(fmt.Sprintf("%v", o.GroupID))
 	builder.WriteString(", date=")
 	builder.WriteString(o.Date.Format(time.ANSIC))
 	builder.WriteString(", symbol=")
@@ -176,10 +174,12 @@ func (o *Order) String() string {
 	builder.WriteString(o.Status)
 	builder.WriteString(", price=")
 	builder.WriteString(fmt.Sprintf("%v", o.Price))
-	builder.WriteString(", price_limit=")
-	builder.WriteString(fmt.Sprintf("%v", o.PriceLimit))
 	builder.WriteString(", quantity=")
 	builder.WriteString(fmt.Sprintf("%v", o.Quantity))
+	builder.WriteString(", group_id=")
+	builder.WriteString(fmt.Sprintf("%v", o.GroupID))
+	builder.WriteString(", stop=")
+	builder.WriteString(fmt.Sprintf("%v", o.Stop))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -17,7 +17,6 @@ func New(path string) (*ent.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer client.Close()
 
 	if err := client.Schema.Create(context.Background()); err != nil {
 		return nil, err

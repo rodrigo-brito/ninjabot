@@ -40,33 +40,6 @@ func (ou *OrderUpdate) AddExchangeID(i int64) *OrderUpdate {
 	return ou
 }
 
-// SetGroupID sets the "group_id" field.
-func (ou *OrderUpdate) SetGroupID(i int64) *OrderUpdate {
-	ou.mutation.ResetGroupID()
-	ou.mutation.SetGroupID(i)
-	return ou
-}
-
-// SetNillableGroupID sets the "group_id" field if the given value is not nil.
-func (ou *OrderUpdate) SetNillableGroupID(i *int64) *OrderUpdate {
-	if i != nil {
-		ou.SetGroupID(*i)
-	}
-	return ou
-}
-
-// AddGroupID adds i to the "group_id" field.
-func (ou *OrderUpdate) AddGroupID(i int64) *OrderUpdate {
-	ou.mutation.AddGroupID(i)
-	return ou
-}
-
-// ClearGroupID clears the value of the "group_id" field.
-func (ou *OrderUpdate) ClearGroupID() *OrderUpdate {
-	ou.mutation.ClearGroupID()
-	return ou
-}
-
 // SetDate sets the "date" field.
 func (ou *OrderUpdate) SetDate(t time.Time) *OrderUpdate {
 	ou.mutation.SetDate(t)
@@ -110,33 +83,6 @@ func (ou *OrderUpdate) AddPrice(f float64) *OrderUpdate {
 	return ou
 }
 
-// SetPriceLimit sets the "price_limit" field.
-func (ou *OrderUpdate) SetPriceLimit(f float64) *OrderUpdate {
-	ou.mutation.ResetPriceLimit()
-	ou.mutation.SetPriceLimit(f)
-	return ou
-}
-
-// SetNillablePriceLimit sets the "price_limit" field if the given value is not nil.
-func (ou *OrderUpdate) SetNillablePriceLimit(f *float64) *OrderUpdate {
-	if f != nil {
-		ou.SetPriceLimit(*f)
-	}
-	return ou
-}
-
-// AddPriceLimit adds f to the "price_limit" field.
-func (ou *OrderUpdate) AddPriceLimit(f float64) *OrderUpdate {
-	ou.mutation.AddPriceLimit(f)
-	return ou
-}
-
-// ClearPriceLimit clears the value of the "price_limit" field.
-func (ou *OrderUpdate) ClearPriceLimit() *OrderUpdate {
-	ou.mutation.ClearPriceLimit()
-	return ou
-}
-
 // SetQuantity sets the "quantity" field.
 func (ou *OrderUpdate) SetQuantity(f float64) *OrderUpdate {
 	ou.mutation.ResetQuantity()
@@ -147,6 +93,60 @@ func (ou *OrderUpdate) SetQuantity(f float64) *OrderUpdate {
 // AddQuantity adds f to the "quantity" field.
 func (ou *OrderUpdate) AddQuantity(f float64) *OrderUpdate {
 	ou.mutation.AddQuantity(f)
+	return ou
+}
+
+// SetGroupID sets the "group_id" field.
+func (ou *OrderUpdate) SetGroupID(i int64) *OrderUpdate {
+	ou.mutation.ResetGroupID()
+	ou.mutation.SetGroupID(i)
+	return ou
+}
+
+// SetNillableGroupID sets the "group_id" field if the given value is not nil.
+func (ou *OrderUpdate) SetNillableGroupID(i *int64) *OrderUpdate {
+	if i != nil {
+		ou.SetGroupID(*i)
+	}
+	return ou
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (ou *OrderUpdate) AddGroupID(i int64) *OrderUpdate {
+	ou.mutation.AddGroupID(i)
+	return ou
+}
+
+// ClearGroupID clears the value of the "group_id" field.
+func (ou *OrderUpdate) ClearGroupID() *OrderUpdate {
+	ou.mutation.ClearGroupID()
+	return ou
+}
+
+// SetStop sets the "stop" field.
+func (ou *OrderUpdate) SetStop(f float64) *OrderUpdate {
+	ou.mutation.ResetStop()
+	ou.mutation.SetStop(f)
+	return ou
+}
+
+// SetNillableStop sets the "stop" field if the given value is not nil.
+func (ou *OrderUpdate) SetNillableStop(f *float64) *OrderUpdate {
+	if f != nil {
+		ou.SetStop(*f)
+	}
+	return ou
+}
+
+// AddStop adds f to the "stop" field.
+func (ou *OrderUpdate) AddStop(f float64) *OrderUpdate {
+	ou.mutation.AddStop(f)
+	return ou
+}
+
+// ClearStop clears the value of the "stop" field.
+func (ou *OrderUpdate) ClearStop() *OrderUpdate {
+	ou.mutation.ClearStop()
 	return ou
 }
 
@@ -238,26 +238,6 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: order.FieldExchangeID,
 		})
 	}
-	if value, ok := ou.mutation.GroupID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldGroupID,
-		})
-	}
-	if value, ok := ou.mutation.AddedGroupID(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldGroupID,
-		})
-	}
-	if ou.mutation.GroupIDCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Column: order.FieldGroupID,
-		})
-	}
 	if value, ok := ou.mutation.Date(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -307,26 +287,6 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: order.FieldPrice,
 		})
 	}
-	if value, ok := ou.mutation.PriceLimit(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldPriceLimit,
-		})
-	}
-	if value, ok := ou.mutation.AddedPriceLimit(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldPriceLimit,
-		})
-	}
-	if ou.mutation.PriceLimitCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Column: order.FieldPriceLimit,
-		})
-	}
 	if value, ok := ou.mutation.Quantity(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeFloat64,
@@ -339,6 +299,46 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: order.FieldQuantity,
+		})
+	}
+	if value, ok := ou.mutation.GroupID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: order.FieldGroupID,
+		})
+	}
+	if value, ok := ou.mutation.AddedGroupID(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: order.FieldGroupID,
+		})
+	}
+	if ou.mutation.GroupIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Column: order.FieldGroupID,
+		})
+	}
+	if value, ok := ou.mutation.Stop(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldStop,
+		})
+	}
+	if value, ok := ou.mutation.AddedStop(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldStop,
+		})
+	}
+	if ou.mutation.StopCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Column: order.FieldStop,
 		})
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ou.driver, _spec); err != nil {
@@ -370,33 +370,6 @@ func (ouo *OrderUpdateOne) SetExchangeID(i int64) *OrderUpdateOne {
 // AddExchangeID adds i to the "exchange_id" field.
 func (ouo *OrderUpdateOne) AddExchangeID(i int64) *OrderUpdateOne {
 	ouo.mutation.AddExchangeID(i)
-	return ouo
-}
-
-// SetGroupID sets the "group_id" field.
-func (ouo *OrderUpdateOne) SetGroupID(i int64) *OrderUpdateOne {
-	ouo.mutation.ResetGroupID()
-	ouo.mutation.SetGroupID(i)
-	return ouo
-}
-
-// SetNillableGroupID sets the "group_id" field if the given value is not nil.
-func (ouo *OrderUpdateOne) SetNillableGroupID(i *int64) *OrderUpdateOne {
-	if i != nil {
-		ouo.SetGroupID(*i)
-	}
-	return ouo
-}
-
-// AddGroupID adds i to the "group_id" field.
-func (ouo *OrderUpdateOne) AddGroupID(i int64) *OrderUpdateOne {
-	ouo.mutation.AddGroupID(i)
-	return ouo
-}
-
-// ClearGroupID clears the value of the "group_id" field.
-func (ouo *OrderUpdateOne) ClearGroupID() *OrderUpdateOne {
-	ouo.mutation.ClearGroupID()
 	return ouo
 }
 
@@ -443,33 +416,6 @@ func (ouo *OrderUpdateOne) AddPrice(f float64) *OrderUpdateOne {
 	return ouo
 }
 
-// SetPriceLimit sets the "price_limit" field.
-func (ouo *OrderUpdateOne) SetPriceLimit(f float64) *OrderUpdateOne {
-	ouo.mutation.ResetPriceLimit()
-	ouo.mutation.SetPriceLimit(f)
-	return ouo
-}
-
-// SetNillablePriceLimit sets the "price_limit" field if the given value is not nil.
-func (ouo *OrderUpdateOne) SetNillablePriceLimit(f *float64) *OrderUpdateOne {
-	if f != nil {
-		ouo.SetPriceLimit(*f)
-	}
-	return ouo
-}
-
-// AddPriceLimit adds f to the "price_limit" field.
-func (ouo *OrderUpdateOne) AddPriceLimit(f float64) *OrderUpdateOne {
-	ouo.mutation.AddPriceLimit(f)
-	return ouo
-}
-
-// ClearPriceLimit clears the value of the "price_limit" field.
-func (ouo *OrderUpdateOne) ClearPriceLimit() *OrderUpdateOne {
-	ouo.mutation.ClearPriceLimit()
-	return ouo
-}
-
 // SetQuantity sets the "quantity" field.
 func (ouo *OrderUpdateOne) SetQuantity(f float64) *OrderUpdateOne {
 	ouo.mutation.ResetQuantity()
@@ -480,6 +426,60 @@ func (ouo *OrderUpdateOne) SetQuantity(f float64) *OrderUpdateOne {
 // AddQuantity adds f to the "quantity" field.
 func (ouo *OrderUpdateOne) AddQuantity(f float64) *OrderUpdateOne {
 	ouo.mutation.AddQuantity(f)
+	return ouo
+}
+
+// SetGroupID sets the "group_id" field.
+func (ouo *OrderUpdateOne) SetGroupID(i int64) *OrderUpdateOne {
+	ouo.mutation.ResetGroupID()
+	ouo.mutation.SetGroupID(i)
+	return ouo
+}
+
+// SetNillableGroupID sets the "group_id" field if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableGroupID(i *int64) *OrderUpdateOne {
+	if i != nil {
+		ouo.SetGroupID(*i)
+	}
+	return ouo
+}
+
+// AddGroupID adds i to the "group_id" field.
+func (ouo *OrderUpdateOne) AddGroupID(i int64) *OrderUpdateOne {
+	ouo.mutation.AddGroupID(i)
+	return ouo
+}
+
+// ClearGroupID clears the value of the "group_id" field.
+func (ouo *OrderUpdateOne) ClearGroupID() *OrderUpdateOne {
+	ouo.mutation.ClearGroupID()
+	return ouo
+}
+
+// SetStop sets the "stop" field.
+func (ouo *OrderUpdateOne) SetStop(f float64) *OrderUpdateOne {
+	ouo.mutation.ResetStop()
+	ouo.mutation.SetStop(f)
+	return ouo
+}
+
+// SetNillableStop sets the "stop" field if the given value is not nil.
+func (ouo *OrderUpdateOne) SetNillableStop(f *float64) *OrderUpdateOne {
+	if f != nil {
+		ouo.SetStop(*f)
+	}
+	return ouo
+}
+
+// AddStop adds f to the "stop" field.
+func (ouo *OrderUpdateOne) AddStop(f float64) *OrderUpdateOne {
+	ouo.mutation.AddStop(f)
+	return ouo
+}
+
+// ClearStop clears the value of the "stop" field.
+func (ouo *OrderUpdateOne) ClearStop() *OrderUpdateOne {
+	ouo.mutation.ClearStop()
 	return ouo
 }
 
@@ -595,26 +595,6 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Column: order.FieldExchangeID,
 		})
 	}
-	if value, ok := ouo.mutation.GroupID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldGroupID,
-		})
-	}
-	if value, ok := ouo.mutation.AddedGroupID(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldGroupID,
-		})
-	}
-	if ouo.mutation.GroupIDCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Column: order.FieldGroupID,
-		})
-	}
 	if value, ok := ouo.mutation.Date(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -664,26 +644,6 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Column: order.FieldPrice,
 		})
 	}
-	if value, ok := ouo.mutation.PriceLimit(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldPriceLimit,
-		})
-	}
-	if value, ok := ouo.mutation.AddedPriceLimit(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldPriceLimit,
-		})
-	}
-	if ouo.mutation.PriceLimitCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Column: order.FieldPriceLimit,
-		})
-	}
 	if value, ok := ouo.mutation.Quantity(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeFloat64,
@@ -696,6 +656,46 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Type:   field.TypeFloat64,
 			Value:  value,
 			Column: order.FieldQuantity,
+		})
+	}
+	if value, ok := ouo.mutation.GroupID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: order.FieldGroupID,
+		})
+	}
+	if value, ok := ouo.mutation.AddedGroupID(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: order.FieldGroupID,
+		})
+	}
+	if ouo.mutation.GroupIDCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Column: order.FieldGroupID,
+		})
+	}
+	if value, ok := ouo.mutation.Stop(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldStop,
+		})
+	}
+	if value, ok := ouo.mutation.AddedStop(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldStop,
+		})
+	}
+	if ouo.mutation.StopCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Column: order.FieldStop,
 		})
 	}
 	_node = &Order{config: ouo.config}

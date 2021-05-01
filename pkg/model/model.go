@@ -88,9 +88,11 @@ type Order struct {
 	Type       OrderType
 	Status     OrderStatusType
 	Price      float64
-	PriceLimit *float64
 	Quantity   float64
-	GroupID    *int64
+
+	// OCO Orders only
+	Stop    *float64
+	GroupID *int64
 }
 
 type Account struct {

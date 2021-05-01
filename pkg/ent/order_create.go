@@ -26,20 +26,6 @@ func (oc *OrderCreate) SetExchangeID(i int64) *OrderCreate {
 	return oc
 }
 
-// SetGroupID sets the "group_id" field.
-func (oc *OrderCreate) SetGroupID(i int64) *OrderCreate {
-	oc.mutation.SetGroupID(i)
-	return oc
-}
-
-// SetNillableGroupID sets the "group_id" field if the given value is not nil.
-func (oc *OrderCreate) SetNillableGroupID(i *int64) *OrderCreate {
-	if i != nil {
-		oc.SetGroupID(*i)
-	}
-	return oc
-}
-
 // SetDate sets the "date" field.
 func (oc *OrderCreate) SetDate(t time.Time) *OrderCreate {
 	oc.mutation.SetDate(t)
@@ -76,23 +62,37 @@ func (oc *OrderCreate) SetPrice(f float64) *OrderCreate {
 	return oc
 }
 
-// SetPriceLimit sets the "price_limit" field.
-func (oc *OrderCreate) SetPriceLimit(f float64) *OrderCreate {
-	oc.mutation.SetPriceLimit(f)
+// SetQuantity sets the "quantity" field.
+func (oc *OrderCreate) SetQuantity(f float64) *OrderCreate {
+	oc.mutation.SetQuantity(f)
 	return oc
 }
 
-// SetNillablePriceLimit sets the "price_limit" field if the given value is not nil.
-func (oc *OrderCreate) SetNillablePriceLimit(f *float64) *OrderCreate {
-	if f != nil {
-		oc.SetPriceLimit(*f)
+// SetGroupID sets the "group_id" field.
+func (oc *OrderCreate) SetGroupID(i int64) *OrderCreate {
+	oc.mutation.SetGroupID(i)
+	return oc
+}
+
+// SetNillableGroupID sets the "group_id" field if the given value is not nil.
+func (oc *OrderCreate) SetNillableGroupID(i *int64) *OrderCreate {
+	if i != nil {
+		oc.SetGroupID(*i)
 	}
 	return oc
 }
 
-// SetQuantity sets the "quantity" field.
-func (oc *OrderCreate) SetQuantity(f float64) *OrderCreate {
-	oc.mutation.SetQuantity(f)
+// SetStop sets the "stop" field.
+func (oc *OrderCreate) SetStop(f float64) *OrderCreate {
+	oc.mutation.SetStop(f)
+	return oc
+}
+
+// SetNillableStop sets the "stop" field if the given value is not nil.
+func (oc *OrderCreate) SetNillableStop(f *float64) *OrderCreate {
+	if f != nil {
+		oc.SetStop(*f)
+	}
 	return oc
 }
 
@@ -218,14 +218,6 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		})
 		_node.ExchangeID = value
 	}
-	if value, ok := oc.mutation.GroupID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeInt64,
-			Value:  value,
-			Column: order.FieldGroupID,
-		})
-		_node.GroupID = value
-	}
 	if value, ok := oc.mutation.Date(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -274,14 +266,6 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		})
 		_node.Price = value
 	}
-	if value, ok := oc.mutation.PriceLimit(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeFloat64,
-			Value:  value,
-			Column: order.FieldPriceLimit,
-		})
-		_node.PriceLimit = value
-	}
 	if value, ok := oc.mutation.Quantity(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeFloat64,
@@ -289,6 +273,22 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 			Column: order.FieldQuantity,
 		})
 		_node.Quantity = value
+	}
+	if value, ok := oc.mutation.GroupID(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: order.FieldGroupID,
+		})
+		_node.GroupID = value
+	}
+	if value, ok := oc.mutation.Stop(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeFloat64,
+			Value:  value,
+			Column: order.FieldStop,
+		})
+		_node.Stop = value
 	}
 	return _node, _spec
 }
