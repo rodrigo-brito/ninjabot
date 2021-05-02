@@ -83,6 +83,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 	}
 
 	oderFeed.Start()
+	orderController.Start()
 	<-dataFeed.Start(ctx)
 	return nil
 }

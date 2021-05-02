@@ -21,6 +21,7 @@ var (
 
 type Exchange interface {
 	Broker
+	Order(symbol string, id int64) (model.Order, error)
 	LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
 	LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
 	SubscribeCandles(pair, timeframe string) (chan model.Candle, chan error)

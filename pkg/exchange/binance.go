@@ -284,6 +284,59 @@ func (b *Binance) Cancel(order model.Order) error {
 	return err
 }
 
+func (b *Binance) Orders(symbol string, limit int) ([]model.Order, error) {
+	result, err := b.client.NewListOrdersService().
+		Symbol(symbol).
+		Limit(limit).
+		Do(b.ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	orders := make([]model.Order, 0)
+	for _, order := range result {
+		orders = append(orders, newOrder(order))
+	}
+	return orders, nil
+}
+
+func (b *Binance) Order(symbol string, id int64) (model.Order, error) {
+	order, err := b.client.NewGetOrderService().
+		Symbol(symbol).
+		OrderID(id).
+		Do(b.ctx)
+
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	return newOrder(order), nil
+}
+
+func newOrder(order *binance.Order) model.Order {
+	var price float64
+	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+	quantity, _ := strconv.ParseFloat(order.ExecutedQuantity, 64)
+	if cost > 0 && quantity > 0 {
+		price = cost / quantity
+	} else {
+		price, _ = strconv.ParseFloat(order.Price, 64)
+		quantity, _ = strconv.ParseFloat(order.OrigQuantity, 64)
+	}
+
+	return model.Order{
+		ExchangeID: order.OrderID,
+		Symbol:     order.Symbol,
+		Date:       time.Unix(0, order.Time*int64(time.Millisecond)),
+		Side:       model.SideType(order.Side),
+		Type:       model.OrderType(order.Type),
+		Status:     model.OrderStatusType(order.Status),
+		Price:      price,
+		Quantity:   quantity,
+	}
+}
+
 func (b *Binance) Account() (model.Account, error) {
 	acc, err := b.client.NewGetAccountService().Do(b.ctx)
 	if err != nil {

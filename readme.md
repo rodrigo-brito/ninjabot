@@ -28,8 +28,8 @@ go run example/main.go
 - [x] Exchange Feed Data
 - [x] Custom Strategy
 - [x] Order Management
-    - [ ] Update Status
-    - [ ] Order report
+    - [x] Update Status
+    - [x] Order report
 - [ ] Strategy Backtesting
 - [x] Bot CLI
   - [x] Download

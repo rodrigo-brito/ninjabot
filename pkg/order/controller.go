@@ -3,6 +3,9 @@ package order
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/rodrigo-brito/ninjabot/pkg/ent/order"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
@@ -25,6 +28,46 @@ func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent
 		exchange:  exchange,
 		orderFeed: orderFeed,
 	}
+}
+
+func (c Controller) Start() {
+	go func() {
+		for range time.NewTicker(10 * time.Second).C {
+			// get pending orders
+			orders, err := c.storage.Order.Query().
+				Where(order.StatusIn(
+					string(model.OrderStatusTypeNew),
+					string(model.OrderStatusTypePartiallyFilled),
+					string(model.OrderStatusTypePendingCancel),
+				)).
+				Order(ent.Desc(order.FieldDate)).
+				All(c.ctx)
+			if err != nil {
+				log.Error("orderController/start:", err)
+				continue
+			}
+
+			// For each pending order, check for updates
+			for _, order := range orders {
+				result, err := c.exchange.Order(order.Symbol, order.ExchangeID)
+				if err != nil {
+					log.Error("orderControler/update: ", err)
+					continue
+				}
+
+				_, err = order.Update().
+					SetStatus(string(result.Status)).
+					SetQuantity(result.Quantity).
+					SetPrice(result.Price).Save(c.ctx)
+				if err != nil {
+					log.Error("orderControler/update: ", err)
+					continue
+				}
+				log.Infof("[ORDER %s] %s", result.Status, result)
+				c.orderFeed.Publish(result, false)
+			}
+		}
+	}()
 }
 
 func (c Controller) createOrder(order *model.Order) error {
