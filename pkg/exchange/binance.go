@@ -27,11 +27,16 @@ type AssetInfo struct {
 	PriceDecimalPrecision int64
 }
 
+type UserInfo struct {
+	MakerCommission float64
+	TakerCommission float64
+}
+
 type Binance struct {
-	ctx       context.Context
-	client    *binance.Client
-	baseAsset string
-	info      map[string]AssetInfo
+	ctx        context.Context
+	client     *binance.Client
+	assetsInfo map[string]AssetInfo
+	userInfo   UserInfo
 }
 
 type BinanceOption func(*Binance)
@@ -41,6 +46,16 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 	err := client.NewPingService().Do(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("binance ping fail: %w", err)
+	}
+
+	acc, err := client.NewGetAccountService().Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	userInfo := UserInfo{
+		MakerCommission: float64(acc.MakerCommission) / 10000.0,
+		TakerCommission: float64(acc.TakerCommission) / 10000.0,
 	}
 
 	results, err := client.NewExchangeInfoService().Do(ctx)
@@ -76,9 +91,10 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 	}
 
 	exchange := &Binance{
-		ctx:    ctx,
-		client: client,
-		info:   assetsInfo,
+		ctx:        ctx,
+		client:     client,
+		assetsInfo: assetsInfo,
+		userInfo:   userInfo,
 	}
 	for _, option := range options {
 		option(exchange)
@@ -86,8 +102,8 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 	return exchange, nil
 }
 
-func (b *Binance) validate(side model.SideType, symbol string, quantity float64, value *float64) error {
-	info, ok := b.info[symbol]
+func (b *Binance) validate(side model.SideType, typ model.OrderType, symbol string, quantity float64, value *float64) error {
+	info, ok := b.assetsInfo[symbol]
 	if !ok {
 		return ErrInvalidAsset
 	}
@@ -101,6 +117,12 @@ func (b *Binance) validate(side model.SideType, symbol string, quantity float64,
 		return err
 	}
 
+	commissionFactor := 1 + b.userInfo.MakerCommission
+	if typ == model.OrderTypeMarket || typ == model.OrderTypeLimitMaker ||
+		typ == model.OrderTypeStopLoss || typ == model.OrderTypeTakeProfit {
+		commissionFactor = 1 + b.userInfo.TakerCommission
+	}
+
 	if side == model.SideTypeBuy {
 		if value == nil {
 			candles, err := b.LoadCandlesByLimit(b.ctx, symbol, "1m", 1)
@@ -110,12 +132,12 @@ func (b *Binance) validate(side model.SideType, symbol string, quantity float64,
 			value = &candles[0].Close
 		}
 
-		if value != nil && account.Balance(info.QuoteAsset).Free < quantity*(*value) {
+		if value != nil && account.Balance(info.QuoteAsset).Free < quantity*(*value)*commissionFactor {
 			return ErrInsufficientFunds
 		}
 	}
 
-	if side == model.SideTypeSell && account.Balance(info.BaseAsset).Free < quantity {
+	if side == model.SideTypeSell && account.Balance(info.BaseAsset).Free < quantity*commissionFactor {
 		return ErrInsufficientFunds
 	}
 
@@ -124,13 +146,13 @@ func (b *Binance) validate(side model.SideType, symbol string, quantity float64,
 
 func (b *Binance) OrderOCO(side model.SideType, symbol string, quantity, price, stop, stopLimit float64) ([]model.Order, error) {
 	// validate stop
-	err := b.validate(side, symbol, quantity, &stopLimit)
+	err := b.validate(side, model.OrderTypeStopLossLimit, symbol, quantity, &stopLimit)
 	if err != nil {
 		return nil, err
 	}
 
 	// validate take profit
-	err = b.validate(side, symbol, quantity, &price)
+	err = b.validate(side, model.OrderTypeLimitMaker, symbol, quantity, &price)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +198,7 @@ func (b *Binance) OrderOCO(side model.SideType, symbol string, quantity, price, 
 
 func (b *Binance) formatPrice(symbol string, value float64) string {
 	precision := -1
-	if limits, ok := b.info[symbol]; ok {
+	if limits, ok := b.assetsInfo[symbol]; ok {
 		precision = int(limits.PriceDecimalPrecision)
 	}
 	return strconv.FormatFloat(value, 'f', precision, 64)
@@ -184,14 +206,14 @@ func (b *Binance) formatPrice(symbol string, value float64) string {
 
 func (b *Binance) formatQuantity(symbol string, value float64) string {
 	precision := -1
-	if limits, ok := b.info[symbol]; ok {
+	if limits, ok := b.assetsInfo[symbol]; ok {
 		precision = int(limits.QtyDecimalPrecision)
 	}
 	return strconv.FormatFloat(value, 'f', precision, 64)
 }
 
 func (b *Binance) OrderLimit(side model.SideType, symbol string, quantity float64, limit float64) (model.Order, error) {
-	err := b.validate(side, symbol, quantity, &limit)
+	err := b.validate(side, model.OrderTypeLimit, symbol, quantity, &limit)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -224,7 +246,7 @@ func (b *Binance) OrderLimit(side model.SideType, symbol string, quantity float6
 }
 
 func (b *Binance) OrderMarket(side model.SideType, symbol string, quantity float64) (model.Order, error) {
-	err := b.validate(side, symbol, quantity, nil)
+	err := b.validate(side, model.OrderTypeMarket, symbol, quantity, nil)
 	if err != nil {
 		return model.Order{}, err
 	}

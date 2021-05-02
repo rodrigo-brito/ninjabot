@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
-
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 	"github.com/rodrigo-brito/ninjabot/pkg/order"
 	"github.com/rodrigo-brito/ninjabot/pkg/storage"
 	"github.com/rodrigo-brito/ninjabot/pkg/strategy"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const defaultDatabase = "ninjabot.db"
@@ -30,6 +31,11 @@ func NewBot(settings model.Settings, exchange exchange.Exchange, strategy strate
 		strategy: strategy,
 	}
 
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04",
+	})
+
 	for _, option := range options {
 		option(bot)
 	}
@@ -48,6 +54,12 @@ func NewBot(settings model.Settings, exchange exchange.Exchange, strategy strate
 func WithStorage(storage *ent.Client) Option {
 	return func(bot *NinjaBot) {
 		bot.storage = storage
+	}
+}
+
+func WithLogLevel(level log.Level) Option {
+	return func(bot *NinjaBot) {
+		log.SetLevel(level)
 	}
 }
 

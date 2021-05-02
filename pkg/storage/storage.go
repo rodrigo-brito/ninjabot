@@ -10,8 +10,6 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 )
 
-const InMemory = "ent?mode=memory&cache=shared&_fk=1"
-
 func New(path string) (*ent.Client, error) {
 	client, err := ent.Open(dialect.SQLite, fmt.Sprintf("file:%s?cache=shared&_fk=1", path))
 	if err != nil {

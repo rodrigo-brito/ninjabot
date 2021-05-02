@@ -9,5 +9,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/mattn/go-sqlite3 v1.14.7
+	github.com/sirupsen/logrus v1.8.1
 	github.com/urfave/cli/v2 v2.3.0
+	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )

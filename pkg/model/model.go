@@ -95,6 +95,10 @@ type Order struct {
 	GroupID *int64
 }
 
+func (o Order) String() string {
+	return fmt.Sprintf("%s %s | ID: %d, Type: %s - %f x $%f (%s)", o.Side, o.Symbol, o.ID, o.Type, o.Quantity, o.Price, o.Status)
+}
+
 type Account struct {
 	Balances []Balance
 }

@@ -4,18 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
 	ErrInvalidQuantity   = errors.New("invalid quantity")
-	ErrInsufficientFunds = errors.New("insufficient funds")
+	ErrInsufficientFunds = errors.New("insufficient funds or locked")
 	ErrInvalidAsset      = errors.New("invalid asset")
 )
 
@@ -80,7 +80,7 @@ func (d *DataFeedSubscription) Subscribe(pair, timeframe string, consumer DataFe
 }
 
 func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.Candle) {
-	fmt.Printf("[SETUP] preloading %d candles for %s--%s\n", len(candles), pair, timeframe)
+	log.Infof("[SETUP] preloading %d candles for %s-%s", len(candles), pair, timeframe)
 	key := d.feedKey(pair, timeframe)
 	for _, candle := range candles {
 		for _, subscription := range d.SubscriptionsByDataFeed[key] {
@@ -90,8 +90,8 @@ func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.C
 }
 
 func (d *DataFeedSubscription) Connect() {
+	log.Infof("[SETUP] connecting to exchange")
 	for _, feed := range d.Feeds {
-		fmt.Println("[SETUP] connecting to datafeed:", feed)
 		pair, timeframe := d.PairTimeframeFromKey(feed)
 		ccandle, cerr := d.exchange.SubscribeCandles(pair, timeframe)
 		d.DataFeeds[feed] = &DataFeed{
@@ -116,7 +116,7 @@ func (d *DataFeedSubscription) Start(ctx context.Context) <-chan struct{} {
 						subscription.consumer(candle)
 					}
 				case err := <-feed.Err:
-					log.Println("dataFeedSubscription/start: ", err)
+					log.Error("dataFeedSubscription/start: ", err)
 					if errors.Is(err, &websocket.CloseError{}) {
 						close(done)
 						return
@@ -126,7 +126,7 @@ func (d *DataFeedSubscription) Start(ctx context.Context) <-chan struct{} {
 		}(key, feed)
 	}
 
-	fmt.Println("Bot started.")
+	log.Infof("Bot started.")
 
 	return done
 }
