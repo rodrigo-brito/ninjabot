@@ -37,34 +37,53 @@ type Binance struct {
 	client     *binance.Client
 	assetsInfo map[string]AssetInfo
 	userInfo   UserInfo
+
+	APIKey    string
+	APISecret string
 }
 
 type BinanceOption func(*Binance)
 
-func NewBinance(ctx context.Context, apiKey, secretKey string, options ...BinanceOption) (*Binance, error) {
-	client := binance.NewClient(apiKey, secretKey)
-	err := client.NewPingService().Do(ctx)
+func WithBinanceCredentials(key, secret string) BinanceOption {
+	return func(b *Binance) {
+		b.APIKey = key
+		b.APISecret = secret
+	}
+}
+
+func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error) {
+	exchange := &Binance{ctx: ctx}
+	for _, option := range options {
+		option(exchange)
+	}
+
+	exchange.client = binance.NewClient(exchange.APIKey, exchange.APISecret)
+	err := exchange.client.NewPingService().Do(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("binance ping fail: %w", err)
 	}
 
-	acc, err := client.NewGetAccountService().Do(ctx)
-	if err != nil {
-		return nil, err
+	// If user credentials are present
+	if exchange.APIKey != "" && exchange.APISecret != "" {
+		// Initialize user capabilities and fees
+		acc, err := exchange.client.NewGetAccountService().Do(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		exchange.userInfo = UserInfo{
+			MakerCommission: float64(acc.MakerCommission) / 10000.0,
+			TakerCommission: float64(acc.TakerCommission) / 10000.0,
+		}
 	}
 
-	userInfo := UserInfo{
-		MakerCommission: float64(acc.MakerCommission) / 10000.0,
-		TakerCommission: float64(acc.TakerCommission) / 10000.0,
-	}
-
-	results, err := client.NewExchangeInfoService().Do(ctx)
+	results, err := exchange.client.NewExchangeInfoService().Do(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Initialize with orders precision and assets limits
-	assetsInfo := make(map[string]AssetInfo)
+	exchange.assetsInfo = make(map[string]AssetInfo)
 	for _, info := range results.Symbols {
 		tradeLimits := AssetInfo{
 			BaseAsset:  info.BaseAsset,
@@ -87,18 +106,9 @@ func NewBinance(ctx context.Context, apiKey, secretKey string, options ...Binanc
 				}
 			}
 		}
-		assetsInfo[info.Symbol] = tradeLimits
+		exchange.assetsInfo[info.Symbol] = tradeLimits
 	}
 
-	exchange := &Binance{
-		ctx:        ctx,
-		client:     client,
-		assetsInfo: assetsInfo,
-		userInfo:   userInfo,
-	}
-	for _, option := range options {
-		option(exchange)
-	}
 	return exchange, nil
 }
 
@@ -125,7 +135,7 @@ func (b *Binance) validate(side model.SideType, typ model.OrderType, symbol stri
 
 	if side == model.SideTypeBuy {
 		if value == nil {
-			candles, err := b.LoadCandlesByLimit(b.ctx, symbol, "1m", 1)
+			candles, err := b.CandlesByLimit(b.ctx, symbol, "1m", 1)
 			if err != nil {
 				return err
 			}
@@ -359,13 +369,13 @@ func (b *Binance) Account() (model.Account, error) {
 	}, nil
 }
 
-func (b *Binance) SubscribeCandles(pair, period string) (chan model.Candle, chan error) {
+func (b *Binance) CandlesSubscription(symbol, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
 
 	go func() {
-		done, _, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
-			ccandle <- CandleFromWsKline(event.Kline)
+		done, _, err := binance.WsKlineServe(symbol, period, func(event *binance.WsKlineEvent) {
+			ccandle <- CandleFromWsKline(symbol, event.Kline)
 		}, func(err error) {
 			cerr <- err
 		})
@@ -383,11 +393,11 @@ func (b *Binance) SubscribeCandles(pair, period string) (chan model.Candle, chan
 	return ccandle, cerr
 }
 
-func (b *Binance) LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {
+func (b *Binance) CandlesByLimit(ctx context.Context, symbol, period string, limit int) ([]model.Candle, error) {
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
 
-	data, err := klineService.Symbol(pair).
+	data, err := klineService.Symbol(symbol).
 		Interval(period).
 		Limit(limit).
 		Do(ctx)
@@ -397,17 +407,17 @@ func (b *Binance) LoadCandlesByLimit(ctx context.Context, pair, period string, l
 	}
 
 	for _, d := range data {
-		candles = append(candles, CandleFromKline(*d))
+		candles = append(candles, CandleFromKline(symbol, *d))
 	}
 
 	return candles, nil
 }
 
-func (b *Binance) LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error) {
+func (b *Binance) CandlesByPeriod(ctx context.Context, symbol, period string, start, end time.Time) ([]model.Candle, error) {
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
 
-	data, err := klineService.Symbol(pair).
+	data, err := klineService.Symbol(symbol).
 		Interval(period).
 		StartTime(start.UnixNano() / int64(time.Millisecond)).
 		EndTime(end.UnixNano() / int64(time.Millisecond)).
@@ -418,14 +428,14 @@ func (b *Binance) LoadCandlesByPeriod(ctx context.Context, pair, period string, 
 	}
 
 	for _, d := range data {
-		candles = append(candles, CandleFromKline(*d))
+		candles = append(candles, CandleFromKline(symbol, *d))
 	}
 
 	return candles, nil
 }
 
-func CandleFromKline(k binance.Kline) model.Candle {
-	candle := model.Candle{Time: time.Unix(0, k.OpenTime*int64(time.Millisecond))}
+func CandleFromKline(symbol string, k binance.Kline) model.Candle {
+	candle := model.Candle{Symbol: symbol, Time: time.Unix(0, k.OpenTime*int64(time.Millisecond))}
 	candle.Open, _ = strconv.ParseFloat(k.Open, 64)
 	candle.Close, _ = strconv.ParseFloat(k.Close, 64)
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
@@ -436,8 +446,8 @@ func CandleFromKline(k binance.Kline) model.Candle {
 	return candle
 }
 
-func CandleFromWsKline(k binance.WsKline) model.Candle {
-	candle := model.Candle{Time: time.Unix(0, k.StartTime*int64(time.Millisecond))}
+func CandleFromWsKline(symbol string, k binance.WsKline) model.Candle {
+	candle := model.Candle{Symbol: symbol, Time: time.Unix(0, k.StartTime*int64(time.Millisecond))}
 	candle.Open, _ = strconv.ParseFloat(k.Open, 64)
 	candle.Close, _ = strconv.ParseFloat(k.Close, 64)
 	candle.High, _ = strconv.ParseFloat(k.High, 64)

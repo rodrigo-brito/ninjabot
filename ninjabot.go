@@ -3,6 +3,8 @@ package ninjabot
 import (
 	"context"
 
+	"github.com/rodrigo-brito/ninjabot/pkg/notification"
+
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
@@ -15,26 +17,32 @@ import (
 
 const defaultDatabase = "ninjabot.db"
 
-type NinjaBot struct {
-	settings model.Settings
-	exchange exchange.Exchange
-	strategy strategy.Strategy
-	storage  *ent.Client
-}
-
-type Option func(*NinjaBot)
-
-func NewBot(settings model.Settings, exchange exchange.Exchange, strategy strategy.Strategy, options ...Option) (*NinjaBot, error) {
-	bot := &NinjaBot{
-		settings: settings,
-		exchange: exchange,
-		strategy: strategy,
-	}
-
+func init() {
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04",
 	})
+}
+
+type NinjaBot struct {
+	storage         *ent.Client
+	settings        model.Settings
+	exchange        exchange.Exchange
+	strategy        strategy.Strategy
+	notifier        notification.Notifier
+	orderFeed       order.FeedSubscription
+	dataFeed        exchange.DataFeedSubscription
+	orderController order.Controller
+}
+
+type Option func(*NinjaBot)
+
+func NewBot(ctx context.Context, settings model.Settings, exc exchange.Exchange, str strategy.Strategy, options ...Option) (*NinjaBot, error) {
+	bot := &NinjaBot{
+		settings: settings,
+		exchange: exc,
+		strategy: str,
+	}
 
 	for _, option := range options {
 		option(bot)
@@ -48,7 +56,17 @@ func NewBot(settings model.Settings, exchange exchange.Exchange, strategy strate
 		}
 	}
 
+	bot.orderFeed = order.NewOrderFeed()
+	bot.dataFeed = exchange.NewDataFeed(exc)
+	bot.orderController = order.NewController(ctx, exc, bot.storage, bot.orderFeed)
+
 	return bot, nil
+}
+
+func WithNotifier(notifier notification.Notifier) Option {
+	return func(bot *NinjaBot) {
+		bot.notifier = notifier
+	}
 }
 
 func WithStorage(storage *ent.Client) Option {
@@ -63,27 +81,34 @@ func WithLogLevel(level log.Level) Option {
 	}
 }
 
-func (n *NinjaBot) Run(ctx context.Context) error {
-	oderFeed := order.NewOrderFeed()
-	dataFeed := exchange.NewDataFeed(n.exchange)
-	orderController := order.NewController(ctx, n.exchange, n.storage, oderFeed)
+func (n *NinjaBot) SubscribeDataFeed(consumer exchange.DataFeedConsumer, onCandleClose bool) {
+	for _, symbol := range n.settings.Pairs {
+		n.dataFeed.Subscribe(symbol, n.strategy.Timeframe(), consumer, onCandleClose)
+	}
+}
 
+func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
+		if n.notifier != nil {
+			// subscribe to feed for orders notification
+			n.orderFeed.Subscribe(pair, n.notifier.NotifyOrder, false)
+		}
+
 		// setup and subscribe strategy to data feed (candles)
-		strategyController := strategy.NewStrategyController(pair, n.settings, n.strategy, orderController)
-		dataFeed.Subscribe(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)
+		strategyController := strategy.NewStrategyController(pair, n.settings, n.strategy, n.orderController)
+		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)
 
 		// preload candles to warmup strategy
-		candles, err := n.exchange.LoadCandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
+		candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
 		if err != nil {
 			return err
 		}
-		dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
+		n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
 		strategyController.Start()
 	}
 
-	oderFeed.Start()
-	orderController.Start()
-	<-dataFeed.Start(ctx)
+	n.orderFeed.Start()
+	n.orderController.Start()
+	<-n.dataFeed.Start(ctx)
 	return nil
 }

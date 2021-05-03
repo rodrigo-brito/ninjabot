@@ -41,7 +41,7 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			exc, err := exchange.NewBinance(c.Context, "", "")
+			exc, err := exchange.NewBinance(c.Context)
 			if err != nil {
 				return err
 			}

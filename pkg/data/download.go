@@ -30,7 +30,7 @@ func (d Downloader) Download(ctx context.Context, symbol, timeframe string, limi
 	}
 
 	writer := csv.NewWriter(recordFile)
-	candles, err := d.exchange.LoadCandlesByLimit(ctx, symbol, timeframe, limit)
+	candles, err := d.exchange.CandlesByLimit(ctx, symbol, timeframe, limit)
 	if err != nil {
 		return err
 	}

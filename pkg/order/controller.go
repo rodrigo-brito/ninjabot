@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/pkg/ent/order"
-
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
+	"github.com/rodrigo-brito/ninjabot/pkg/ent/order"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 
@@ -93,6 +92,10 @@ func (c Controller) createOrder(order *model.Order) error {
 
 func (c Controller) Account() (model.Account, error) {
 	return c.exchange.Account()
+}
+
+func (c Controller) Order(symbol string, id int64) (model.Order, error) {
+	return c.exchange.Order(symbol, id)
 }
 
 func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error) {

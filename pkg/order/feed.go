@@ -1,6 +1,8 @@
 package order
 
-import "github.com/rodrigo-brito/ninjabot/pkg/model"
+import (
+	"github.com/rodrigo-brito/ninjabot/pkg/model"
+)
 
 type Feed struct {
 	Data chan model.Order

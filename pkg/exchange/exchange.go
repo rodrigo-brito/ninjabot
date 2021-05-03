@@ -21,14 +21,18 @@ var (
 
 type Exchange interface {
 	Broker
-	Order(symbol string, id int64) (model.Order, error)
-	LoadCandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
-	LoadCandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
-	SubscribeCandles(pair, timeframe string) (chan model.Candle, chan error)
+	Feeder
+}
+
+type Feeder interface {
+	CandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
+	CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
+	CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error)
 }
 
 type Broker interface {
 	Account() (model.Account, error)
+	Order(symbol string, id int64) (model.Order, error)
 	OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error)
 	OrderLimit(side model.SideType, symbol string, size float64, limit float64) (model.Order, error)
 	OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error)
@@ -66,7 +70,7 @@ func (d *DataFeedSubscription) feedKey(pair, timeframe string) string {
 	return fmt.Sprintf("%s--%s", pair, timeframe)
 }
 
-func (d *DataFeedSubscription) PairTimeframeFromKey(key string) (pair, timeframe string) {
+func (d *DataFeedSubscription) pairTimeframeFromKey(key string) (pair, timeframe string) {
 	parts := strings.Split(key, "--")
 	return parts[0], parts[1]
 }
@@ -93,8 +97,8 @@ func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.C
 func (d *DataFeedSubscription) Connect() {
 	log.Infof("[SETUP] connecting to exchange")
 	for _, feed := range d.Feeds {
-		pair, timeframe := d.PairTimeframeFromKey(feed)
-		ccandle, cerr := d.exchange.SubscribeCandles(pair, timeframe)
+		pair, timeframe := d.pairTimeframeFromKey(feed)
+		ccandle, cerr := d.exchange.CandlesSubscription(pair, timeframe)
 		d.DataFeeds[feed] = &DataFeed{
 			Data: ccandle,
 			Err:  cerr,

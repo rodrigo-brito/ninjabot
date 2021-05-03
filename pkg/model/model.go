@@ -57,6 +57,7 @@ type Dataframe struct {
 }
 
 type Candle struct {
+	Symbol   string
 	Time     time.Time
 	Open     float64
 	Close    float64
