@@ -1,5 +1,8 @@
 # Ninja Bot
 
+[![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
+
 A fast cryptocurrency bot implemented in Go
 
 :warning: **Caution:** Working in progress :construction:

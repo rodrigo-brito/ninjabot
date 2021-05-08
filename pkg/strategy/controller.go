@@ -3,7 +3,6 @@ package strategy
 import (
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/order"
 )
 
 type Strategy interface {
@@ -15,14 +14,13 @@ type Strategy interface {
 }
 
 type strategyController struct {
-	strategy        Strategy
-	dataframe       *model.Dataframe
-	broker          exchange.Broker
-	orderController order.Controller
-	started         bool
+	strategy  Strategy
+	dataframe *model.Dataframe
+	broker    exchange.Broker
+	started   bool
 }
 
-func NewStrategyController(pair string, settings model.Settings, strategy Strategy, orderController *order.Controller) *strategyController {
+func NewStrategyController(pair string, settings model.Settings, strategy Strategy, broker exchange.Broker) *strategyController {
 	strategy.Init(settings)
 	dataframe := &model.Dataframe{
 		Pair:     pair,
@@ -32,7 +30,7 @@ func NewStrategyController(pair string, settings model.Settings, strategy Strate
 	return &strategyController{
 		dataframe: dataframe,
 		strategy:  strategy,
-		broker:    orderController,
+		broker:    broker,
 	}
 }
 

@@ -37,6 +37,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 
 		// try to sell and profit 100 USDT
 		order, err = wallet.OrderLimit(model.SideTypeSell, "BTCUSDT", 1, 200)
+		require.NoError(t, err)
 		require.Len(t, wallet.orders, 2)
 		require.Equal(t, 1.0, order.Quantity)
 		require.Equal(t, 200.0, order.Price)
@@ -141,6 +142,7 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 	// sell
 	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 100})
 	order, err = wallet.OrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+	require.NoError(t, err)
 	require.Equal(t, 1.0, order.Quantity)
 	require.Equal(t, 100.0, order.Price)
 	require.Equal(t, 150.0, wallet.assets["USDT"].Free)
