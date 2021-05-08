@@ -58,8 +58,8 @@ type Subscription struct {
 
 type DataFeedConsumer func(model.Candle)
 
-func NewDataFeed(exchange Exchange) DataFeedSubscription {
-	return DataFeedSubscription{
+func NewDataFeed(exchange Exchange) *DataFeedSubscription {
+	return &DataFeedSubscription{
 		exchange:                exchange,
 		DataFeeds:               make(map[string]*DataFeed),
 		SubscriptionsByDataFeed: make(map[string][]Subscription),

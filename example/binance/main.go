@@ -72,10 +72,12 @@ func main() {
 	notifier := notification.NewTelegram(telegramID, telegramKey, telegramChannel)
 
 	strategy := Example{}
-	bot, err := ninjabot.NewBot(settings, binance, strategy, ninjabot.WithNotifier(notifier))
+	bot, err := ninjabot.NewBot(ctx, settings, binance, strategy)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	bot.SubscribeOrder(notifier)
 
 	err = bot.Run(ctx)
 	if err != nil {

@@ -46,7 +46,7 @@ func (t Telegram) Notify(text string) {
 	}
 }
 
-func (t Telegram) NotifyOrder(order model.Order) {
+func (t Telegram) OnOrder(order model.Order) {
 	title := ""
 	switch order.Status {
 	case model.OrderStatusTypeFilled:
@@ -60,7 +60,7 @@ func (t Telegram) NotifyOrder(order model.Order) {
 	t.Notify(message)
 }
 
-func (t Telegram) NotifyError(err error) {
+func (t Telegram) OrError(err error) {
 	title := "🛑 ERROR"
 	message := fmt.Sprintf("%s\n-----\n%s", title, err)
 	t.Notify(message)

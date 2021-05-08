@@ -30,10 +30,8 @@ func (e Example) Indicators(dataframe *model.Dataframe) {
 	dataframe.Metadata["rsi"] = talib.Rsi(dataframe.Close, 14)
 }
 
-func (e Example) OnCandle(dataframe *model.Dataframe, broker exchange.Broker) {
+func (e *Example) OnCandle(dataframe *model.Dataframe, broker exchange.Broker) {
 	fmt.Println("New Candle = ", dataframe.Pair, dataframe.LastUpdate, model.Last(dataframe.Close, 0))
-
-	broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, 100.0/model.Last(dataframe.Close, 0))
 	if model.Last(dataframe.Metadata["rsi"], 0) < 30 {
 		broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, 1)
 	}
@@ -54,7 +52,6 @@ func main() {
 	settings := model.Settings{
 		Pairs: []string{
 			"BTCUSDT",
-			"ETHUSDT",
 		},
 	}
 
@@ -68,23 +65,25 @@ func main() {
 	paperWallet := exchange.NewPaperWallet(
 		ctx,
 		exchange.WithPaperFee(0.001, 0.001),
-		exchange.WithPaperAsset("USDT", 150),
+		exchange.WithPaperAsset("USDT", 100000),
 		exchange.WithDataSource(binance),
 	)
 
-	strategy := Example{}
+	strategy := new(Example)
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
 		paperWallet,
 		strategy,
-		ninjabot.WithNotifier(notifier),
 	)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	bot.SubscribeDataFeed(paperWallet.OnCandle, false)
+	// connect paper wallet to candle feed
+	bot.SubscribeCandle(paperWallet)
+	// connect telegram notifier to new orders
+	bot.SubscribeOrder(notifier)
 
 	err = bot.Run(ctx)
 	if err != nil {

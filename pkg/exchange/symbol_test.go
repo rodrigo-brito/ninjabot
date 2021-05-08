@@ -13,13 +13,15 @@ func TestSplitAssetQuote(t *testing.T) {
 		Quote  string
 	}{
 		{"BTCUSDT", "BTC", "USDT"},
-		{"ETHBTC", "ETC", "BTC"},
+		{"ETHBTC", "ETH", "BTC"},
 		{"BTCBUSD", "BTC", "BUSD"},
 	}
 
 	for _, tc := range tt {
-		asset, quote := SplitAssetQuote(tc.Symbol)
-		require.Equal(t, tc.Asset, asset)
-		require.Equal(t, tc.Quote, quote)
+		t.Run(tc.Symbol, func(t *testing.T) {
+			asset, quote := SplitAssetQuote(tc.Symbol)
+			require.Equal(t, tc.Asset, asset)
+			require.Equal(t, tc.Quote, quote)
+		})
 	}
 }

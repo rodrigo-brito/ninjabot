@@ -17,11 +17,11 @@ type Controller struct {
 	ctx       context.Context
 	exchange  exchange.Exchange
 	storage   *ent.Client
-	orderFeed FeedSubscription
+	orderFeed *FeedSubscription
 }
 
-func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client, orderFeed FeedSubscription) Controller {
-	return Controller{
+func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client, orderFeed *FeedSubscription) *Controller {
+	return &Controller{
 		ctx:       ctx,
 		storage:   storage,
 		exchange:  exchange,
@@ -48,22 +48,30 @@ func (c Controller) Start() {
 
 			// For each pending order, check for updates
 			for _, order := range orders {
-				result, err := c.exchange.Order(order.Symbol, order.ExchangeID)
+				excOrder, err := c.exchange.Order(order.Symbol, order.ExchangeID)
+				if err != nil {
+					log.WithField("id", order.ExchangeID).Error("orderControler/get: ", err)
+					continue
+				}
+
+				// no status change
+				if string(excOrder.Status) == order.Status {
+					continue
+				}
+
+				excOrder.ID = order.ID
+
+				_, err = order.Update().
+					SetStatus(string(excOrder.Status)).
+					SetQuantity(excOrder.Quantity).
+					SetPrice(excOrder.Price).Save(c.ctx)
 				if err != nil {
 					log.Error("orderControler/update: ", err)
 					continue
 				}
 
-				_, err = order.Update().
-					SetStatus(string(result.Status)).
-					SetQuantity(result.Quantity).
-					SetPrice(result.Price).Save(c.ctx)
-				if err != nil {
-					log.Error("orderControler/update: ", err)
-					continue
-				}
-				log.Infof("[ORDER %s] %s", result.Status, result)
-				c.orderFeed.Publish(result, false)
+				log.Infof("[ORDER %s] %s", excOrder.Status, excOrder)
+				c.orderFeed.Publish(excOrder, false)
 			}
 		}
 	}()
@@ -112,14 +120,13 @@ func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, st
 			log.Errorf("order/controller storage: %s", err)
 			return nil, err
 		}
-		log.Infof("[ORDER CREATED] %s", orders[i])
 	}
 
 	return orders, nil
 }
 
 func (c Controller) OrderLimit(side model.SideType, symbol string, size, limit float64) (model.Order, error) {
-	log.Infof("[ORDER] Creating LIMIT order for %s", symbol)
+	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, symbol)
 	order, err := c.exchange.OrderLimit(side, symbol, size, limit)
 	if err != nil {
 		log.Errorf("order/controller exchange: %s", err)
@@ -136,7 +143,7 @@ func (c Controller) OrderLimit(side model.SideType, symbol string, size, limit f
 }
 
 func (c Controller) OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
-	log.Infof("[ORDER] Creating MARKET order for %s", symbol)
+	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
 	order, err := c.exchange.OrderMarket(side, symbol, size)
 	if err != nil {
 		log.Errorf("order/controller exchange: %s", err)

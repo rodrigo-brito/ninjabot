@@ -3,8 +3,6 @@ package ninjabot
 import (
 	"context"
 
-	"github.com/rodrigo-brito/ninjabot/pkg/notification"
-
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
@@ -24,15 +22,23 @@ func init() {
 	})
 }
 
+type OrderSubscriber interface {
+	OnOrder(model.Order)
+}
+
+type CandleSubscriber interface {
+	OnCandle(model.Candle)
+}
+
 type NinjaBot struct {
-	storage         *ent.Client
-	settings        model.Settings
-	exchange        exchange.Exchange
-	strategy        strategy.Strategy
-	notifier        notification.Notifier
-	orderFeed       order.FeedSubscription
-	dataFeed        exchange.DataFeedSubscription
-	orderController order.Controller
+	storage  *ent.Client
+	settings model.Settings
+	exchange exchange.Exchange
+	strategy strategy.Strategy
+
+	orderController *order.Controller
+	orderFeed       *order.FeedSubscription
+	dataFeed        *exchange.DataFeedSubscription
 }
 
 type Option func(*NinjaBot)
@@ -56,17 +62,19 @@ func NewBot(ctx context.Context, settings model.Settings, exc exchange.Exchange,
 		}
 	}
 
-	bot.orderFeed = order.NewOrderFeed()
-	bot.dataFeed = exchange.NewDataFeed(exc)
-	bot.orderController = order.NewController(ctx, exc, bot.storage, bot.orderFeed)
+	if bot.orderFeed == nil {
+		bot.orderFeed = order.NewOrderFeed()
+	}
+
+	if bot.dataFeed == nil {
+		bot.dataFeed = exchange.NewDataFeed(exc)
+	}
+
+	if bot.orderController == nil {
+		bot.orderController = order.NewController(ctx, exc, bot.storage, bot.orderFeed)
+	}
 
 	return bot, nil
-}
-
-func WithNotifier(notifier notification.Notifier) Option {
-	return func(bot *NinjaBot) {
-		bot.notifier = notifier
-	}
 }
 
 func WithStorage(storage *ent.Client) Option {
@@ -81,19 +89,24 @@ func WithLogLevel(level log.Level) Option {
 	}
 }
 
-func (n *NinjaBot) SubscribeDataFeed(consumer exchange.DataFeedConsumer, onCandleClose bool) {
+func (n *NinjaBot) SubscribeCandle(subscriptions ...CandleSubscriber) {
 	for _, symbol := range n.settings.Pairs {
-		n.dataFeed.Subscribe(symbol, n.strategy.Timeframe(), consumer, onCandleClose)
+		for _, subscription := range subscriptions {
+			n.dataFeed.Subscribe(symbol, n.strategy.Timeframe(), subscription.OnCandle, false)
+		}
+	}
+}
+
+func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
+	for _, symbol := range n.settings.Pairs {
+		for _, subscription := range subscriptions {
+			n.orderFeed.Subscribe(symbol, subscription.OnOrder, false)
+		}
 	}
 }
 
 func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
-		if n.notifier != nil {
-			// subscribe to feed for orders notification
-			n.orderFeed.Subscribe(pair, n.notifier.NotifyOrder, false)
-		}
-
 		// setup and subscribe strategy to data feed (candles)
 		strategyController := strategy.NewStrategyController(pair, n.settings, n.strategy, n.orderController)
 		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)

@@ -22,7 +22,7 @@ type strategyController struct {
 	started         bool
 }
 
-func NewStrategyController(pair string, settings model.Settings, strategy Strategy, orderController order.Controller) *strategyController {
+func NewStrategyController(pair string, settings model.Settings, strategy Strategy, orderController *order.Controller) *strategyController {
 	strategy.Init(settings)
 	dataframe := &model.Dataframe{
 		Pair:     pair,

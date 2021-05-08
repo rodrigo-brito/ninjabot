@@ -21,8 +21,8 @@ type Subscription struct {
 	consumer     FeedConsumer
 }
 
-func NewOrderFeed() FeedSubscription {
-	return FeedSubscription{
+func NewOrderFeed() *FeedSubscription {
+	return &FeedSubscription{
 		OrderFeeds:            make(map[string]*Feed),
 		SubscriptionsBySymbol: make(map[string][]Subscription),
 	}
@@ -49,13 +49,13 @@ func (d *FeedSubscription) Publish(order model.Order, newOrder bool) {
 }
 
 func (d *FeedSubscription) Start() {
-	for symbol, feed := range d.OrderFeeds {
+	for symbol := range d.OrderFeeds {
 		go func(symbol string, feed *Feed) {
 			for order := range feed.Data {
 				for _, subscription := range d.SubscriptionsBySymbol[symbol] {
 					subscription.consumer(order)
 				}
 			}
-		}(symbol, feed)
+		}(symbol, d.OrderFeeds[symbol])
 	}
 }

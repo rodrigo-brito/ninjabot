@@ -1,0 +1,20 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Tests and Lint
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+      - run: go test -race -cover ./...
+
+      - name: lint
+        uses: golangci/golangci-lint-action@v2.5.2
+        with:
+          version: latest
+          skip-build-cache: true
+          skip-pkg-cache: true

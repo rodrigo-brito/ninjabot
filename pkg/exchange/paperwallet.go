@@ -11,9 +11,8 @@ import (
 )
 
 type assetInfo struct {
-	Free     float64
-	Lock     float64
-	AvgPrice float64
+	Free float64
+	Lock float64
 }
 
 type PaperWallet struct {
@@ -21,9 +20,10 @@ type PaperWallet struct {
 	counter    int64
 	takerFee   float64
 	makerFee   float64
-	assets     map[string]*assetInfo
-	orders     []model.Order
 	dataSource Feeder
+	orders     []model.Order
+	assets     map[string]*assetInfo
+	avgPrice   map[string]float64
 	lastCandle map[string]float64
 }
 
@@ -32,9 +32,8 @@ type PaperWalletOption func(*PaperWallet)
 func WithPaperAsset(symbol string, amount float64) PaperWalletOption {
 	return func(wallet *PaperWallet) {
 		wallet.assets[symbol] = &assetInfo{
-			Free:     amount,
-			Lock:     0,
-			AvgPrice: 1,
+			Free: amount,
+			Lock: 0,
 		}
 	}
 }
@@ -58,6 +57,7 @@ func NewPaperWallet(ctx context.Context, options ...PaperWalletOption) *PaperWal
 		orders:     make([]model.Order, 0),
 		assets:     make(map[string]*assetInfo),
 		lastCandle: make(map[string]float64),
+		avgPrice:   make(map[string]float64),
 	}
 
 	for _, option := range options {
@@ -70,20 +70,56 @@ func NewPaperWallet(ctx context.Context, options ...PaperWalletOption) *PaperWal
 }
 
 func (p *PaperWallet) lockFunds(asset string, amount float64) error {
-	if p.assets[asset].Free < amount {
+	if value, ok := p.assets[asset]; !ok || value.Free < amount {
 		return ErrInsufficientFunds
 	}
 	p.assets[asset].Free = p.assets[asset].Free - amount
 	p.assets[asset].Lock = p.assets[asset].Lock + amount
+	log.Infof("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
 	return nil
 }
 
-// TODO: execute pending orders
 func (p *PaperWallet) OnCandle(candle model.Candle) {
 	p.lastCandle[candle.Symbol] = candle.Close
 
-	// update status
-	// unlock asset
+	for i, order := range p.orders {
+		if order.Status != model.OrderStatusTypeNew {
+			continue
+		}
+
+		asset, quote := SplitAssetQuote(order.Symbol)
+		if order.Side == model.SideTypeBuy && order.Price <= candle.Close {
+			if _, ok := p.assets[asset]; !ok {
+				p.assets[asset] = &assetInfo{}
+			}
+
+			actualQty := p.assets[asset].Free + p.assets[asset].Lock
+			p.orders[i].Status = model.OrderStatusTypeFilled
+			p.avgPrice[candle.Symbol] = (p.avgPrice[candle.Symbol]*actualQty + order.Price*order.Quantity) / (actualQty + order.Quantity)
+			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
+			p.assets[quote].Lock = p.assets[quote].Lock - order.Quantity*order.Price
+
+			log.Infof("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
+			log.Infof("%s -> LOCK = %f / FREE %f", quote, p.assets[quote].Lock, p.assets[quote].Free)
+		}
+
+		if order.Side == model.SideTypeSell && order.Price >= candle.Close {
+			if _, ok := p.assets[quote]; !ok {
+				p.assets[quote] = &assetInfo{}
+			}
+
+			profit := order.Quantity*order.Price - order.Quantity*p.avgPrice[candle.Symbol]
+			percentage := profit / (order.Quantity * p.avgPrice[candle.Symbol])
+			log.Infof("PROFIT = %.4f %s (%.2f %%)", profit, quote, percentage*100)
+
+			p.orders[i].Status = model.OrderStatusTypeFilled
+			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
+			p.assets[quote].Free = p.assets[quote].Free + order.Quantity*order.Price
+
+			log.Infof("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
+			log.Infof("%s -> LOCK = %f / FREE %f", quote, p.assets[quote].Lock, p.assets[quote].Free)
+		}
+	}
 }
 
 func (p PaperWallet) Account() (model.Account, error) {
@@ -106,7 +142,7 @@ func (p *PaperWallet) OrderOCO(side model.SideType, symbol string, size, price, 
 }
 
 func (p *PaperWallet) OrderLimit(side model.SideType, symbol string, size float64, limit float64) (model.Order, error) {
-	p.counter++
+	p.counter = p.counter + 1
 	asset, quote := SplitAssetQuote(symbol)
 	if side == model.SideTypeSell {
 		err := p.lockFunds(asset, size)
@@ -136,18 +172,28 @@ func (p *PaperWallet) OrderLimit(side model.SideType, symbol string, size float6
 func (p *PaperWallet) OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
 	asset, quote := SplitAssetQuote(symbol)
 	if side == model.SideTypeSell {
-		if p.assets[asset].Free < size {
+		if value, ok := p.assets[asset]; !ok || value.Free < size {
 			return model.Order{}, ErrInsufficientFunds
+		}
+		if _, ok := p.assets[quote]; !ok {
+			p.assets[quote] = &assetInfo{}
 		}
 		p.assets[asset].Free = p.assets[asset].Free - size
+		p.assets[quote].Free = p.assets[quote].Free + p.lastCandle[symbol]*size
 	} else {
-		if p.assets[quote].Free < size*p.lastCandle[symbol] {
+		if value, ok := p.assets[quote]; !ok || value.Free < size*p.lastCandle[symbol] {
 			return model.Order{}, ErrInsufficientFunds
 		}
+		if _, ok := p.assets[asset]; !ok {
+			p.assets[asset] = &assetInfo{}
+		}
+		actualQty := p.assets[asset].Free + p.assets[asset].Lock
+		p.avgPrice[symbol] = (p.avgPrice[symbol]*actualQty + p.lastCandle[symbol]*size) / (actualQty + size)
 		p.assets[quote].Free = p.assets[quote].Free - (size * p.lastCandle[symbol])
+		p.assets[asset].Free = p.assets[asset].Free + size
 	}
 
-	p.counter++
+	p.counter = p.counter + 1
 	order := model.Order{
 		ExchangeID: p.counter,
 		Date:       time.Now(),
@@ -164,7 +210,7 @@ func (p *PaperWallet) OrderMarket(side model.SideType, symbol string, size float
 
 func (p *PaperWallet) Cancel(order model.Order) error {
 	for i, o := range p.orders {
-		if o.ID == order.ID {
+		if o.ExchangeID == order.ExchangeID {
 			p.orders[i].Status = model.OrderStatusTypeCanceled
 		}
 	}
