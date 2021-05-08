@@ -94,10 +94,13 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			}
 
 			actualQty := p.assets[asset].Free + p.assets[asset].Lock
+			orderValue := order.Price * order.Quantity
+			walletValue := p.avgPrice[candle.Symbol] * actualQty
+
 			p.orders[i].Status = model.OrderStatusTypeFilled
-			p.avgPrice[candle.Symbol] = (p.avgPrice[candle.Symbol]*actualQty + order.Price*order.Quantity) / (actualQty + order.Quantity)
+			p.avgPrice[candle.Symbol] = (walletValue + orderValue) / (actualQty + order.Quantity)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
-			p.assets[quote].Lock = p.assets[quote].Lock - order.Quantity*order.Price
+			p.assets[quote].Lock = p.assets[quote].Lock - orderValue
 
 			log.Infof("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
 			log.Infof("%s -> LOCK = %f / FREE %f", quote, p.assets[quote].Lock, p.assets[quote].Free)
@@ -137,7 +140,9 @@ func (p PaperWallet) Account() (model.Account, error) {
 	}, nil
 }
 
-func (p *PaperWallet) OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error) {
+func (p *PaperWallet) OrderOCO(side model.SideType, symbol string,
+	size, price, stop, stopLimit float64) ([]model.Order, error) {
+
 	panic("implement me")
 }
 
@@ -226,7 +231,9 @@ func (p *PaperWallet) Order(symbol string, id int64) (model.Order, error) {
 	return model.Order{}, errors.New("order not found")
 }
 
-func (p *PaperWallet) CandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error) {
+func (p *PaperWallet) CandlesByPeriod(ctx context.Context, pair, period string,
+	start, end time.Time) ([]model.Candle, error) {
+
 	return p.dataSource.CandlesByPeriod(ctx, pair, period, start, end)
 }
 

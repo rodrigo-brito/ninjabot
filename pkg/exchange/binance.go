@@ -112,7 +112,9 @@ func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error)
 	return exchange, nil
 }
 
-func (b *Binance) validate(side model.SideType, typ model.OrderType, symbol string, quantity float64, value *float64) error {
+func (b *Binance) validate(side model.SideType, typ model.OrderType, symbol string, quantity float64,
+	value *float64) error {
+
 	info, ok := b.assetsInfo[symbol]
 	if !ok {
 		return ErrInvalidAsset
@@ -154,7 +156,9 @@ func (b *Binance) validate(side model.SideType, typ model.OrderType, symbol stri
 	return nil
 }
 
-func (b *Binance) OrderOCO(side model.SideType, symbol string, quantity, price, stop, stopLimit float64) ([]model.Order, error) {
+func (b *Binance) OrderOCO(side model.SideType, symbol string,
+	quantity, price, stop, stopLimit float64) ([]model.Order, error) {
+
 	// validate stop
 	err := b.validate(side, model.OrderTypeStopLossLimit, symbol, quantity, &stopLimit)
 	if err != nil {
@@ -413,7 +417,9 @@ func (b *Binance) CandlesByLimit(ctx context.Context, symbol, period string, lim
 	return candles, nil
 }
 
-func (b *Binance) CandlesByPeriod(ctx context.Context, symbol, period string, start, end time.Time) ([]model.Candle, error) {
+func (b *Binance) CandlesByPeriod(ctx context.Context, symbol, period string,
+	start, end time.Time) ([]model.Candle, error) {
+
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
 

@@ -25,7 +25,7 @@ func NewTelegram(id string, key string, channel string) Telegram {
 }
 
 func (t Telegram) Notify(text string) {
-	baseUrl, err := url.Parse(fmt.Sprintf("https://api.telegram.org/bot%s:%s/sendMessage", t.ID, t.Key))
+	baseURL, err := url.Parse(fmt.Sprintf("https://api.telegram.org/bot%s:%s/sendMessage", t.ID, t.Key))
 	if err != nil {
 		log.Error(err)
 	}
@@ -34,8 +34,8 @@ func (t Telegram) Notify(text string) {
 	params.Add("chat_id", t.ChannelID)
 	params.Add("text", text)
 
-	baseUrl.RawQuery = params.Encode()
-	resp, err := http.Get(baseUrl.String())
+	baseURL.RawQuery = params.Encode()
+	resp, err := http.Get(baseURL.String())
 	if err != nil {
 		log.Error(err)
 	}

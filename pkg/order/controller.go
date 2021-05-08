@@ -20,7 +20,9 @@ type Controller struct {
 	orderFeed *FeedSubscription
 }
 
-func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client, orderFeed *FeedSubscription) *Controller {
+func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client,
+	orderFeed *FeedSubscription) *Controller {
+
 	return &Controller{
 		ctx:       ctx,
 		storage:   storage,
@@ -106,7 +108,9 @@ func (c Controller) Order(symbol string, id int64) (model.Order, error) {
 	return c.exchange.Order(symbol, id)
 }
 
-func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error) {
+func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, stop,
+	stopLimit float64) ([]model.Order, error) {
+
 	log.Infof("[ORDER] Creating OCO order for %s", symbol)
 	orders, err := c.exchange.OrderOCO(side, symbol, size, price, stop, stopLimit)
 	if err != nil {

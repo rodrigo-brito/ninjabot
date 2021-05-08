@@ -13,32 +13,34 @@ type Strategy interface {
 	OnCandle(dataframe *model.Dataframe, broker exchange.Broker)
 }
 
-type strategyController struct {
+type Controller struct {
 	strategy  Strategy
 	dataframe *model.Dataframe
 	broker    exchange.Broker
 	started   bool
 }
 
-func NewStrategyController(pair string, settings model.Settings, strategy Strategy, broker exchange.Broker) *strategyController {
+func NewStrategyController(pair string, settings model.Settings, strategy Strategy,
+	broker exchange.Broker) *Controller {
+
 	strategy.Init(settings)
 	dataframe := &model.Dataframe{
 		Pair:     pair,
 		Metadata: make(map[string][]float64),
 	}
 
-	return &strategyController{
+	return &Controller{
 		dataframe: dataframe,
 		strategy:  strategy,
 		broker:    broker,
 	}
 }
 
-func (s *strategyController) Start() {
+func (s *Controller) Start() {
 	s.started = true
 }
 
-func (s *strategyController) OnCandle(candle model.Candle) {
+func (s *Controller) OnCandle(candle model.Candle) {
 	s.dataframe.Close = append(s.dataframe.Close, candle.Close)
 	s.dataframe.Open = append(s.dataframe.Open, candle.Open)
 	s.dataframe.High = append(s.dataframe.High, candle.High)

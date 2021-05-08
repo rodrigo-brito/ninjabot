@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"entgo.io/ent/dialect"
-
+	//nolint
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 )

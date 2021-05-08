@@ -43,7 +43,9 @@ type NinjaBot struct {
 
 type Option func(*NinjaBot)
 
-func NewBot(ctx context.Context, settings model.Settings, exc exchange.Exchange, str strategy.Strategy, options ...Option) (*NinjaBot, error) {
+func NewBot(ctx context.Context, settings model.Settings, exc exchange.Exchange, str strategy.Strategy,
+	options ...Option) (*NinjaBot, error) {
+
 	bot := &NinjaBot{
 		settings: settings,
 		exchange: exc,
