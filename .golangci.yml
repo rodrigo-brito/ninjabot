@@ -1,6 +1,7 @@
 run:
   skip-dirs:
     - example
+    - pkg/ent
 linters:
   enable:
     - lll

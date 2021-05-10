@@ -2,6 +2,9 @@ package ninjabot
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
@@ -35,21 +38,24 @@ type NinjaBot struct {
 	settings model.Settings
 	exchange exchange.Exchange
 	strategy strategy.Strategy
+	notifier notification.Notifier
 
 	orderController *order.Controller
-	orderFeed       *order.FeedSubscription
+	orderFeed       *order.Feed
 	dataFeed        *exchange.DataFeedSubscription
 }
 
 type Option func(*NinjaBot)
 
-func NewBot(ctx context.Context, settings model.Settings, exc exchange.Exchange, str strategy.Strategy,
+func NewBot(ctx context.Context, settings model.Settings, exch exchange.Exchange, str strategy.Strategy,
 	options ...Option) (*NinjaBot, error) {
 
 	bot := &NinjaBot{
-		settings: settings,
-		exchange: exc,
-		strategy: str,
+		settings:  settings,
+		exchange:  exch,
+		strategy:  str,
+		orderFeed: order.NewOrderFeed(),
+		dataFeed:  exchange.NewDataFeed(exch),
 	}
 
 	for _, option := range options {
@@ -64,16 +70,8 @@ func NewBot(ctx context.Context, settings model.Settings, exc exchange.Exchange,
 		}
 	}
 
-	if bot.orderFeed == nil {
-		bot.orderFeed = order.NewOrderFeed()
-	}
-
-	if bot.dataFeed == nil {
-		bot.dataFeed = exchange.NewDataFeed(exc)
-	}
-
 	if bot.orderController == nil {
-		bot.orderController = order.NewController(ctx, exc, bot.storage, bot.orderFeed)
+		bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed, bot.notifier)
 	}
 
 	return bot, nil
@@ -91,6 +89,19 @@ func WithLogLevel(level log.Level) Option {
 	}
 }
 
+func WithNotifier(notifier notification.Notifier) Option {
+	return func(bot *NinjaBot) {
+		bot.notifier = notifier
+		bot.SubscribeOrder(notifier)
+	}
+}
+
+func WithCandleSubscription(subscriber CandleSubscriber) Option {
+	return func(bot *NinjaBot) {
+		bot.SubscribeCandle(subscriber)
+	}
+}
+
 func (n *NinjaBot) SubscribeCandle(subscriptions ...CandleSubscriber) {
 	for _, symbol := range n.settings.Pairs {
 		for _, subscription := range subscriptions {
@@ -105,6 +116,20 @@ func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
 			n.orderFeed.Subscribe(symbol, subscription.OnOrder, false)
 		}
 	}
+}
+
+func (n *NinjaBot) Summary() {
+	var total float64
+	fmt.Println("------")
+	fmt.Println("TRADES")
+	fmt.Println("------")
+	for _, summary := range n.orderController.Results {
+		fmt.Println(summary)
+		total += summary.Profit
+	}
+	fmt.Println("------")
+	fmt.Println("GLOBAL PROFIT = ", total)
+	fmt.Println("------")
 }
 
 func (n *NinjaBot) Run(ctx context.Context) error {

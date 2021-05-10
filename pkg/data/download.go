@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 )
 
@@ -48,6 +50,8 @@ func (d Downloader) Download(ctx context.Context, symbol, timeframe string, limi
 	}
 
 	writer.Flush()
+
+	log.Info("Done!")
 
 	return writer.Error()
 }

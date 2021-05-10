@@ -13,11 +13,11 @@ A fast cryptocurrency bot implemented in Go
 
 ## Example of Usage
 
-Check example folder for a complete example:
+Check [example](example) directory:
 
-```bash
-go run example/main.go
-```
+- Paper Wallet (Live Simultation)
+- Backtesting
+- Real Account (Binance)
 
 ### CLI
 
@@ -28,16 +28,13 @@ go run example/main.go
 ## Roadmap
 
 ### Features:
-- [x] Exchange Feed Data
+- [x] Order Limit, Market, OCO, and Stop
 - [x] Custom Strategy
-- [x] Order Management
-    - [x] Update Status
-    - [x] Order report
-- [ ] Strategy Backtesting
+- [x] Paper Wallet
+- [x] Strategy Backtesting (Only for market orders)
 - [x] Bot CLI
   - [x] Download
   - [ ] Plot
 
 ### Exchanges:
 - [x] Binance
-- [ ] FTX

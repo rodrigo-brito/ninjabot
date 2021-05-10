@@ -9,6 +9,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 
 	"github.com/adshao/go-binance/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 type AssetInfo struct {
@@ -108,6 +109,8 @@ func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error)
 		}
 		exchange.assetsInfo[info.Symbol] = tradeLimits
 	}
+
+	log.Info("[SETUP] Using Binance exchange")
 
 	return exchange, nil
 }
@@ -371,6 +374,15 @@ func (b *Binance) Account() (model.Account, error) {
 	return model.Account{
 		Balances: balances,
 	}, nil
+}
+
+func (b *Binance) Position(symbol string) (asset, quote float64, err error) {
+	assetTick, quoteTick := SplitAssetQuote(symbol)
+	acc, err := b.Account()
+	if err != nil {
+		return 0, 0, err
+	}
+	return acc.Balance(assetTick).Free, acc.Balance(quoteTick).Free, nil
 }
 
 func (b *Binance) CandlesSubscription(symbol, period string) (chan model.Candle, chan error) {

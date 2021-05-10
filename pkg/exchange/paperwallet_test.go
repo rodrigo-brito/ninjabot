@@ -10,7 +10,7 @@ import (
 
 func TestPaperWallet_OrderLimit(t *testing.T) {
 	t.Run("normal order", func(t *testing.T) {
-		wallet := NewPaperWallet(context.Background(), WithPaperAsset("USDT", 100))
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 		order, err := wallet.OrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 100)
 		require.NoError(t, err)
 
@@ -56,7 +56,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 	})
 
 	t.Run("multiple pending orders", func(t *testing.T) {
-		wallet := NewPaperWallet(context.Background(), WithPaperAsset("USDT", 100))
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 		wallet.lastCandle["BTCUSDT"] = 10
 
 		order, err := wallet.OrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 10)
@@ -118,7 +118,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 }
 
 func TestPaperWallet_OrderMarket(t *testing.T) {
-	wallet := NewPaperWallet(context.Background(), WithPaperAsset("USDT", 100))
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 50})
 	order, err := wallet.OrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 	require.NoError(t, err)
@@ -153,7 +153,7 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 }
 
 func TestPaperWallet_Order(t *testing.T) {
-	wallet := NewPaperWallet(context.Background(), WithPaperAsset("USDT", 100))
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 	expectOrder, err := wallet.OrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), expectOrder.ExchangeID)

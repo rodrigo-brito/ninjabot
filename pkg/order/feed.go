@@ -4,15 +4,15 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 )
 
-type Feed struct {
+type DataFeed struct {
 	Data chan model.Order
 	Err  chan error
 }
 
 type FeedConsumer func(order model.Order)
 
-type FeedSubscription struct {
-	OrderFeeds            map[string]*Feed
+type Feed struct {
+	OrderFeeds            map[string]*DataFeed
 	SubscriptionsBySymbol map[string][]Subscription
 }
 
@@ -21,16 +21,16 @@ type Subscription struct {
 	consumer     FeedConsumer
 }
 
-func NewOrderFeed() *FeedSubscription {
-	return &FeedSubscription{
-		OrderFeeds:            make(map[string]*Feed),
+func NewOrderFeed() *Feed {
+	return &Feed{
+		OrderFeeds:            make(map[string]*DataFeed),
 		SubscriptionsBySymbol: make(map[string][]Subscription),
 	}
 }
 
-func (d *FeedSubscription) Subscribe(symbol string, consumer FeedConsumer, onlyNewOrder bool) {
+func (d *Feed) Subscribe(symbol string, consumer FeedConsumer, onlyNewOrder bool) {
 	if _, ok := d.OrderFeeds[symbol]; !ok {
-		d.OrderFeeds[symbol] = &Feed{
+		d.OrderFeeds[symbol] = &DataFeed{
 			Data: make(chan model.Order),
 			Err:  make(chan error),
 		}
@@ -42,15 +42,15 @@ func (d *FeedSubscription) Subscribe(symbol string, consumer FeedConsumer, onlyN
 	})
 }
 
-func (d *FeedSubscription) Publish(order model.Order, newOrder bool) {
+func (d *Feed) Publish(order model.Order, newOrder bool) {
 	if _, ok := d.OrderFeeds[order.Symbol]; ok {
 		d.OrderFeeds[order.Symbol].Data <- order
 	}
 }
 
-func (d *FeedSubscription) Start() {
+func (d *Feed) Start() {
 	for symbol := range d.OrderFeeds {
-		go func(symbol string, feed *Feed) {
+		go func(symbol string, feed *DataFeed) {
 			for order := range feed.Data {
 				for _, subscription := range d.SubscriptionsBySymbol[symbol] {
 					subscription.consumer(order)

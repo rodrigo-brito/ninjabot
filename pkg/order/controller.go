@@ -3,32 +3,115 @@ package order
 import (
 	"context"
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/ent/order"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 
+	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
 )
+
+type summary struct {
+	Symbol string
+	Win    int
+	Lose   int
+	Profit float64
+}
+
+func (s summary) String() string {
+	tableString := &strings.Builder{}
+	table := tablewriter.NewWriter(tableString)
+	_, quote := exchange.SplitAssetQuote(s.Symbol)
+	data := [][]string{
+		{"Coin", s.Symbol},
+		{"Trades", strconv.Itoa(s.Lose + s.Win)},
+		{"Win", strconv.Itoa(s.Win)},
+		{"Loss", strconv.Itoa(s.Lose)},
+		{"% Win", fmt.Sprintf("%.1f", float64(s.Win)/float64(s.Win+s.Lose)*100)},
+		{"Profit", fmt.Sprintf("%.4f %s", s.Profit, quote)},
+	}
+	table.AppendBulk(data)
+	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT})
+	table.Render()
+	return tableString.String()
+}
 
 type Controller struct {
 	ctx       context.Context
 	exchange  exchange.Exchange
 	storage   *ent.Client
-	orderFeed *FeedSubscription
+	orderFeed *Feed
+	notifier  notification.Notifier
+	Results   map[string]*summary
 }
 
 func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client,
-	orderFeed *FeedSubscription) *Controller {
+	orderFeed *Feed, notifier notification.Notifier) *Controller {
 
 	return &Controller{
 		ctx:       ctx,
 		storage:   storage,
 		exchange:  exchange,
 		orderFeed: orderFeed,
+		notifier:  notifier,
+		Results:   make(map[string]*summary),
 	}
+}
+
+func (c *Controller) calculateProfit(o model.Order) (value, percent float64, err error) {
+	orders, err := c.storage.Order.Query().Where(order.IDLT(o.ID)).All(c.ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	quantity := 0.0
+	avgPrice := 0.0
+	for _, order := range orders {
+		if order.Side == string(model.SideTypeBuy) && order.Status == string(model.OrderStatusTypeFilled) {
+			avgPrice = (order.Quantity*order.Price + avgPrice*quantity) / (order.Quantity + quantity)
+			quantity += order.Quantity
+		} else {
+			quantity = math.Max(quantity-order.Quantity, 0)
+		}
+	}
+
+	cost := o.Quantity * avgPrice
+	profitValue := o.Quantity*o.Price - cost
+	return profitValue, profitValue / cost, nil
+}
+
+func (c Controller) notify(message string) {
+	log.Info(message)
+	if c.notifier != nil {
+		c.notifier.Notify(message)
+	}
+}
+
+func (c *Controller) processTrade(order model.Order) {
+	profitValue, profit, err := c.calculateProfit(order)
+	if err != nil {
+		log.Errorf("order/controller storage: %s", err)
+	}
+	if _, ok := c.Results[order.Symbol]; !ok {
+		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
+	}
+
+	c.Results[order.Symbol].Profit += profitValue
+	if profitValue > 0 {
+		c.Results[order.Symbol].Win++
+	} else {
+		c.Results[order.Symbol].Lose++
+	}
+
+	_, quote := exchange.SplitAssetQuote(order.Symbol)
+	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Symbol].String()))
 }
 
 func (c Controller) Start() {
@@ -74,6 +157,9 @@ func (c Controller) Start() {
 
 				log.Infof("[ORDER %s] %s", excOrder.Status, excOrder)
 				c.orderFeed.Publish(excOrder, false)
+				if excOrder.Side == model.SideTypeSell {
+					c.processTrade(excOrder)
+				}
 			}
 		}
 	}()
@@ -102,6 +188,10 @@ func (c Controller) createOrder(order *model.Order) error {
 
 func (c Controller) Account() (model.Account, error) {
 	return c.exchange.Account()
+}
+
+func (c Controller) Position(symbol string) (asset, quote float64, err error) {
+	return c.exchange.Position(symbol)
 }
 
 func (c Controller) Order(symbol string, id int64) (model.Order, error) {
@@ -159,6 +249,12 @@ func (c Controller) OrderMarket(side model.SideType, symbol string, size float64
 		log.Errorf("order/controller storage: %s", err)
 		return model.Order{}, err
 	}
+
+	// calculate profit
+	if order.Side == model.SideTypeSell {
+		c.processTrade(order)
+	}
+
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
 }

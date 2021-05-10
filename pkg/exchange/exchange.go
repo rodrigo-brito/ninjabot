@@ -9,7 +9,6 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 
-	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,6 +31,7 @@ type Feeder interface {
 
 type Broker interface {
 	Account() (model.Account, error)
+	Position(symbol string) (asset, quote float64, err error)
 	Order(symbol string, id int64) (model.Order, error)
 	OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error)
 	OrderLimit(side model.SideType, symbol string, size float64, limit float64) (model.Order, error)
@@ -113,7 +113,11 @@ func (d *DataFeedSubscription) Start(ctx context.Context) <-chan struct{} {
 		go func(key string, feed *DataFeed) {
 			for {
 				select {
-				case candle := <-feed.Data:
+				case candle, ok := <-feed.Data:
+					if !ok {
+						close(done)
+						return
+					}
 					for _, subscription := range d.SubscriptionsByDataFeed[key] {
 						if subscription.onCandleClose && !candle.Complete {
 							continue
@@ -122,10 +126,6 @@ func (d *DataFeedSubscription) Start(ctx context.Context) <-chan struct{} {
 					}
 				case err := <-feed.Err:
 					log.Error("dataFeedSubscription/start: ", err)
-					if errors.Is(err, &websocket.CloseError{}) {
-						close(done)
-						return
-					}
 				}
 			}
 		}(key, feed)

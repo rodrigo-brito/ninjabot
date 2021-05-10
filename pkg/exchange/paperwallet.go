@@ -3,6 +3,7 @@ package exchange
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ type assetInfo struct {
 
 type PaperWallet struct {
 	ctx        context.Context
+	baseCoin   string
 	counter    int64
 	takerFee   float64
 	makerFee   float64
@@ -51,9 +53,10 @@ func WithDataSource(feeder Feeder) PaperWalletOption {
 	}
 }
 
-func NewPaperWallet(ctx context.Context, options ...PaperWalletOption) *PaperWallet {
+func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWalletOption) *PaperWallet {
 	wallet := PaperWallet{
 		ctx:        ctx,
+		baseCoin:   baseCoin,
 		orders:     make([]model.Order, 0),
 		assets:     make(map[string]*assetInfo),
 		lastCandle: make(map[string]float64),
@@ -67,6 +70,24 @@ func NewPaperWallet(ctx context.Context, options ...PaperWalletOption) *PaperWal
 	log.Info("[SETUP] Using paper wallet")
 
 	return &wallet
+}
+
+func (p *PaperWallet) Summary() {
+	var total float64
+	fmt.Println("--------------")
+	fmt.Println("WALLET SUMMARY")
+	fmt.Println("--------------")
+	for pair, price := range p.avgPrice {
+		asset, _ := SplitAssetQuote(pair)
+		quantity := p.assets[asset].Free + p.assets[asset].Lock
+		total += quantity * price
+		fmt.Printf("%f %s\n", quantity, asset)
+	}
+	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
+	fmt.Printf("%f %s\n", baseCoinValue, p.baseCoin)
+	fmt.Println("--------------")
+	fmt.Println("TOTAL = ", total+baseCoinValue, p.baseCoin)
+	fmt.Println("--------------")
 }
 
 func (p *PaperWallet) lockFunds(asset string, amount float64) error {
@@ -101,9 +122,6 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			p.avgPrice[candle.Symbol] = (walletValue + orderValue) / (actualQty + order.Quantity)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
 			p.assets[quote].Lock = p.assets[quote].Lock - orderValue
-
-			log.Infof("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
-			log.Infof("%s -> LOCK = %f / FREE %f", quote, p.assets[quote].Lock, p.assets[quote].Free)
 		}
 
 		if order.Side == model.SideTypeSell && order.Price >= candle.Close {
@@ -111,16 +129,13 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 				p.assets[quote] = &assetInfo{}
 			}
 
-			profit := order.Quantity*order.Price - order.Quantity*p.avgPrice[candle.Symbol]
-			percentage := profit / (order.Quantity * p.avgPrice[candle.Symbol])
-			log.Infof("PROFIT = %.4f %s (%.2f %%)", profit, quote, percentage*100)
+			profitValue := order.Quantity*order.Price - order.Quantity*p.avgPrice[candle.Symbol]
+			percentage := profitValue / (order.Quantity * p.avgPrice[candle.Symbol])
+			log.Infof("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100)
 
 			p.orders[i].Status = model.OrderStatusTypeFilled
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
 			p.assets[quote].Free = p.assets[quote].Free + order.Quantity*order.Price
-
-			log.Infof("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
-			log.Infof("%s -> LOCK = %f / FREE %f", quote, p.assets[quote].Lock, p.assets[quote].Free)
 		}
 	}
 }
@@ -138,6 +153,15 @@ func (p PaperWallet) Account() (model.Account, error) {
 	return model.Account{
 		Balances: balances,
 	}, nil
+}
+
+func (p PaperWallet) Position(symbol string) (asset, quote float64, err error) {
+	assetTick, quoteTick := SplitAssetQuote(symbol)
+	acc, err := p.Account()
+	if err != nil {
+		return 0, 0, err
+	}
+	return acc.Balance(assetTick).Free, acc.Balance(quoteTick).Free, nil
 }
 
 func (p *PaperWallet) OrderOCO(side model.SideType, symbol string,

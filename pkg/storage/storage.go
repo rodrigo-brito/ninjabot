@@ -10,7 +10,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 )
 
-func NewMemory(path string) (*ent.Client, error) {
+func NewMemory() (*ent.Client, error) {
 	return newClient("file:ent?mode=memory&cache=shared&_fk=1")
 }
 
