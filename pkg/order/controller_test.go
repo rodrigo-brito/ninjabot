@@ -15,7 +15,7 @@ func TestController_calculateProfit(t *testing.T) {
 	storage, err := storage.NewMemory()
 	require.NoError(t, err)
 	ctx := context.Background()
-	wallet := exchange.NewPaperWallet(ctx, exchange.WithPaperAsset("USDT", 3000))
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
 	controller := NewController(ctx, wallet, storage, NewOrderFeed(), nil)
 
 	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 1000})
