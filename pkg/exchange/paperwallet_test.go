@@ -57,7 +57,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 
 	t.Run("multiple pending orders", func(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
-		wallet.lastCandle["BTCUSDT"] = 10
+		wallet.lastCandle["BTCUSDT"] = model.Candle{Close: 10}
 
 		order, err := wallet.OrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 10)
 		require.NoError(t, err)

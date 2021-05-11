@@ -36,7 +36,7 @@ func main() {
 			&cli.StringFlag{
 				Name:     "output",
 				Aliases:  []string{"o"},
-				Usage:    "eg. ./data",
+				Usage:    "eg. ./btc.csv",
 				Required: true,
 			},
 		},

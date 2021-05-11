@@ -3,6 +3,7 @@ package exchange
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -11,10 +12,11 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 )
 
+var ErrInsufficientData = errors.New("insufficient data")
+
 type PairFeed struct {
-	Pair      string
-	File      string
-	Timeframe string
+	Pair string
+	File string
 }
 
 type CSVFeed struct {
@@ -23,14 +25,14 @@ type CSVFeed struct {
 	CandlePairTimeFrame map[string][]model.Candle
 }
 
-func NewCSVFeed(feeds ...PairFeed) (*CSVFeed, error) {
+func NewCSVFeed(timeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	csvFeed := &CSVFeed{
 		Feeds:               make(map[string]PairFeed),
 		CandlePairTimeFrame: make(map[string][]model.Candle),
 	}
 
 	for _, feed := range feeds {
-		csvFeed.Timeframes = append(csvFeed.Timeframes, feed.Timeframe)
+		csvFeed.Timeframes = append(csvFeed.Timeframes, timeframe)
 		csvFeed.Feeds[feed.Pair] = feed
 
 		csvFile, err := os.Open(feed.File)
@@ -84,7 +86,7 @@ func NewCSVFeed(feeds ...PairFeed) (*CSVFeed, error) {
 			candles = append(candles, candle)
 		}
 
-		csvFeed.CandlePairTimeFrame[csvFeed.feedTimeframeKey(feed.Pair, feed.Timeframe)] = candles
+		csvFeed.CandlePairTimeFrame[csvFeed.feedTimeframeKey(feed.Pair, timeframe)] = candles
 	}
 
 	return csvFeed, nil
@@ -121,12 +123,14 @@ func (c CSVFeed) CandlesByPeriod(_ context.Context, pair, timeframe string,
 	return candles, nil
 }
 
-func (c CSVFeed) CandlesByLimit(_ context.Context, pair, timeframe string, limit int) ([]model.Candle, error) {
+func (c *CSVFeed) CandlesByLimit(_ context.Context, pair, timeframe string, limit int) ([]model.Candle, error) {
+	var result []model.Candle
 	key := c.feedTimeframeKey(pair, timeframe)
-	if len(c.CandlePairTimeFrame[key]) > limit {
-		return c.CandlePairTimeFrame[key][len(c.CandlePairTimeFrame[key])-limit:], nil
+	if len(c.CandlePairTimeFrame[key]) < limit {
+		return nil, fmt.Errorf("%w: %s", ErrInsufficientData, pair)
 	}
-	return c.CandlePairTimeFrame[key], nil
+	result, c.CandlePairTimeFrame[key] = c.CandlePairTimeFrame[key][:limit], c.CandlePairTimeFrame[key][limit:]
+	return result, nil
 }
 
 func (c CSVFeed) CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error) {

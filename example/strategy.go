@@ -13,7 +13,7 @@ type MyStrategy struct{}
 func (e MyStrategy) Init(settings model.Settings) {}
 
 func (e MyStrategy) Timeframe() string {
-	return "1m"
+	return "1d"
 }
 
 func (e MyStrategy) WarmupPeriod() int {
@@ -35,10 +35,16 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 
 	if quotePosition > 10 && // minimum size
 		model.Last(dataframe.Metadata["ema"], 0) > model.Last(dataframe.Metadata["ema"], 1) {
-		size := quotePosition / closePrice
+		size := quotePosition / closePrice * 0.999
 		_, err := broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, size)
 		if err != nil {
-			log.Error(err)
+			log.WithFields(map[string]interface{}{
+				"side":  model.SideTypeBuy,
+				"close": closePrice,
+				"asset": assetPosition,
+				"quote": quotePosition,
+				"size":  size,
+			}).Error(err)
 		}
 	}
 
@@ -46,7 +52,13 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 		model.Last(dataframe.Metadata["ema"], 0) < model.Last(dataframe.Metadata["ema"], 1) {
 		_, err := broker.OrderMarket(model.SideTypeSell, dataframe.Pair, assetPosition)
 		if err != nil {
-			log.Error(err)
+			log.WithFields(map[string]interface{}{
+				"side":  model.SideTypeSell,
+				"close": closePrice,
+				"asset": assetPosition,
+				"quote": quotePosition,
+				"size":  assetPosition,
+			}).Error(err)
 		}
 	}
 }

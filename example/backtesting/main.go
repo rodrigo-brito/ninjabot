@@ -21,21 +21,23 @@ func main() {
 		},
 	}
 
-	dataSource, err := exchange.NewCSVFeed(exchange.PairFeed{
-		Pair:      "BTCUSDT",
-		File:      "testdata/btc-1m.csv",
-		Timeframe: "1m",
-	})
+	dataSource, err := exchange.NewCSVFeed(
+		"1d",
+		exchange.PairFeed{
+			Pair: "BTCUSDT",
+			File: "data/btc-1d.csv",
+		},
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	storage, err := storage.NewMemory()
+	storage, err := storage.New("backtest.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	paperWallet := exchange.NewPaperWallet(
+	wallet := exchange.NewPaperWallet(
 		ctx,
 		"USDT",
 		exchange.WithPaperAsset("USDT", 10000),
@@ -46,22 +48,22 @@ func main() {
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
-		paperWallet,
+		wallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithCandleSubscription(paperWallet),
+		ninjabot.WithCandleSubscription(wallet),
 		ninjabot.WithLogLevel(log.ErrorLevel),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	err = bot.Run(ctx)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	// Print bot results
 	bot.Summary()
-	paperWallet.Summary()
+	wallet.Summary()
 }

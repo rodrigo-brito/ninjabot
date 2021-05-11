@@ -3,6 +3,10 @@ package ninjabot
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
+
+	"github.com/olekukonko/tablewriter"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 
@@ -119,17 +123,38 @@ func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
 }
 
 func (n *NinjaBot) Summary() {
-	var total float64
-	fmt.Println("------")
+	var (
+		total float64
+		wins  int
+		loses int
+	)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Profit"})
+	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
+	fmt.Println("-------------------")
 	fmt.Println("TRADES")
-	fmt.Println("------")
 	for _, summary := range n.orderController.Results {
-		fmt.Println(summary)
+		table.Append([]string{
+			summary.Symbol,
+			strconv.Itoa(summary.Win + summary.Lose),
+			strconv.Itoa(summary.Win),
+			strconv.Itoa(summary.Lose),
+			fmt.Sprintf("%.1f %%", float64(summary.Win)/float64(summary.Win+summary.Lose)*100),
+			fmt.Sprintf("%.4f", summary.Profit),
+		})
 		total += summary.Profit
+		wins += summary.Win
+		loses += summary.Lose
 	}
-	fmt.Println("------")
-	fmt.Println("GLOBAL PROFIT = ", total)
-	fmt.Println("------")
+	table.SetFooter([]string{
+		"TOTAL",
+		strconv.Itoa(wins + loses),
+		strconv.Itoa(wins),
+		strconv.Itoa(loses),
+		fmt.Sprintf("%.1f %%", float64(wins)/float64(wins+loses)*100),
+		fmt.Sprintf("%.4f", total),
+	})
+	table.Render()
 }
 
 func (n *NinjaBot) Run(ctx context.Context) error {
