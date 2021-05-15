@@ -16,16 +16,30 @@ func main() {
 		Usage: "download historical data",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:     "symbol",
-				Aliases:  []string{"s"},
+				Name:     "pair",
+				Aliases:  []string{"p"},
 				Usage:    "eg. BTCUSDT",
 				Required: true,
 			},
 			&cli.IntFlag{
-				Name:     "limit",
-				Aliases:  []string{"l"},
-				Usage:    "eg. 100",
-				Required: true,
+				Name:     "days",
+				Aliases:  []string{"d"},
+				Usage:    "eg. 100 (default 30 days)",
+				Required: false,
+			},
+			&cli.TimestampFlag{
+				Name:     "start",
+				Aliases:  []string{"s"},
+				Usage:    "eg. 2021-12-01",
+				Layout:   "2006-01-02",
+				Required: false,
+			},
+			&cli.TimestampFlag{
+				Name:     "end",
+				Aliases:  []string{"e"},
+				Usage:    "eg. 2020-12-31",
+				Layout:   "2006-01-02",
+				Required: false,
 			},
 			&cli.StringFlag{
 				Name:     "timeframe",
@@ -45,8 +59,22 @@ func main() {
 			if err != nil {
 				return err
 			}
-			return data.NewDownloader(exc).Download(c.Context, c.String("symbol"),
-				c.String("timeframe"), c.Int("limit"), c.String("output"))
+
+			var options []data.Option
+			if days := c.Int("days"); days > 0 {
+				options = append(options, data.WithDays(days))
+			}
+
+			start := c.Timestamp("start")
+			end := c.Timestamp("end")
+			if start != nil && end != nil && !start.IsZero() && !end.IsZero() {
+				options = append(options, data.WithInterval(*start, *end))
+			} else if start != nil || end != nil {
+				log.Fatal("START and END must be informed together")
+			}
+
+			return data.NewDownloader(exc).Download(c.Context, c.String("pair"),
+				c.String("timeframe"), c.String("output"), options...)
 		},
 	}
 

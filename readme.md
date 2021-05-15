@@ -21,18 +21,46 @@ Check [example](example) directory:
 
 ### CLI
 
-- `ninjabot download` - Download historical data
-    - Example: `ninjabot download --symbol BTCUSDT --timeframe 1h --limit 100 --output ./btc.csv`
+To download historical data you can download ninjabot CLI from [release page]
 
+#### Commands
+```text
+NAME:
+   download - download historical data
 
-## Roadmap
+USAGE:
+   cli [global options] command [command options] [arguments...]
 
-### Features:
-- [x] Order Limit, Market, OCO, and Stop
-- [x] Custom Strategy
-- [x] Paper Wallet
-- [x] Strategy Backtesting (Only for market orders)
-- [x] Bot CLI
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --pair value, -p value       eg. BTCUSDT
+   --days value, -d value       eg. 100 (default 30 days) (default: 0)
+   --start value, -s value      eg. 2021-12-01
+   --end value, -e value        eg. 2020-12-31
+   --timeframe value, -t value  eg. 1h
+   --output value, -o value     eg. ./btc.csv
+   --help, -h                   show help (default: false)
+```
+#### Examples
+
+- Download 30 days: `ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
+
+### Roadmap:
+
+- [x] Live Trading
+  - [x] Order Limit, Market, OCO, and Stop
+  - [x] Custom Strategy
+
+- [x] Backtesting
+  - [x] Paper Wallet (Live Trading with fake wallet)
+  - [x] Load Feed from CSV
+  - [x] Market Orders
+  - [x] Limit Orders
+  - [ ] OCO Orders
+  
+- [x] Bot CLI - Utilities to support studies
   - [x] Download
   - [ ] Plot
 

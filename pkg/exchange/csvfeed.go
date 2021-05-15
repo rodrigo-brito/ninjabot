@@ -46,7 +46,7 @@ func NewCSVFeed(timeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 		}
 
 		var candles []model.Candle
-		for _, line := range csvLines[1:] {
+		for _, line := range csvLines {
 			timestamp, err := strconv.Atoi(line[0])
 			if err != nil {
 				return nil, err
