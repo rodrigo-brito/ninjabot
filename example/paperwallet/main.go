@@ -4,9 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/rodrigo-brito/ninjabot/example"
-
 	"github.com/rodrigo-brito/ninjabot"
+	"github.com/rodrigo-brito/ninjabot/example"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 	"github.com/rodrigo-brito/ninjabot/pkg/notification"
@@ -49,7 +48,7 @@ func main() {
 		"USDT",
 		exchange.WithPaperFee(0.001, 0.001),
 		exchange.WithPaperAsset("USDT", 10000),
-		exchange.WithDataSource(binance),
+		exchange.WithDataFeed(binance),
 	)
 
 	strategy := new(example.MyStrategy)

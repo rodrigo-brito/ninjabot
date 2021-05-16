@@ -129,22 +129,23 @@ func (n *NinjaBot) Summary() {
 		loses int
 	)
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Profit"})
+	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "Profit"})
 	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
-	fmt.Println("-------------------")
-	fmt.Println("TRADES")
+	avgPayoff := 0.0
 	for _, summary := range n.orderController.Results {
+		avgPayoff += summary.Payoff() * float64(len(summary.Win)+len(summary.Lose))
 		table.Append([]string{
 			summary.Symbol,
-			strconv.Itoa(summary.Win + summary.Lose),
-			strconv.Itoa(summary.Win),
-			strconv.Itoa(summary.Lose),
-			fmt.Sprintf("%.1f %%", float64(summary.Win)/float64(summary.Win+summary.Lose)*100),
-			fmt.Sprintf("%.4f", summary.Profit),
+			strconv.Itoa(len(summary.Win) + len(summary.Lose)),
+			strconv.Itoa(len(summary.Win)),
+			strconv.Itoa(len(summary.Lose)),
+			fmt.Sprintf("%.1f %%", float64(len(summary.Win))/float64(len(summary.Win)+len(summary.Lose))*100),
+			fmt.Sprintf("%.3f", summary.Payoff()),
+			fmt.Sprintf("%.4f", summary.Profit()),
 		})
-		total += summary.Profit
-		wins += summary.Win
-		loses += summary.Lose
+		total += summary.Profit()
+		wins += len(summary.Win)
+		loses += len(summary.Lose)
 	}
 	table.SetFooter([]string{
 		"TOTAL",
@@ -152,6 +153,7 @@ func (n *NinjaBot) Summary() {
 		strconv.Itoa(wins),
 		strconv.Itoa(loses),
 		fmt.Sprintf("%.1f %%", float64(wins)/float64(wins+loses)*100),
+		fmt.Sprintf("%.3f", avgPayoff/float64(wins+loses)),
 		fmt.Sprintf("%.4f", total),
 	})
 	table.Render()

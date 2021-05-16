@@ -19,16 +19,17 @@ type assetInfo struct {
 
 type PaperWallet struct {
 	sync.Mutex
-	ctx        context.Context
-	baseCoin   string
-	counter    int64
-	takerFee   float64
-	makerFee   float64
-	dataSource Feeder
-	orders     []model.Order
-	assets     map[string]*assetInfo
-	avgPrice   map[string]float64
-	lastCandle map[string]model.Candle
+	ctx          context.Context
+	baseCoin     string
+	counter      int64
+	takerFee     float64
+	makerFee     float64
+	initialValue float64
+	feeder       Feeder
+	orders       []model.Order
+	assets       map[string]*assetInfo
+	avgPrice     map[string]float64
+	lastCandle   map[string]model.Candle
 }
 
 type PaperWalletOption func(*PaperWallet)
@@ -49,9 +50,9 @@ func WithPaperFee(maker, taker float64) PaperWalletOption {
 	}
 }
 
-func WithDataSource(feeder Feeder) PaperWalletOption {
+func WithDataFeed(feeder Feeder) PaperWalletOption {
 	return func(wallet *PaperWallet) {
-		wallet.dataSource = feeder
+		wallet.feeder = feeder
 	}
 }
 
@@ -69,7 +70,9 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 		option(&wallet)
 	}
 
+	wallet.initialValue = wallet.assets[wallet.baseCoin].Free
 	log.Info("[SETUP] Using paper wallet")
+	log.Infof("[SETUP] Initial Portfolio = %f %s", wallet.initialValue, wallet.baseCoin)
 
 	return &wallet
 }
@@ -86,9 +89,12 @@ func (p *PaperWallet) Summary() {
 		fmt.Printf("%f %s\n", quantity, asset)
 	}
 	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
+	profit := total + baseCoinValue - p.initialValue
 	fmt.Printf("%f %s\n", baseCoinValue, p.baseCoin)
 	fmt.Println("--------------")
-	fmt.Println("TOTAL = ", total+baseCoinValue, p.baseCoin)
+	fmt.Println("START PORTFOLIO = ", p.initialValue, p.baseCoin)
+	fmt.Println("FINAL PORTFOLIO = ", total+baseCoinValue, p.baseCoin)
+	fmt.Printf("PROFIT = %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
 	fmt.Println("--------------")
 }
 
@@ -276,13 +282,13 @@ func (p *PaperWallet) Order(symbol string, id int64) (model.Order, error) {
 
 func (p *PaperWallet) CandlesByPeriod(ctx context.Context, pair, period string,
 	start, end time.Time) ([]model.Candle, error) {
-	return p.dataSource.CandlesByPeriod(ctx, pair, period, start, end)
+	return p.feeder.CandlesByPeriod(ctx, pair, period, start, end)
 }
 
 func (p *PaperWallet) CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {
-	return p.dataSource.CandlesByLimit(ctx, pair, period, limit)
+	return p.feeder.CandlesByLimit(ctx, pair, period, limit)
 }
 
 func (p *PaperWallet) CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error) {
-	return p.dataSource.CandlesSubscription(pair, timeframe)
+	return p.feeder.CandlesSubscription(pair, timeframe)
 }

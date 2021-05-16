@@ -5,34 +5,38 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+
+	"github.com/xhit/go-str2duration/v2"
 )
 
 var ErrInsufficientData = errors.New("insufficient data")
 
 type PairFeed struct {
-	Pair string
-	File string
+	Pair      string
+	File      string
+	Timeframe string
 }
 
 type CSVFeed struct {
-	Timeframes          []string
+	//Timeframes          []string
 	Feeds               map[string]PairFeed
 	CandlePairTimeFrame map[string][]model.Candle
 }
 
-func NewCSVFeed(timeframe string, feeds ...PairFeed) (*CSVFeed, error) {
+func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	csvFeed := &CSVFeed{
 		Feeds:               make(map[string]PairFeed),
 		CandlePairTimeFrame: make(map[string][]model.Candle),
 	}
 
 	for _, feed := range feeds {
-		csvFeed.Timeframes = append(csvFeed.Timeframes, timeframe)
+		//csvFeed.Timeframes = append(csvFeed.Timeframes, feed.Timeframe)
 		csvFeed.Feeds[feed.Pair] = feed
 
 		csvFile, err := os.Open(feed.File)
@@ -86,7 +90,12 @@ func NewCSVFeed(timeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 			candles = append(candles, candle)
 		}
 
-		csvFeed.CandlePairTimeFrame[csvFeed.feedTimeframeKey(feed.Pair, timeframe)] = candles
+		csvFeed.CandlePairTimeFrame[csvFeed.feedTimeframeKey(feed.Pair, feed.Timeframe)] = candles
+
+		err = csvFeed.resample(feed.Pair, feed.Timeframe, targetTimeframe)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return csvFeed, nil
@@ -96,15 +105,71 @@ func (c CSVFeed) feedTimeframeKey(pair, timeframe string) string {
 	return fmt.Sprintf("%s--%s", pair, timeframe)
 }
 
-func (c *CSVFeed) Resample(timeframes ...string) error {
-	c.Timeframes = timeframes
-	for _, feed := range c.Feeds {
-		for _, timeframe := range timeframes {
-			key := c.feedTimeframeKey(feed.Pair, timeframe)
-			c.CandlePairTimeFrame[key] = make([]model.Candle, 0)
-			// TODO: resample candles
-		}
+func isLastCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (bool, error) {
+	if fromTimeframe == targetTimeframe {
+		return true, nil
 	}
+
+	fromDuration, err := str2duration.ParseDuration(fromTimeframe)
+	if err != nil {
+		return false, err
+	}
+
+	next := t.Add(fromDuration)
+
+	switch targetTimeframe {
+	case "1m":
+		return next.Second()%60 == 0, nil
+	case "5m":
+		return next.Minute()%5 == 0, nil
+	case "10m":
+		return next.Minute()%10 == 0, nil
+	case "15m":
+		return next.Minute()%15 == 0, nil
+	case "30m":
+		return next.Minute()%30 == 0, nil
+	case "1h":
+		return next.Minute()%60 == 0, nil
+	case "2h":
+		return next.Minute() == 0 && next.Hour()%2 == 0, nil
+	case "4h":
+		return next.Minute() == 0 && next.Hour()%4 == 0, nil
+	case "12h":
+		return next.Minute() == 0 && next.Hour()%4 == 0, nil
+	case "1d":
+		return next.Minute() == 0 && next.Hour()%24 == 0, nil
+	case "1w":
+		return next.Minute() == 0 && next.Hour()%24 == 0 && next.Weekday() == time.Sunday, nil
+	}
+
+	return false, fmt.Errorf("invalid timeframe: 1y")
+}
+
+func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error {
+	sourceKey := c.feedTimeframeKey(pair, sourceTimeframe)
+	targetKey := c.feedTimeframeKey(pair, targetTimeframe)
+
+	candles := make([]model.Candle, 0)
+	for i, candle := range c.CandlePairTimeFrame[sourceKey] {
+		if last, err := isLastCandlePeriod(candle.Time.UTC(), sourceTimeframe, targetTimeframe); err != nil {
+			return err
+		} else if last {
+			candle.Complete = true
+		} else {
+			candle.Complete = false
+		}
+
+		if i > 0 && !candles[i-1].Complete {
+			candle.Open = candles[i-1].Open
+			candle.High = math.Max(candles[i-1].High, candle.High)
+			candle.Low = math.Min(candles[i-1].Low, candle.Low)
+			candle.Volume += candles[i-1].Volume
+			candle.Trades += candles[i-1].Trades
+		}
+		candles = append(candles, candle)
+	}
+
+	c.CandlePairTimeFrame[targetKey] = candles
 
 	return nil
 }

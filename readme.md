@@ -15,7 +15,7 @@ A fast cryptocurrency bot implemented in Go
 
 Check [example](example) directory:
 
-- Paper Wallet (Live Simultation)
+- Paper Wallet (Live Simulation)
 - Backtesting
 - Real Account (Binance)
 
@@ -46,6 +46,38 @@ GLOBAL OPTIONS:
 #### Examples
 
 - Download 30 days: `ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
+
+### Backtesting Example
+
+- Backtesting from [example](example) directory:
+```
+go run example/backtesting/main.go
+```
+
+Output:
+
+```
+INFO[2021-05-16 13:22] [SETUP] Using paper wallet                   
+INFO[2021-05-16 13:22] [SETUP] Initial Portfolio = 10000.000000 USDT 
++---------+--------+-----+------+--------+--------+------------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |   PROFIT   |
++---------+--------+-----+------+--------+--------+------------+
+| BTCUSDT |      9 |   4 |    5 | 44.4 % |  1.080 | 10074.0928 |
++---------+--------+-----+------+--------+--------+------------+
+|   TOTAL |      9 |   4 |    5 | 44.4 % |  1.080 | 10074.0928 |
++---------+--------+-----+------+--------+--------+------------+
+--------------
+WALLET SUMMARY
+--------------
+0.000000 BTC
+13757.142338 USDT
+--------------
+START PORTFOLIO =  10000 USDT
+FINAL PORTFOLIO =  13757.142338196232 USDT
+PROFIT = 3757.142338 USDT (37.57%)
+--------------
+
+```
 
 ### Roadmap:
 

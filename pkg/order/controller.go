@@ -20,22 +20,43 @@ import (
 
 type summary struct {
 	Symbol string
-	Win    int
-	Lose   int
-	Profit float64
+	Win    []float64
+	Lose   []float64
+}
+
+func (s summary) Profit() float64 {
+	profit := 0.0
+	for _, value := range append(s.Win, s.Lose...) {
+		profit += value
+	}
+	return profit
+}
+
+func (s summary) Payoff() float64 {
+	avgWin := 0.0
+	avgLose := 0.0
+	for _, value := range s.Win {
+		avgWin += value
+	}
+	for _, value := range s.Lose {
+		avgLose += value
+	}
+	return avgWin / avgLose
 }
 
 func (s summary) String() string {
 	tableString := &strings.Builder{}
 	table := tablewriter.NewWriter(tableString)
 	_, quote := exchange.SplitAssetQuote(s.Symbol)
+
 	data := [][]string{
 		{"Coin", s.Symbol},
-		{"Trades", strconv.Itoa(s.Lose + s.Win)},
-		{"Win", strconv.Itoa(s.Win)},
-		{"Loss", strconv.Itoa(s.Lose)},
-		{"% Win", fmt.Sprintf("%.1f", float64(s.Win)/float64(s.Win+s.Lose)*100)},
-		{"Profit", fmt.Sprintf("%.4f %s", s.Profit, quote)},
+		{"Trades", strconv.Itoa(len(s.Lose) + len(s.Win))},
+		{"Win", strconv.Itoa(len(s.Win))},
+		{"Loss", strconv.Itoa(len(s.Lose))},
+		{"% Win", fmt.Sprintf("%.1f", float64(len(s.Win))/float64(len(s.Win)+len(s.Lose))*100)},
+		{"Payoff", fmt.Sprintf("%.1f", s.Payoff()*100)},
+		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
 	}
 	table.AppendBulk(data)
 	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT})
@@ -103,11 +124,10 @@ func (c *Controller) processTrade(order model.Order) {
 		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
 	}
 
-	c.Results[order.Symbol].Profit += profitValue
 	if profitValue > 0 {
-		c.Results[order.Symbol].Win++
+		c.Results[order.Symbol].Win = append(c.Results[order.Symbol].Win, profitValue)
 	} else {
-		c.Results[order.Symbol].Lose++
+		c.Results[order.Symbol].Lose = append(c.Results[order.Symbol].Win, profitValue)
 	}
 
 	_, quote := exchange.SplitAssetQuote(order.Symbol)

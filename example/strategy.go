@@ -33,9 +33,10 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 		log.Error(err)
 	}
 
-	if quotePosition > 10 && // minimum size
+	buyAmount := 5000.0             // 200 USDT for each buy
+	if quotePosition > buyAmount && // minimum size
 		model.Last(dataframe.Metadata["ema"], 0) > model.Last(dataframe.Metadata["ema"], 1) {
-		size := quotePosition / closePrice * 0.999
+		size := buyAmount / closePrice
 		_, err := broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, size)
 		if err != nil {
 			log.WithFields(map[string]interface{}{

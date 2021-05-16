@@ -21,11 +21,14 @@ func main() {
 		},
 	}
 
-	dataSource, err := exchange.NewCSVFeed(
-		"1d",
+	strategy := new(example.MyStrategy)
+
+	csvFeed, err := exchange.NewCSVFeed(
+		strategy.Timeframe(),
 		exchange.PairFeed{
-			Pair: "BTCUSDT",
-			File: "data/btc-1d.csv",
+			Pair:      "BTCUSDT",
+			File:      "testdata/btc-1h.csv",
+			Timeframe: "1h",
 		},
 	)
 	if err != nil {
@@ -41,10 +44,9 @@ func main() {
 		ctx,
 		"USDT",
 		exchange.WithPaperAsset("USDT", 10000),
-		exchange.WithDataSource(dataSource),
+		exchange.WithDataFeed(csvFeed),
 	)
 
-	strategy := new(example.MyStrategy)
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
