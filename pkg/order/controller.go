@@ -41,7 +41,7 @@ func (s summary) Payoff() float64 {
 	for _, value := range s.Lose {
 		avgLose += value
 	}
-	return avgWin / avgLose
+	return (avgWin / float64(len(s.Win))) / math.Abs(avgLose/float64(len(s.Lose)))
 }
 
 func (s summary) String() string {
@@ -124,10 +124,10 @@ func (c *Controller) processTrade(order model.Order) {
 		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
 	}
 
-	if profitValue > 0 {
+	if profitValue >= 0 {
 		c.Results[order.Symbol].Win = append(c.Results[order.Symbol].Win, profitValue)
 	} else {
-		c.Results[order.Symbol].Lose = append(c.Results[order.Symbol].Win, profitValue)
+		c.Results[order.Symbol].Lose = append(c.Results[order.Symbol].Lose, profitValue)
 	}
 
 	_, quote := exchange.SplitAssetQuote(order.Symbol)
