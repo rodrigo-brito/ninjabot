@@ -17,11 +17,11 @@ func (e MyStrategy) Timeframe() string {
 }
 
 func (e MyStrategy) WarmupPeriod() int {
-	return 9
+	return 21
 }
 
 func (e MyStrategy) Indicators(dataframe *model.Dataframe) {
-	dataframe.Metadata["ema"] = talib.Ema(dataframe.Close, 9)
+	dataframe.Metadata["ema"] = talib.Ema(dataframe.Close, 21)
 }
 
 func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker) {
@@ -35,6 +35,7 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 
 	buyAmount := 5000.0             // 200 USDT for each buy
 	if quotePosition > buyAmount && // minimum size
+		assetPosition*closePrice < 10 && // no position
 		model.Last(dataframe.Metadata["ema"], 0) > model.Last(dataframe.Metadata["ema"], 1) {
 		size := buyAmount / closePrice
 		_, err := broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, size)

@@ -11,8 +11,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-ninjabot
-ninjabot.db
-backtest.db
-data/
-dist/
+/ninjabot
+/ninjabot.db
+/backtest.db
+/data/
+/dist/

@@ -12,7 +12,7 @@ import (
 	"github.com/xhit/go-str2duration/v2"
 )
 
-const batchSize = 1000
+const batchSize = 500
 
 type Downloader struct {
 	exchange exchange.Exchange
@@ -60,14 +60,20 @@ func (d Downloader) Download(ctx context.Context, symbol, timeframe string, outp
 		return err
 	}
 
+	now := time.Now()
 	parameters := &Parameters{
-		Start: time.Now().AddDate(0, -1, 0),
-		End:   time.Now(),
+		Start: now.AddDate(0, -1, 0),
+		End:   now,
 	}
 
 	for _, option := range options {
 		option(parameters)
 	}
+
+	parameters.Start = time.Date(parameters.Start.Year(), parameters.Start.Month(), parameters.Start.Day(),
+		0, 0, 0, 0, time.UTC)
+	parameters.End = time.Date(parameters.End.Year(), parameters.End.Month(), parameters.End.Day(),
+		0, 0, 0, 0, time.UTC)
 
 	candlesCount, interval, err := candlesCount(parameters.Start, parameters.End, timeframe)
 	if err != nil {

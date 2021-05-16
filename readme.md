@@ -21,30 +21,7 @@ Check [example](example) directory:
 
 ### CLI
 
-To download historical data you can download ninjabot CLI from [release page]
-
-#### Commands
-```text
-NAME:
-   download - download historical data
-
-USAGE:
-   cli [global options] command [command options] [arguments...]
-
-COMMANDS:
-   help, h  Shows a list of commands or help for one command
-
-GLOBAL OPTIONS:
-   --pair value, -p value       eg. BTCUSDT
-   --days value, -d value       eg. 100 (default 30 days) (default: 0)
-   --start value, -s value      eg. 2021-12-01
-   --end value, -e value        eg. 2020-12-31
-   --timeframe value, -t value  eg. 1h
-   --output value, -o value     eg. ./btc.csv
-   --help, -h                   show help (default: false)
-```
-#### Examples
-
+To download historical data you can download ninjabot CLI from [release page](https://github.com/rodrigo-brito/ninjabot/releases)
 - Download 30 days: `ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
 
 ### Backtesting Example
@@ -78,6 +55,10 @@ PROFIT = 3757.142338 USDT (37.57%)
 --------------
 ```
 
+### Plot result:
+
+<img width="500"  src="https://user-images.githubusercontent.com/7620947/118415713-67e50c80-b682-11eb-854d-b21d060e308b.png"/>
+
 ### Roadmap:
 
 - [x] Live Trading
@@ -93,7 +74,7 @@ PROFIT = 3757.142338 USDT (37.57%)
   
 - [x] Bot CLI - Utilities to support studies
   - [x] Download
-  - [ ] Plot
+  - [x] Plot (Candles + Sell / Buy orders)
 
 ### Exchanges:
 - [x] Binance

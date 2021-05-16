@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ninja Bot - Graph</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<script defer>
+function unpack(rows, key) {
+    return rows.map(function(row) {
+        return row[key];
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const candles = {{ .Candles }};
+    const orders = {{ .Orders }};
+    const trace1 = {
+      x: unpack(candles, "Time"),
+      close: unpack(candles, "Close"),
+      open: unpack(candles, "Open"),
+      low: unpack(candles, "Low"),
+      high: unpack(candles, "High"),
+      type: 'candlestick',
+      xaxis: 'x',
+      yaxis: 'y'
+    };
+
+    var data = [trace1];
+
+    var layout = {
+      dragmode: 'zoom',
+      margin: {
+        r: 10,
+        t: 25,
+        b: 40,
+        l: 60
+      },
+      showlegend: false,
+      xaxis: {
+        autorange: true
+      },
+      yaxis: {
+        autorange: true,
+        type: 'linear'
+      },
+        annotations: orders.map(order => {
+            const annotation = {
+                x: order.Date,
+                y: order.Price,
+                xref: 'x',
+                yref: 'y',
+                text: 'BUY',
+                hovertext: "ID: " + order.ID,
+                showarrow: true,
+                arrowcolor: 'green',
+                valign: 'bottom',
+                arrowhead: 3,
+                ax: 0,
+                ay: 50,
+                font: {
+                    size: 14,
+                    color: "green",
+                },
+                opacity: 0.5,
+            }
+
+            if (order.Side === "SELL") {
+                annotation.font.color = 'red';
+                annotation.arrowcolor = 'red';
+                annotation.text = 'SELL';
+                annotation.ay = -50;
+            }
+
+            return annotation;
+        }),
+    };
+
+    Plotly.newPlot('graph', data, layout);
+});
+</script>
+<style>
+    #graph {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: 50px;
+    }
+</style>
+<body>
+    <div id="graph"></div>
+</body>
+</html>

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	"github.com/rodrigo-brito/ninjabot/pkg/plot"
+
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/example"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
@@ -47,6 +49,8 @@ func main() {
 		exchange.WithDataFeed(csvFeed),
 	)
 
+	chart := plot.NewChart()
+
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
@@ -54,6 +58,8 @@ func main() {
 		strategy,
 		ninjabot.WithStorage(storage),
 		ninjabot.WithCandleSubscription(wallet),
+		ninjabot.WithCandleSubscription(chart),
+		ninjabot.WithOrderSubscription(chart),
 		ninjabot.WithLogLevel(log.ErrorLevel),
 	)
 	if err != nil {
@@ -68,4 +74,5 @@ func main() {
 	// Print bot results
 	bot.Summary()
 	wallet.Summary()
+	chart.Start()
 }

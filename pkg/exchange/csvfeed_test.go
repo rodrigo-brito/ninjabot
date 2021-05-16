@@ -71,6 +71,27 @@ func TestCSVFeed_resample(t *testing.T) {
 	assert.Equal(t, 51367.19, last.High)
 	assert.Equal(t, 147332.0, last.Volume)
 	assert.True(t, last.Complete)
+
+	// load feed with 180 days witch candles of 1h
+	feed, err = NewCSVFeed(
+		"1d",
+		PairFeed{
+			Timeframe: "1h",
+			Pair:      "BTCUSDT",
+			File:      "../../testdata/btc-1h.csv",
+		})
+	require.NoError(t, err)
+
+	totalComplete := 0
+	for _, candle := range feed.CandlePairTimeFrame["BTCUSDT--1d"] {
+		if candle.Time.Hour() == 23 {
+			require.True(t, true)
+		}
+		if candle.Complete {
+			totalComplete++
+		}
+	}
+	require.Equal(t, 180, totalComplete)
 }
 
 func TestIsLastCandlePeriod(t *testing.T) {

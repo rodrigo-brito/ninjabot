@@ -24,7 +24,6 @@ type PairFeed struct {
 }
 
 type CSVFeed struct {
-	//Timeframes          []string
 	Feeds               map[string]PairFeed
 	CandlePairTimeFrame map[string][]model.Candle
 }
@@ -36,7 +35,6 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	}
 
 	for _, feed := range feeds {
-		//csvFeed.Timeframes = append(csvFeed.Timeframes, feed.Timeframe)
 		csvFeed.Feeds[feed.Pair] = feed
 
 		csvFile, err := os.Open(feed.File)
@@ -57,7 +55,7 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 			}
 
 			candle := model.Candle{
-				Time:     time.Unix(int64(timestamp), 0),
+				Time:     time.Unix(int64(timestamp), 0).UTC(),
 				Symbol:   feed.Pair,
 				Complete: true,
 			}
@@ -115,7 +113,7 @@ func isLastCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (boo
 		return false, err
 	}
 
-	next := t.Add(fromDuration)
+	next := t.Add(fromDuration).UTC()
 
 	switch targetTimeframe {
 	case "1m":
@@ -151,7 +149,7 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 
 	candles := make([]model.Candle, 0)
 	for i, candle := range c.CandlePairTimeFrame[sourceKey] {
-		if last, err := isLastCandlePeriod(candle.Time.UTC(), sourceTimeframe, targetTimeframe); err != nil {
+		if last, err := isLastCandlePeriod(candle.Time, sourceTimeframe, targetTimeframe); err != nil {
 			return err
 		} else if last {
 			candle.Complete = true

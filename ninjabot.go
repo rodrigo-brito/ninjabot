@@ -114,6 +114,12 @@ func (n *NinjaBot) SubscribeCandle(subscriptions ...CandleSubscriber) {
 	}
 }
 
+func WithOrderSubscription(subscriber OrderSubscriber) Option {
+	return func(bot *NinjaBot) {
+		bot.SubscribeOrder(subscriber)
+	}
+}
+
 func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
 	for _, symbol := range n.settings.Pairs {
 		for _, subscription := range subscriptions {
