@@ -182,6 +182,6 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 
 	n.orderFeed.Start()
 	n.orderController.Start()
-	<-n.dataFeed.Start(ctx)
+	n.dataFeed.Start()
 	return nil
 }

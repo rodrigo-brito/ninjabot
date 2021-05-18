@@ -20,6 +20,7 @@ func main() {
 	settings := model.Settings{
 		Pairs: []string{
 			"BTCUSDT",
+			"ETHUSDT",
 		},
 	}
 
@@ -30,6 +31,11 @@ func main() {
 		exchange.PairFeed{
 			Pair:      "BTCUSDT",
 			File:      "testdata/btc-1h.csv",
+			Timeframe: "1h",
+		},
+		exchange.PairFeed{
+			Pair:      "ETHUSDT",
+			File:      "testdata/eth-1h.csv",
 			Timeframe: "1h",
 		},
 	)

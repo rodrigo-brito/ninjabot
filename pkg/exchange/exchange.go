@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
@@ -106,16 +107,17 @@ func (d *DataFeedSubscription) Connect() {
 	}
 }
 
-func (d *DataFeedSubscription) Start(ctx context.Context) <-chan struct{} {
+func (d *DataFeedSubscription) Start() {
 	d.Connect()
-	done := make(chan struct{}, 1)
+	wg := new(sync.WaitGroup)
 	for key, feed := range d.DataFeeds {
+		wg.Add(1)
 		go func(key string, feed *DataFeed) {
 			for {
 				select {
 				case candle, ok := <-feed.Data:
 					if !ok {
-						close(done)
+						wg.Done()
 						return
 					}
 					for _, subscription := range d.SubscriptionsByDataFeed[key] {
@@ -132,6 +134,5 @@ func (d *DataFeedSubscription) Start(ctx context.Context) <-chan struct{} {
 	}
 
 	log.Infof("Bot started.")
-
-	return done
+	wg.Wait()
 }
