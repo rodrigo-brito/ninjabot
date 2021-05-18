@@ -94,6 +94,9 @@ type Order struct {
 	// OCO Orders only
 	Stop    *float64
 	GroupID *int64
+
+	// Internal use (Plot)
+	Profit float64
 }
 
 func (o Order) String() string {

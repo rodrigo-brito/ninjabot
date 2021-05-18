@@ -31,7 +31,7 @@ func TestController_calculateProfit(t *testing.T) {
 	sellOrder, err := controller.OrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 	require.NoError(t, err)
 
-	value, profit, err := controller.calculateProfit(sellOrder)
+	value, profit, err := controller.calculateProfit(&sellOrder)
 	require.NoError(t, err)
 	assert.Equal(t, 1500.0, value)
 	assert.Equal(t, 1.0, profit)
@@ -40,7 +40,7 @@ func TestController_calculateProfit(t *testing.T) {
 	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 750})
 	sellOrder, err = controller.OrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 	require.NoError(t, err)
-	value, profit, err = controller.calculateProfit(sellOrder)
+	value, profit, err = controller.calculateProfit(&sellOrder)
 	require.NoError(t, err)
 	assert.Equal(t, -750.0, value)
 	assert.Equal(t, -0.5, profit)

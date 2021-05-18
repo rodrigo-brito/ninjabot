@@ -86,7 +86,7 @@ func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent
 	}
 }
 
-func (c *Controller) calculateProfit(o model.Order) (value, percent float64, err error) {
+func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
 	orders, err := c.storage.Order.Query().Where(order.IDLT(o.ID)).All(c.ctx)
 	if err != nil {
 		return 0, 0, err
@@ -115,11 +115,12 @@ func (c Controller) notify(message string) {
 	}
 }
 
-func (c *Controller) processTrade(order model.Order) {
+func (c *Controller) processTrade(order *model.Order) {
 	profitValue, profit, err := c.calculateProfit(order)
 	if err != nil {
 		log.Errorf("order/controller storage: %s", err)
 	}
+	order.Profit = profit
 	if _, ok := c.Results[order.Symbol]; !ok {
 		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
 	}
@@ -176,10 +177,10 @@ func (c Controller) Start() {
 				}
 
 				log.Infof("[ORDER %s] %s", excOrder.Status, excOrder)
-				c.orderFeed.Publish(excOrder, false)
 				if excOrder.Side == model.SideTypeSell {
-					c.processTrade(excOrder)
+					c.processTrade(&excOrder)
 				}
+				c.orderFeed.Publish(excOrder, false)
 			}
 		}
 	}()
@@ -202,7 +203,6 @@ func (c Controller) createOrder(order *model.Order) error {
 		return fmt.Errorf("error on save order: %w", err)
 	}
 	order.ID = register.ID
-	go c.orderFeed.Publish(*order, true)
 	return nil
 }
 
@@ -234,6 +234,7 @@ func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, st
 			log.Errorf("order/controller storage: %s", err)
 			return nil, err
 		}
+		go c.orderFeed.Publish(orders[i], true)
 	}
 
 	return orders, nil
@@ -252,6 +253,7 @@ func (c Controller) OrderLimit(side model.SideType, symbol string, size, limit f
 		log.Errorf("order/controller storage: %s", err)
 		return model.Order{}, err
 	}
+	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, nil
 }
@@ -272,9 +274,10 @@ func (c Controller) OrderMarket(side model.SideType, symbol string, size float64
 
 	// calculate profit
 	if order.Side == model.SideTypeSell {
-		c.processTrade(order)
+		c.processTrade(&order)
 	}
 
+	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
 }
