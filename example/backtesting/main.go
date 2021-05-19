@@ -20,6 +20,7 @@ func main() {
 	settings := model.Settings{
 		Pairs: []string{
 			"BTCUSDT",
+			"ETHUSDT",
 		},
 	}
 
@@ -32,12 +33,17 @@ func main() {
 			File:      "testdata/btc-1h.csv",
 			Timeframe: "1h",
 		},
+		exchange.PairFeed{
+			Pair:      "ETHUSDT",
+			File:      "testdata/eth-1h.csv",
+			Timeframe: "1h",
+		},
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	storage, err := storage.NewMemory()
+	storage, err := storage.FromMemory()
 	if err != nil {
 		log.Fatal(err)
 	}

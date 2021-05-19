@@ -37,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	storage, err := storage.NewMemory()
+	storage, err := storage.FromFile("backtest.db")
 	if err != nil {
 		log.Fatal(err)
 	}

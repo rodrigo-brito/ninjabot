@@ -68,7 +68,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch exchange.Exchange
 
 	var err error
 	if bot.storage == nil {
-		bot.storage, err = storage.New(defaultDatabase)
+		bot.storage, err = storage.FromFile(defaultDatabase)
 		if err != nil {
 			return nil, err
 		}
@@ -182,6 +182,6 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 
 	n.orderFeed.Start()
 	n.orderController.Start()
-	<-n.dataFeed.Start(ctx)
+	n.dataFeed.Start()
 	return nil
 }

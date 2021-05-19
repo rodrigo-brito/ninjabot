@@ -23,7 +23,7 @@
       right: 0;
       top: 50px;
     }
-    #pairs {
+    ul li {
       display: inline;
       list-style-type: none;
       padding-right: 20px;
@@ -31,7 +31,7 @@
     }
   </style>
   <body>
-    <ul id="pairs">
+    <ul>
       {{range $val := .Pairs}}
         <li><a href="/?pair={{ $val }}">{{ $val }}</a></li>
       {{end}}
