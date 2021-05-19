@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
@@ -65,6 +66,7 @@ func (s summary) String() string {
 }
 
 type Controller struct {
+	mtx       sync.Mutex
 	ctx       context.Context
 	exchange  exchange.Exchange
 	storage   *ent.Client
@@ -87,7 +89,7 @@ func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent
 }
 
 func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
-	orders, err := c.storage.Order.Query().Where(order.IDLT(o.ID)).All(c.ctx)
+	orders, err := c.storage.Order.Query().Where(order.IDLT(o.ID), order.Symbol(o.Symbol)).All(c.ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -108,7 +110,7 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 	return profitValue, profitValue / cost, nil
 }
 
-func (c Controller) notify(message string) {
+func (c *Controller) notify(message string) {
 	log.Info(message)
 	if c.notifier != nil {
 		c.notifier.Notify(message)
@@ -135,9 +137,10 @@ func (c *Controller) processTrade(order *model.Order) {
 	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Symbol].String()))
 }
 
-func (c Controller) Start() {
+func (c *Controller) Start() {
 	go func() {
 		for range time.NewTicker(10 * time.Second).C {
+			c.mtx.Lock()
 			// get pending orders
 			orders, err := c.storage.Order.Query().
 				Where(order.StatusIn(
@@ -149,6 +152,7 @@ func (c Controller) Start() {
 				All(c.ctx)
 			if err != nil {
 				log.Error("orderController/start:", err)
+				c.mtx.Unlock()
 				continue
 			}
 
@@ -182,11 +186,12 @@ func (c Controller) Start() {
 				}
 				c.orderFeed.Publish(excOrder, false)
 			}
+			c.mtx.Unlock()
 		}
 	}()
 }
 
-func (c Controller) createOrder(order *model.Order) error {
+func (c *Controller) createOrder(order *model.Order) error {
 	register, err := c.storage.Order.Create().
 		SetExchangeID(order.ExchangeID).
 		SetDate(order.Date).
@@ -206,20 +211,22 @@ func (c Controller) createOrder(order *model.Order) error {
 	return nil
 }
 
-func (c Controller) Account() (model.Account, error) {
+func (c *Controller) Account() (model.Account, error) {
 	return c.exchange.Account()
 }
 
-func (c Controller) Position(symbol string) (asset, quote float64, err error) {
+func (c *Controller) Position(symbol string) (asset, quote float64, err error) {
 	return c.exchange.Position(symbol)
 }
 
-func (c Controller) Order(symbol string, id int64) (model.Order, error) {
+func (c *Controller) Order(symbol string, id int64) (model.Order, error) {
 	return c.exchange.Order(symbol, id)
 }
 
-func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, stop,
+func (c *Controller) OrderOCO(side model.SideType, symbol string, size, price, stop,
 	stopLimit float64) ([]model.Order, error) {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
 
 	log.Infof("[ORDER] Creating OCO order for %s", symbol)
 	orders, err := c.exchange.OrderOCO(side, symbol, size, price, stop, stopLimit)
@@ -240,7 +247,10 @@ func (c Controller) OrderOCO(side model.SideType, symbol string, size, price, st
 	return orders, nil
 }
 
-func (c Controller) OrderLimit(side model.SideType, symbol string, size, limit float64) (model.Order, error) {
+func (c *Controller) OrderLimit(side model.SideType, symbol string, size, limit float64) (model.Order, error) {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, symbol)
 	order, err := c.exchange.OrderLimit(side, symbol, size, limit)
 	if err != nil {
@@ -258,7 +268,10 @@ func (c Controller) OrderLimit(side model.SideType, symbol string, size, limit f
 	return order, nil
 }
 
-func (c Controller) OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
+func (c *Controller) OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
 	order, err := c.exchange.OrderMarket(side, symbol, size)
 	if err != nil {
@@ -283,6 +296,9 @@ func (c Controller) OrderMarket(side model.SideType, symbol string, size float64
 }
 
 func (c Controller) Cancel(order model.Order) error {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
 	log.Infof("[ORDER] Cancelling order for %s", order.Symbol)
 	err := c.exchange.Cancel(order)
 	if err != nil {

@@ -39,20 +39,24 @@ Output:
 +---------+--------+-----+------+--------+--------+-----------+
 |  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT   |
 +---------+--------+-----+------+--------+--------+-----------+
-| BTCUSDT |     12 |   5 |    7 | 41.7 % |  5.137 | 4217.4657 |
+| ETHUSDT |      8 |   6 |    2 | 75.0 % | 12.215 | 5641.9314 |
+| BTCUSDT |     12 |   5 |    7 | 41.7 % |  5.137 | 3373.9726 |
 +---------+--------+-----+------+--------+--------+-----------+
-|   TOTAL |     12 |   5 |    7 | 41.7 % |  5.137 | 4217.4657 |
+|   TOTAL |     20 |  11 |    9 | 55.0 % |  7.968 | 9015.9040 |
 +---------+--------+-----+------+--------+--------+-----------+
 --------------
 WALLET SUMMARY
 --------------
 0.000000 BTC
-14217.465729 USDT
+1.723774 ETH
+15015.904020 USDT
 --------------
 START PORTFOLIO =  10000 USDT
-FINAL PORTFOLIO =  14217.465729229527 USDT
-PROFIT = 4217.465729 USDT (42.17%)
+FINAL PORTFOLIO =  19015.904019955597 USDT
+GROSS PROFIT    =  9015.904020 USDT (90.16%)
+MARKET CHANGE   =  396.71%
 --------------
+Chart available at http://localhost:8080
 ```
 
 ### Plot result:
@@ -71,10 +75,12 @@ PROFIT = 4217.465729 USDT (42.17%)
   - [x] Market Orders
   - [x] Limit Orders
   - [ ] OCO Orders
+  - [ ] Stop Orders
   
 - [x] Bot CLI - Utilities to support studies
   - [x] Download
   - [x] Plot (Candles + Sell / Buy orders)
 
 ### Exchanges:
-- [x] Binance
+
+Currently, we only support Binance exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface `Exchange`. You can check some examples in [exchange](./pkg/exchange) directory.

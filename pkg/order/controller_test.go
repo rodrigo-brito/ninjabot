@@ -12,7 +12,7 @@ import (
 )
 
 func TestController_calculateProfit(t *testing.T) {
-	storage, err := storage.NewMemory()
+	storage, err := storage.FromMemory()
 	require.NoError(t, err)
 	ctx := context.Background()
 	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))

@@ -30,6 +30,7 @@ type PaperWallet struct {
 	assets       map[string]*assetInfo
 	avgPrice     map[string]float64
 	lastCandle   map[string]model.Candle
+	fistCandle   map[string]model.Candle
 }
 
 type PaperWalletOption func(*PaperWallet)
@@ -62,6 +63,7 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 		baseCoin:   baseCoin,
 		orders:     make([]model.Order, 0),
 		assets:     make(map[string]*assetInfo),
+		fistCandle: make(map[string]model.Candle),
 		lastCandle: make(map[string]model.Candle),
 		avgPrice:   make(map[string]float64),
 	}
@@ -78,7 +80,11 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 }
 
 func (p *PaperWallet) Summary() {
-	var total float64
+	var (
+		total        float64
+		marketChange float64
+	)
+
 	fmt.Println("--------------")
 	fmt.Println("WALLET SUMMARY")
 	fmt.Println("--------------")
@@ -86,15 +92,18 @@ func (p *PaperWallet) Summary() {
 		asset, _ := SplitAssetQuote(pair)
 		quantity := p.assets[asset].Free + p.assets[asset].Lock
 		total += quantity * price
+		marketChange += (p.lastCandle[pair].Close - p.fistCandle[pair].Close) / p.fistCandle[pair].Close
 		fmt.Printf("%f %s\n", quantity, asset)
 	}
+	avgMarketChange := marketChange / float64(len(p.avgPrice))
 	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
 	profit := total + baseCoinValue - p.initialValue
 	fmt.Printf("%f %s\n", baseCoinValue, p.baseCoin)
 	fmt.Println("--------------")
 	fmt.Println("START PORTFOLIO = ", p.initialValue, p.baseCoin)
 	fmt.Println("FINAL PORTFOLIO = ", total+baseCoinValue, p.baseCoin)
-	fmt.Printf("PROFIT = %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
+	fmt.Printf("GROSS PROFIT    =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
+	fmt.Printf("MARKET CHANGE   =  %.2f%%\n", avgMarketChange*100)
 	fmt.Println("--------------")
 }
 
@@ -113,6 +122,9 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 	defer p.Unlock()
 
 	p.lastCandle[candle.Symbol] = candle
+	if _, ok := p.fistCandle[candle.Symbol]; !ok {
+		p.fistCandle[candle.Symbol] = candle
+	}
 
 	for i, order := range p.orders {
 		if order.Status != model.OrderStatusTypeNew {

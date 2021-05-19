@@ -43,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	storage, err := storage.NewMemory()
+	storage, err := storage.FromMemory()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -68,7 +68,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch exchange.Exchange
 
 	var err error
 	if bot.storage == nil {
-		bot.storage, err = storage.New(defaultDatabase)
+		bot.storage, err = storage.FromFile(defaultDatabase)
 		if err != nil {
 			return nil, err
 		}

@@ -17,11 +17,11 @@ func (e MyStrategy) Timeframe() string {
 }
 
 func (e MyStrategy) WarmupPeriod() int {
-	return 21
+	return 9
 }
 
 func (e MyStrategy) Indicators(dataframe *model.Dataframe) {
-	dataframe.Metadata["ema"] = talib.Ema(dataframe.Close, 21)
+	dataframe.Metadata["ema"] = talib.Ema(dataframe.Close, 9)
 }
 
 func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker) {
@@ -33,14 +33,14 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 		log.Error(err)
 	}
 
-	buyAmount := 5000.0             // 200 USDT for each buy
-	if quotePosition > buyAmount && // minimum size
+	if quotePosition > 1000 && // minimum size
 		assetPosition*closePrice < 10 && // no position
 		model.Last(dataframe.Metadata["ema"], 0) > model.Last(dataframe.Metadata["ema"], 1) {
-		size := buyAmount / closePrice
+		size := 4000 / closePrice
 		_, err := broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, size)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
+				"pair":  dataframe.Pair,
 				"side":  model.SideTypeBuy,
 				"close": closePrice,
 				"asset": assetPosition,
@@ -55,6 +55,7 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 		_, err := broker.OrderMarket(model.SideTypeSell, dataframe.Pair, assetPosition)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
+				"pair":  dataframe.Pair,
 				"side":  model.SideTypeSell,
 				"close": closePrice,
 				"asset": assetPosition,
