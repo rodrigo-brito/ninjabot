@@ -295,7 +295,7 @@ func (c *Controller) OrderMarket(side model.SideType, symbol string, size float6
 	return order, err
 }
 
-func (c Controller) Cancel(order model.Order) error {
+func (c *Controller) Cancel(order model.Order) error {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
