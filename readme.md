@@ -83,4 +83,4 @@ Chart available at http://localhost:8080
 
 ### Exchanges:
 
-Currently, we only support Binance exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface `Exchange`. You can check some examples in [exchange](./pkg/exchange) directory.
+Currently, we only support Binance exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface [`Exchange`](https://github.com/rodrigo-brito/ninjabot/blob/main/pkg/exchange/exchange.go#L22-L41). You can check some examples in [exchange](./pkg/exchange) directory.
