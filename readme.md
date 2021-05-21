@@ -22,7 +22,7 @@ Check [example](example) directory:
 ### CLI
 
 To download historical data you can download ninjabot CLI from [release page](https://github.com/rodrigo-brito/ninjabot/releases)
-- Download 30 days: `ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
+- Download 30 days: `ninjabot --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
 
 ### Backtesting Example
 
