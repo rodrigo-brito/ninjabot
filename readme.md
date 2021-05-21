@@ -3,9 +3,9 @@
 [![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
 
-A fast cryptocurrency bot implemented in Go
+A fast cryptocurrency bot implemented in Go. Ninjabot provides a bot framework to create and testing custom strategies.
 
-:warning: **Caution:** Working in progress :construction:
+:warning: **Caution:** Working in progress - It's not production ready :construction:
 
 ## Instalation
 
@@ -83,4 +83,4 @@ Chart available at http://localhost:8080
 
 ### Exchanges:
 
-Currently, we only support Binance exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface [`Exchange`](https://github.com/rodrigo-brito/ninjabot/blob/main/pkg/exchange/exchange.go#L22-L41). You can check some examples in [exchange](./pkg/exchange) directory.
+Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface [`Exchange`](https://github.com/rodrigo-brito/ninjabot/blob/main/pkg/exchange/exchange.go#L22-L41). You can check some examples in [exchange](./pkg/exchange) directory.
