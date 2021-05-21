@@ -3,6 +3,7 @@ package strategy
 import (
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/series"
 )
 
 type Strategy interface {
@@ -26,7 +27,7 @@ func NewStrategyController(pair string, settings model.Settings, strategy Strate
 	strategy.Init(settings)
 	dataframe := &model.Dataframe{
 		Pair:     pair,
-		Metadata: make(map[string][]float64),
+		Metadata: make(map[string]series.Series),
 	}
 
 	return &Controller{

@@ -13,34 +13,34 @@ type MyStrategy struct{}
 func (e MyStrategy) Init(settings model.Settings) {}
 
 func (e MyStrategy) Timeframe() string {
-	return "1d"
+	return "1h"
 }
 
 func (e MyStrategy) WarmupPeriod() int {
-	return 9
+	return 21
 }
 
-func (e MyStrategy) Indicators(dataframe *model.Dataframe) {
-	dataframe.Metadata["ema"] = talib.Ema(dataframe.Close, 9)
+func (e MyStrategy) Indicators(df *model.Dataframe) {
+	df.Metadata["ema9"] = talib.Ema(df.Close, 9)
+	df.Metadata["ema21"] = talib.Ema(df.Close, 21)
 }
 
-func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker) {
-	closePrice := model.Last(dataframe.Close, 0)
-	log.Info("New Candle = ", dataframe.Pair, dataframe.LastUpdate, closePrice)
+func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
+	closePrice := df.Close.Last(0)
+	log.Info("New Candle = ", df.Pair, df.LastUpdate, closePrice)
 
-	assetPosition, quotePosition, err := broker.Position(dataframe.Pair)
+	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
 		log.Error(err)
 	}
 
-	if quotePosition > 1000 && // minimum size
-		assetPosition*closePrice < 10 && // no position
-		model.Last(dataframe.Metadata["ema"], 0) > model.Last(dataframe.Metadata["ema"], 1) {
-		size := 1000 / closePrice
-		_, err := broker.OrderMarket(model.SideTypeBuy, dataframe.Pair, size)
+	buyAmount := 4000.0
+	if quotePosition > buyAmount && df.Metadata["ema9"].Crossover(df.Metadata["ema21"]) {
+		size := buyAmount / closePrice
+		_, err := broker.OrderMarket(model.SideTypeBuy, df.Pair, size)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
-				"pair":  dataframe.Pair,
+				"pair":  df.Pair,
 				"side":  model.SideTypeBuy,
 				"close": closePrice,
 				"asset": assetPosition,
@@ -50,12 +50,12 @@ func (e *MyStrategy) OnCandle(dataframe *model.Dataframe, broker exchange.Broker
 		}
 	}
 
-	if assetPosition*closePrice > 10 && // minimum size
-		model.Last(dataframe.Metadata["ema"], 0) < model.Last(dataframe.Metadata["ema"], 1) {
-		_, err := broker.OrderMarket(model.SideTypeSell, dataframe.Pair, assetPosition)
+	if assetPosition*closePrice > 10 && // minimum tradable size
+		df.Metadata["ema9"].Crossunder(df.Metadata["ema21"]) {
+		_, err := broker.OrderMarket(model.SideTypeSell, df.Pair, assetPosition)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
-				"pair":  dataframe.Pair,
+				"pair":  df.Pair,
 				"side":  model.SideTypeSell,
 				"close": closePrice,
 				"asset": assetPosition,

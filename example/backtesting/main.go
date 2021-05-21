@@ -80,5 +80,8 @@ func main() {
 	// Print bot results
 	bot.Summary()
 	wallet.Summary()
-	chart.Start()
+	err = chart.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 	"time"
+
+	"github.com/rodrigo-brito/ninjabot/pkg/series"
 )
 
 type SideType string
@@ -43,17 +45,17 @@ type Balance struct {
 type Dataframe struct {
 	Pair string
 
-	Close  []float64
-	Open   []float64
-	High   []float64
-	Low    []float64
-	Volume []float64
+	Close  series.Series
+	Open   series.Series
+	High   series.Series
+	Low    series.Series
+	Volume series.Series
 
 	Time       []time.Time
 	LastUpdate time.Time
 
 	// Custom user metadata
-	Metadata map[string][]float64
+	Metadata map[string]series.Series
 }
 
 type Candle struct {
