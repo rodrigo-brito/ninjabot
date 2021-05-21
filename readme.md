@@ -7,7 +7,7 @@ A fast cryptocurrency bot implemented in Go. Ninjabot provides a bot framework t
 
 :warning: **Caution:** Working in progress - It's not production ready :construction:
 
-## Instalation
+## Installation
 
 `go get -u github.com/rodrigo-brito/ninjabot`
 
