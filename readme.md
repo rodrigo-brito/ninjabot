@@ -3,7 +3,7 @@
 [![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
 
-A fast cryptocurrency bot implemented in Go. Ninjabot provides a bot framework to create and testing custom strategies.
+A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets.. 
 
 :warning: **Caution:** Working in progress - It's not production ready :construction:
 
