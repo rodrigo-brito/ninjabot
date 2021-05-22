@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
       b: 40,
       l: 60,
     },
-    showlegend: false,
+    showlegend: true,
     xaxis: {
       autorange: true,
     },
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", function () {
     annotations: orders.map((order) => {
       const annotation = {
         x: order.Date,
-        y: candleByDate[order.Date].Low,
+        y: order.Price,
         xref: "x",
         yref: "y",
         text: "B",
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
         annotation.font.color = "red";
         annotation.arrowcolor = "red";
         annotation.text = "S";
-        annotation.y = candleByDate[order.Date].High;
+        annotation.y = order.Price;
         annotation.ay = -15;
       }
 

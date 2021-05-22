@@ -3,7 +3,7 @@
 [![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
 
-A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets.. 
+A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets. 
 
 :warning: **Caution:** Working in progress - It's not production ready :construction:
 
@@ -13,7 +13,7 @@ A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to
 
 ## Examples of Usage
 
-Check [example](example) directory:
+Check [examples](examples) directory:
 
 - Paper Wallet (Live Simulation)
 - Backtesting
@@ -26,9 +26,9 @@ To download historical data you can download ninjabot CLI from [release page](ht
 
 ### Backtesting Example
 
-- Backtesting from [example](example) directory:
+- Backtesting a custom strategy from [examples](examples) directory:
 ```
-go run example/backtesting/main.go
+go run examples/backtesting/main.go
 ```
 
 Output:
@@ -62,13 +62,14 @@ Chart available at http://localhost:8080
 
 ### Plot result:
 
-<img width="500"  src="https://user-images.githubusercontent.com/7620947/118583297-38f69580-b76b-11eb-8a7f-ad3999541cac.png"/>
+<img width="500"  src="https://user-images.githubusercontent.com/7620947/118583297-38f69580-b76b-11eb-8a7f-ad3999541cac.png" />
 
 ### Roadmap:
 
 - [x] Live Trading
-  - [x] Order Limit, Market, OCO, and Stop
   - [x] Custom Strategy
+  - [x] Order Limit, Market, OCO
+  - [ ] Stop Orders
 
 - [x] Backtesting
   - [x] Paper Wallet (Live Trading with fake wallet)
@@ -78,9 +79,11 @@ Chart available at http://localhost:8080
   - [ ] OCO Orders
   - [ ] Stop Orders
   
-- [x] Bot CLI - Utilities to support studies
-  - [x] Download
+- [x] Bot Utilities
+  - [x] CLI to download historical data
   - [x] Plot (Candles + Sell / Buy orders)
+  - [x] Telegram Notifier
+  - [ ] Plot Indicators
 
 ### Exchanges:
 

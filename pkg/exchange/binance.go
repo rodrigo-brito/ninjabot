@@ -213,6 +213,38 @@ func (b *Binance) OrderOCO(side model.SideType, symbol string,
 	return orders, nil
 }
 
+func (b *Binance) OrderStop(symbol string, quantity float64, limit float64) (model.Order, error) {
+	err := b.validate(model.SideTypeSell, model.OrderTypeStopLoss, symbol, quantity, &limit)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	order, err := b.client.NewCreateOrderService().Symbol(symbol).
+		Type(binance.OrderTypeStopLoss).
+		TimeInForce(binance.TimeInForceTypeGTC).
+		Side(binance.SideTypeSell).
+		Quantity(b.formatQuantity(symbol, quantity)).
+		Price(b.formatPrice(symbol, limit)).
+		Do(b.ctx)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	price, _ := strconv.ParseFloat(order.Price, 64)
+	quantity, _ = strconv.ParseFloat(order.OrigQuantity, 64)
+
+	return model.Order{
+		ExchangeID: order.OrderID,
+		Date:       time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		Symbol:     symbol,
+		Side:       model.SideType(order.Side),
+		Type:       model.OrderType(order.Type),
+		Status:     model.OrderStatusType(order.Status),
+		Price:      price,
+		Quantity:   quantity,
+	}, nil
+}
+
 func (b *Binance) formatPrice(symbol string, value float64) string {
 	precision := -1
 	if limits, ok := b.assetsInfo[symbol]; ok {

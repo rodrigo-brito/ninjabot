@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/rodrigo-brito/ninjabot"
-	"github.com/rodrigo-brito/ninjabot/example"
+	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 	"github.com/rodrigo-brito/ninjabot/pkg/notification"
@@ -51,7 +51,7 @@ func main() {
 		exchange.WithDataFeed(binance),
 	)
 
-	strategy := new(example.MyStrategy)
+	strategy := new(strategies.CrossEMA)
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
