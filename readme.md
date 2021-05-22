@@ -11,7 +11,7 @@ A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to
 
 `go get -u github.com/rodrigo-brito/ninjabot`
 
-## Example of Usage
+## Examples of Usage
 
 Check [example](example) directory:
 
@@ -22,7 +22,7 @@ Check [example](example) directory:
 ### CLI
 
 To download historical data you can download ninjabot CLI from [release page](https://github.com/rodrigo-brito/ninjabot/releases)
-- Download 30 days: `ninjabot --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
+- Download 30 days: `ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
 
 ### Backtesting Example
 
@@ -36,25 +36,26 @@ Output:
 ```
 [SETUP] Using paper wallet                   
 [SETUP] Initial Portfolio = 10000.000000 USDT 
-+---------+--------+-----+------+--------+--------+-----------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT   |
-+---------+--------+-----+------+--------+--------+-----------+
-| ETHUSDT |      8 |   6 |    2 | 75.0 % | 12.215 | 5641.9314 |
-| BTCUSDT |     12 |   5 |    7 | 41.7 % |  5.137 | 3373.9726 |
-+---------+--------+-----+------+--------+--------+-----------+
-|   TOTAL |     20 |  11 |    9 | 55.0 % |  7.968 | 9015.9040 |
-+---------+--------+-----+------+--------+--------+-----------+
++---------+--------+-----+------+--------+--------+------------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |   PROFIT   |
++---------+--------+-----+------+--------+--------+------------+
+| ETHUSDT |     19 |   9 |   10 | 47.4 % |  6.975 |  6334.1268 |
+| BTCUSDT |     17 |   6 |   11 | 35.3 % |  7.734 |  4803.0181 |
++---------+--------+-----+------+--------+--------+------------+
+|   TOTAL |     36 |  15 |   21 | 41.7 % |  7.333 | 11137.1449 |
++---------+--------+-----+------+--------+--------+------------+
 --------------
 WALLET SUMMARY
 --------------
+0.000000 ETH
 0.000000 BTC
-1.723774 ETH
-15015.904020 USDT
+21137.144920 USDT
 --------------
 START PORTFOLIO =  10000 USDT
-FINAL PORTFOLIO =  19015.904019955597 USDT
-GROSS PROFIT    =  9015.904020 USDT (90.16%)
+FINAL PORTFOLIO =  21137.14492013396 USDT
+GROSS PROFIT    =  11137.144920 USDT (111.37%)
 MARKET CHANGE   =  396.71%
+
 --------------
 Chart available at http://localhost:8080
 ```

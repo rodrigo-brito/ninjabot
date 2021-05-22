@@ -133,7 +133,7 @@ func isLastCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (boo
 	case "4h":
 		return next.Minute() == 0 && next.Hour()%4 == 0, nil
 	case "12h":
-		return next.Minute() == 0 && next.Hour()%4 == 0, nil
+		return next.Minute() == 0 && next.Hour()%12 == 0, nil
 	case "1d":
 		return next.Minute() == 0 && next.Hour()%24 == 0, nil
 	case "1w":

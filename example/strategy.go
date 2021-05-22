@@ -13,16 +13,15 @@ type MyStrategy struct{}
 func (e MyStrategy) Init(settings model.Settings) {}
 
 func (e MyStrategy) Timeframe() string {
-	return "1h"
+	return "1d"
 }
 
 func (e MyStrategy) WarmupPeriod() int {
-	return 21
+	return 9
 }
 
 func (e MyStrategy) Indicators(df *model.Dataframe) {
 	df.Metadata["ema9"] = talib.Ema(df.Close, 9)
-	df.Metadata["ema21"] = talib.Ema(df.Close, 21)
 }
 
 func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
@@ -35,7 +34,7 @@ func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
 	}
 
 	buyAmount := 4000.0
-	if quotePosition > buyAmount && df.Metadata["ema9"].Crossover(df.Metadata["ema21"]) {
+	if quotePosition > buyAmount && df.Close.Crossover(df.Metadata["ema9"]) {
 		size := buyAmount / closePrice
 		_, err := broker.OrderMarket(model.SideTypeBuy, df.Pair, size)
 		if err != nil {
@@ -51,7 +50,7 @@ func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
 	}
 
 	if assetPosition*closePrice > 10 && // minimum tradable size
-		df.Metadata["ema9"].Crossunder(df.Metadata["ema21"]) {
+		df.Close.Crossunder(df.Metadata["ema9"]) {
 		_, err := broker.OrderMarket(model.SideTypeSell, df.Pair, assetPosition)
 		if err != nil {
 			log.WithFields(map[string]interface{}{

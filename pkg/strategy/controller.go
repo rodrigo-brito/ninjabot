@@ -6,14 +6,6 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/series"
 )
 
-type Strategy interface {
-	Init(settings model.Settings)
-	Timeframe() string
-	WarmupPeriod() int
-	Indicators(dataframe *model.Dataframe)
-	OnCandle(dataframe *model.Dataframe, broker exchange.Broker)
-}
-
 type Controller struct {
 	strategy  Strategy
 	dataframe *model.Dataframe
