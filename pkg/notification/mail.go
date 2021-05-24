@@ -3,7 +3,6 @@ package notification
 import (
 	"fmt"
 	"net/smtp"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -11,15 +10,34 @@ import (
 )
 
 type Mail struct {
-	SMTPServerAddress string
-	Email             string
-	Password          string
+	auth smtp.Auth
+
+	smtpServerPort    int
+	smtpServerAddress string
+
+	to   string
+	from string
 }
 
 func (t Mail) Notify(text string) {
-	err := smtp.SendMail(t.SMTPServerAddress,
-		smtp.PlainAuth("", t.Email, t.Password, domain(t.SMTPServerAddress)),
-		t.Email, []string{t.Email}, []byte(text))
+	serverAddress := fmt.Sprintf(
+		"%s:%d",
+		t.smtpServerAddress,
+		t.smtpServerPort)
+
+	message := fmt.Sprintf(
+		`To: "User" <%s>\nFrom: "NinjaBot" <%s>\n%s`,
+		t.to,
+		t.from,
+		text,
+	)
+
+	err := smtp.SendMail(
+		serverAddress,
+		t.auth,
+		t.from,
+		[]string{t.to},
+		[]byte(message))
 	if err != nil {
 		log.
 			WithError(err).
@@ -37,23 +55,37 @@ func (t Mail) OnOrder(order model.Order) {
 	case model.OrderStatusTypeCanceled, model.OrderStatusTypeRejected:
 		title = fmt.Sprintf("❌ ORDER CANCELED / REJECTED - %s", order.Symbol)
 	}
-	message := fmt.Sprintf("%s\n-----\n%s", title, order)
+
+	message := fmt.Sprintf("Subject: %s\nOrder %s", title, order)
+
 	t.Notify(message)
 }
 
 func (t Mail) OrError(err error) {
-	title := "🛑 ERROR"
-	message := fmt.Sprintf("%s\n-----\n%s", title, err)
+	message := fmt.Sprintf("Subject: 🛑 ERROR\nError %s", err)
 	t.Notify(message)
 }
 
-func domain(url string) string {
-	splitted := strings.Split(url, ":")
-	if len(splitted) == 0 {
-		return url
+type MailParams struct {
+	SMTPServerPort    int
+	SMTPServerAddress string
+
+	To       string
+	From     string
+	Password string
+}
+
+func NewMail(params MailParams) Mail {
+	return Mail{
+		from:              params.From,
+		to:                params.To,
+		smtpServerPort:    params.SMTPServerPort,
+		smtpServerAddress: params.SMTPServerAddress,
+		auth: smtp.PlainAuth(
+			"",
+			params.From,
+			params.Password,
+			params.SMTPServerAddress,
+		),
 	}
-
-	domain := splitted[0]
-
-	return domain
 }
