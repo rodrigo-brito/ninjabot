@@ -3,7 +3,7 @@
 [![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
 
-A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets.. 
+A fast cryptocurrency bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets.
 
 :warning: **Caution:** Working in progress - It's not production ready :construction:
 
@@ -67,20 +67,22 @@ Chart available at http://localhost:8080
 ### Roadmap:
 
 - [x] Live Trading
-  - [x] Order Limit, Market, OCO, and Stop
+  - [x] Order Limit, Market, OCO
   - [x] Custom Strategy
+  - [ ] Stop Orders
 
 - [x] Backtesting
   - [x] Paper Wallet (Live Trading with fake wallet)
   - [x] Load Feed from CSV
   - [x] Market Orders
-  - [x] Limit Orders
-  - [ ] OCO Orders
+  - [ ] Limit Orders (WIP [#6](https://github.com/rodrigo-brito/ninjabot/pull/6))
+  - [ ] OCO Orders (wIP [#6](https://github.com/rodrigo-brito/ninjabot/pull/6))
   - [ ] Stop Orders
   
 - [x] Bot CLI - Utilities to support studies
   - [x] Download
-  - [x] Plot (Candles + Sell / Buy orders)
+  - [x] Plot (Candles + Orders)
+  - [ ] Support indicator in plot result
 
 ### Exchanges:
 
