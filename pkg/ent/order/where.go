@@ -99,10 +99,17 @@ func ExchangeID(v int64) predicate.Order {
 	})
 }
 
-// Date applies equality check predicate on the "date" field. It's identical to DateEQ.
-func Date(v time.Time) predicate.Order {
+// CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
+func CreatedAt(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDate), v))
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
+	})
+}
+
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
 	})
 }
 
@@ -238,22 +245,22 @@ func ExchangeIDLTE(v int64) predicate.Order {
 	})
 }
 
-// DateEQ applies the EQ predicate on the "date" field.
-func DateEQ(v time.Time) predicate.Order {
+// CreatedAtEQ applies the EQ predicate on the "created_at" field.
+func CreatedAtEQ(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldDate), v))
+		s.Where(sql.EQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// DateNEQ applies the NEQ predicate on the "date" field.
-func DateNEQ(v time.Time) predicate.Order {
+// CreatedAtNEQ applies the NEQ predicate on the "created_at" field.
+func CreatedAtNEQ(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldDate), v))
+		s.Where(sql.NEQ(s.C(FieldCreatedAt), v))
 	})
 }
 
-// DateIn applies the In predicate on the "date" field.
-func DateIn(vs ...time.Time) predicate.Order {
+// CreatedAtIn applies the In predicate on the "created_at" field.
+func CreatedAtIn(vs ...time.Time) predicate.Order {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -265,12 +272,12 @@ func DateIn(vs ...time.Time) predicate.Order {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldDate), v...))
+		s.Where(sql.In(s.C(FieldCreatedAt), v...))
 	})
 }
 
-// DateNotIn applies the NotIn predicate on the "date" field.
-func DateNotIn(vs ...time.Time) predicate.Order {
+// CreatedAtNotIn applies the NotIn predicate on the "created_at" field.
+func CreatedAtNotIn(vs ...time.Time) predicate.Order {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -282,35 +289,111 @@ func DateNotIn(vs ...time.Time) predicate.Order {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldDate), v...))
+		s.Where(sql.NotIn(s.C(FieldCreatedAt), v...))
 	})
 }
 
-// DateGT applies the GT predicate on the "date" field.
-func DateGT(v time.Time) predicate.Order {
+// CreatedAtGT applies the GT predicate on the "created_at" field.
+func CreatedAtGT(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldDate), v))
+		s.Where(sql.GT(s.C(FieldCreatedAt), v))
 	})
 }
 
-// DateGTE applies the GTE predicate on the "date" field.
-func DateGTE(v time.Time) predicate.Order {
+// CreatedAtGTE applies the GTE predicate on the "created_at" field.
+func CreatedAtGTE(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldDate), v))
+		s.Where(sql.GTE(s.C(FieldCreatedAt), v))
 	})
 }
 
-// DateLT applies the LT predicate on the "date" field.
-func DateLT(v time.Time) predicate.Order {
+// CreatedAtLT applies the LT predicate on the "created_at" field.
+func CreatedAtLT(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldDate), v))
+		s.Where(sql.LT(s.C(FieldCreatedAt), v))
 	})
 }
 
-// DateLTE applies the LTE predicate on the "date" field.
-func DateLTE(v time.Time) predicate.Order {
+// CreatedAtLTE applies the LTE predicate on the "created_at" field.
+func CreatedAtLTE(v time.Time) predicate.Order {
 	return predicate.Order(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldDate), v))
+		s.Where(sql.LTE(s.C(FieldCreatedAt), v))
+	})
+}
+
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Order {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Order(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
+	})
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Order {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Order(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
+	})
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
 	})
 }
 

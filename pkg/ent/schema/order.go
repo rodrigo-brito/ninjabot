@@ -13,7 +13,8 @@ func (Order) Fields() []ent.Field {
 	return []ent.Field{
 		field.Int64("id"),
 		field.Int64("exchange_id"),
-		field.Time("date"),
+		field.Time("created_at"),
+		field.Time("updated_at"),
 		field.String("symbol"),
 		field.String("side"),
 		field.String("type"),

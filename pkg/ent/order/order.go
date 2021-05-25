@@ -9,8 +9,10 @@ const (
 	FieldID = "id"
 	// FieldExchangeID holds the string denoting the exchange_id field in the database.
 	FieldExchangeID = "exchange_id"
-	// FieldDate holds the string denoting the date field in the database.
-	FieldDate = "date"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// FieldSymbol holds the string denoting the symbol field in the database.
 	FieldSymbol = "symbol"
 	// FieldSide holds the string denoting the side field in the database.
@@ -35,7 +37,8 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldExchangeID,
-	FieldDate,
+	FieldCreatedAt,
+	FieldUpdatedAt,
 	FieldSymbol,
 	FieldSide,
 	FieldType,

@@ -18,8 +18,10 @@ type Order struct {
 	ID int64 `json:"id,omitempty"`
 	// ExchangeID holds the value of the "exchange_id" field.
 	ExchangeID int64 `json:"exchange_id,omitempty"`
-	// Date holds the value of the "date" field.
-	Date time.Time `json:"date,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Symbol holds the value of the "symbol" field.
 	Symbol string `json:"symbol,omitempty"`
 	// Side holds the value of the "side" field.
@@ -49,7 +51,7 @@ func (*Order) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullInt64)
 		case order.FieldSymbol, order.FieldSide, order.FieldType, order.FieldStatus:
 			values[i] = new(sql.NullString)
-		case order.FieldDate:
+		case order.FieldCreatedAt, order.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Order", columns[i])
@@ -78,11 +80,17 @@ func (o *Order) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				o.ExchangeID = value.Int64
 			}
-		case order.FieldDate:
+		case order.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field date", values[i])
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				o.Date = value.Time
+				o.CreatedAt = value.Time
+			}
+		case order.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				o.UpdatedAt = value.Time
 			}
 		case order.FieldSymbol:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -162,8 +170,10 @@ func (o *Order) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", o.ID))
 	builder.WriteString(", exchange_id=")
 	builder.WriteString(fmt.Sprintf("%v", o.ExchangeID))
-	builder.WriteString(", date=")
-	builder.WriteString(o.Date.Format(time.ANSIC))
+	builder.WriteString(", created_at=")
+	builder.WriteString(o.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", updated_at=")
+	builder.WriteString(o.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", symbol=")
 	builder.WriteString(o.Symbol)
 	builder.WriteString(", side=")
