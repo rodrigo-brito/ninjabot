@@ -193,7 +193,8 @@ func (b *Binance) OrderOCO(side model.SideType, symbol string,
 		quantity, _ := strconv.ParseFloat(order.OrigQuantity, 64)
 		item := model.Order{
 			ExchangeID: order.OrderID,
-			Date:       time.Unix(0, ocoOrder.TransactionTime*int64(time.Millisecond)),
+			CreatedAt:  time.Unix(0, ocoOrder.TransactionTime*int64(time.Millisecond)),
+			UpdatedAt:  time.Unix(0, ocoOrder.TransactionTime*int64(time.Millisecond)),
 			Symbol:     symbol,
 			Side:       model.SideType(order.Side),
 			Type:       model.OrderType(order.Type),
@@ -235,7 +236,8 @@ func (b *Binance) OrderStop(symbol string, quantity float64, limit float64) (mod
 
 	return model.Order{
 		ExchangeID: order.OrderID,
-		Date:       time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
 		Symbol:     symbol,
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
@@ -284,7 +286,8 @@ func (b *Binance) OrderLimit(side model.SideType, symbol string, quantity float6
 
 	return model.Order{
 		ExchangeID: order.OrderID,
-		Date:       time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
 		Symbol:     symbol,
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
@@ -315,7 +318,8 @@ func (b *Binance) OrderMarket(side model.SideType, symbol string, quantity float
 	quantity, _ = strconv.ParseFloat(order.ExecutedQuantity, 64)
 	return model.Order{
 		ExchangeID: order.OrderID,
-		Date:       time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
 		Symbol:     order.Symbol,
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
@@ -377,7 +381,8 @@ func newOrder(order *binance.Order) model.Order {
 	return model.Order{
 		ExchangeID: order.OrderID,
 		Symbol:     order.Symbol,
-		Date:       time.Unix(0, order.Time*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.Time*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
 		Status:     model.OrderStatusType(order.Status),

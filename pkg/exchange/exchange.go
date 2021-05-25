@@ -135,4 +135,8 @@ func (d *DataFeedSubscription) Start() {
 
 	log.Infof("Bot started.")
 	wg.Wait()
+
+	// TODO: remove. Used to wait pending orders (Ticker)
+	fmt.Println("Finishing...")
+	time.Sleep(5 * time.Second)
 }

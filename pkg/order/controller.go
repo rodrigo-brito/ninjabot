@@ -66,25 +66,27 @@ func (s summary) String() string {
 }
 
 type Controller struct {
-	mtx       sync.Mutex
-	ctx       context.Context
-	exchange  exchange.Exchange
-	storage   *ent.Client
-	orderFeed *Feed
-	notifier  notification.Notifier
-	Results   map[string]*summary
+	mtx            sync.Mutex
+	ctx            context.Context
+	exchange       exchange.Exchange
+	storage        *ent.Client
+	orderFeed      *Feed
+	notifier       notification.Notifier
+	Results        map[string]*summary
+	tickerInterval time.Duration
 }
 
 func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client,
 	orderFeed *Feed, notifier notification.Notifier) *Controller {
 
 	return &Controller{
-		ctx:       ctx,
-		storage:   storage,
-		exchange:  exchange,
-		orderFeed: orderFeed,
-		notifier:  notifier,
-		Results:   make(map[string]*summary),
+		ctx:            ctx,
+		storage:        storage,
+		exchange:       exchange,
+		orderFeed:      orderFeed,
+		notifier:       notifier,
+		Results:        make(map[string]*summary),
+		tickerInterval: time.Second,
 	}
 }
 
@@ -139,7 +141,7 @@ func (c *Controller) processTrade(order *model.Order) {
 
 func (c *Controller) Start() {
 	go func() {
-		for range time.NewTicker(10 * time.Second).C {
+		for range time.NewTicker(c.tickerInterval).C {
 			c.mtx.Lock()
 			// get pending orders
 			orders, err := c.storage.Order.Query().
@@ -148,7 +150,7 @@ func (c *Controller) Start() {
 					string(model.OrderStatusTypePartiallyFilled),
 					string(model.OrderStatusTypePendingCancel),
 				)).
-				Order(ent.Desc(order.FieldDate)).
+				Order(ent.Desc(order.FieldCreatedAt)).
 				All(c.ctx)
 			if err != nil {
 				log.Error("orderController/start:", err)
@@ -172,6 +174,7 @@ func (c *Controller) Start() {
 				excOrder.ID = order.ID
 
 				_, err = order.Update().
+					SetUpdatedAt(excOrder.UpdatedAt).
 					SetStatus(string(excOrder.Status)).
 					SetQuantity(excOrder.Quantity).
 					SetPrice(excOrder.Price).Save(c.ctx)
@@ -194,7 +197,8 @@ func (c *Controller) Start() {
 func (c *Controller) createOrder(order *model.Order) error {
 	register, err := c.storage.Order.Create().
 		SetExchangeID(order.ExchangeID).
-		SetDate(order.Date).
+		SetCreatedAt(order.CreatedAt).
+		SetUpdatedAt(order.UpdatedAt).
 		SetPrice(order.Price).
 		SetQuantity(order.Quantity).
 		SetSide(string(order.Side)).

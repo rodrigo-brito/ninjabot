@@ -85,7 +85,6 @@ func (c Candle) ToSlice() []string {
 type Order struct {
 	ID         int64
 	ExchangeID int64
-	Date       time.Time
 	Symbol     string
 	Side       SideType
 	Type       OrderType
@@ -93,12 +92,16 @@ type Order struct {
 	Price      float64
 	Quantity   float64
 
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
 	// OCO Orders only
 	Stop    *float64
 	GroupID *int64
 
 	// Internal use (Plot)
 	Profit float64
+	Candle Candle
 }
 
 func (o Order) String() string {

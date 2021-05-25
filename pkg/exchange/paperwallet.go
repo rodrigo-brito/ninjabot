@@ -158,11 +158,11 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 				order.Type == model.OrderTypeLimitMaker ||
 				order.Type == model.OrderTypeTakeProfit ||
 				order.Type == model.OrderTypeTakeProfitLimit) &&
-				candle.High >= order.Price {
+				candle.Close >= order.Price {
 				orderPrice = order.Price
 			} else if (order.Type == model.OrderTypeStopLossLimit ||
 				order.Type == model.OrderTypeStopLoss) &&
-				candle.Low <= *order.Stop {
+				candle.Close <= *order.Stop {
 				orderPrice = *order.Stop
 			} else {
 				continue
@@ -172,7 +172,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			if order.GroupID != nil {
 				for j, groupOrder := range p.orders {
 					if groupOrder.GroupID != nil && *groupOrder.GroupID == *order.GroupID &&
-						groupOrder.ID != order.ID {
+						groupOrder.ExchangeID != order.ExchangeID {
 						p.orders[j].Status = model.OrderStatusTypeCanceled
 						break
 					}
@@ -187,7 +187,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			percentage := profitValue / (order.Quantity * p.avgPrice[candle.Symbol])
 			log.Infof("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100)
 
-			p.orders[i].Date = candle.Time
+			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
 			p.assets[quote].Free = p.assets[quote].Free + order.Quantity*orderPrice
@@ -237,7 +237,8 @@ func (p *PaperWallet) OrderOCO(side model.SideType, symbol string,
 	groupID := p.ID()
 	limitMaker := model.Order{
 		ExchangeID: p.ID(),
-		Date:       p.lastCandle[symbol].Time,
+		CreatedAt:  p.lastCandle[symbol].Time,
+		UpdatedAt:  p.lastCandle[symbol].Time,
 		Symbol:     symbol,
 		Side:       side,
 		Type:       model.OrderTypeLimitMaker,
@@ -249,7 +250,8 @@ func (p *PaperWallet) OrderOCO(side model.SideType, symbol string,
 
 	stopOrder := model.Order{
 		ExchangeID: p.ID(),
-		Date:       p.lastCandle[symbol].Time,
+		CreatedAt:  p.lastCandle[symbol].Time,
+		UpdatedAt:  p.lastCandle[symbol].Time,
 		Symbol:     symbol,
 		Side:       side,
 		Type:       model.OrderTypeStopLoss,
@@ -282,7 +284,8 @@ func (p *PaperWallet) OrderLimit(side model.SideType, symbol string, size float6
 	}
 	order := model.Order{
 		ExchangeID: p.ID(),
-		Date:       p.lastCandle[symbol].Time,
+		CreatedAt:  p.lastCandle[symbol].Time,
+		UpdatedAt:  p.lastCandle[symbol].Time,
 		Symbol:     symbol,
 		Side:       side,
 		Type:       model.OrderTypeLimit,
@@ -323,7 +326,8 @@ func (p *PaperWallet) OrderMarket(side model.SideType, symbol string, size float
 
 	order := model.Order{
 		ExchangeID: p.ID(),
-		Date:       p.lastCandle[symbol].Time,
+		CreatedAt:  p.lastCandle[symbol].Time,
+		UpdatedAt:  p.lastCandle[symbol].Time,
 		Symbol:     symbol,
 		Side:       side,
 		Type:       model.OrderTypeMarket,

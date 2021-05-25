@@ -38,14 +38,14 @@ document.addEventListener("DOMContentLoaded", function () {
     },
     annotations: orders.map((order) => {
       const annotation = {
-        x: order.Date,
-        y: order.Price,
+        x: order.Candle.Time,
+        y: order.Candle.Low,
         xref: "x",
         yref: "y",
         text: "B",
-        hovertext: `ID: ${order.ID}<br>Size: ${order.Quantity.toPrecision(
-          4
-        )}<br>Type: ${order.Type}<br>${
+        hovertext: `${order.UpdatedAt}<br>ID: ${
+          order.ID
+        }<br>Size: ${order.Quantity.toPrecision(4)}<br>Type: ${order.Type}<br>${
           (order.Profit &&
             "Profit: " + (order.Profit * 100).toPrecision(2) + "%") ||
           ""
@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
         borderpad: 4,
         arrowhead: 2,
         ax: 0,
-        ay: 15,
+        ay: 20,
         font: {
           size: 12,
           color: "green",
@@ -67,9 +67,12 @@ document.addEventListener("DOMContentLoaded", function () {
         annotation.font.color = "red";
         annotation.arrowcolor = "red";
         annotation.text = "S";
-        annotation.y = order.Price;
-        annotation.ay = -15;
+        annotation.y = order.Candle.High;
+        annotation.ay = -20;
+        annotation.valign = "top";
       }
+
+      debugger;
 
       return annotation;
     }),

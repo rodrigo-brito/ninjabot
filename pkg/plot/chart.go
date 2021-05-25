@@ -4,7 +4,9 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
+	"sync"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 
@@ -15,16 +17,38 @@ import (
 var staticFiles embed.FS
 
 type Chart struct {
+	sync.Mutex
 	port    int
 	candles map[string][]model.Candle
 	orders  map[string][]model.Order
 }
 
 func (c *Chart) OnOrder(order model.Order) {
+	c.Lock()
+	defer c.Unlock()
+
+	candles := c.candles[order.Symbol]
+	order.Candle = candles[len(candles)-1]
+
+	// find the closes candle to the order
+	for i := len(candles) - 1; i >= 0; i-- {
+		// check if the the candle is closest
+		newPosition := float64(order.UpdatedAt.Sub(candles[i].Time))
+		lastPosition := float64(order.UpdatedAt.Sub(order.Candle.Time))
+		if math.Abs(newPosition) <= math.Abs(lastPosition) {
+			order.Candle = candles[i]
+		} else {
+			// if the distance increase, stop
+			break
+		}
+	}
 	c.orders[order.Symbol] = append(c.orders[order.Symbol], order)
 }
 
 func (c *Chart) OnCandle(candle model.Candle) {
+	c.Lock()
+	defer c.Unlock()
+
 	if candle.Complete {
 		c.candles[candle.Symbol] = append(c.candles[candle.Symbol], candle)
 	}
@@ -52,6 +76,14 @@ func (c *Chart) Start() error {
 			pair = pairs[0]
 		}
 
+		var filledOrders []model.Order
+		for _, order := range c.orders[pair] {
+			if order.Status != model.OrderStatusTypeFilled {
+				continue
+			}
+			filledOrders = append(filledOrders, order)
+		}
+
 		w.Header().Add("Content-Type", "text/html")
 		err := t.Execute(w, struct {
 			Pairs   []string
@@ -60,7 +92,7 @@ func (c *Chart) Start() error {
 		}{
 			Pairs:   pairs,
 			Candles: c.candles[pair],
-			Orders:  c.orders[pair],
+			Orders:  filledOrders,
 		})
 		if err != nil {
 			log.Error(err)
