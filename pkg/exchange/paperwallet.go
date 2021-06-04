@@ -158,11 +158,11 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 				order.Type == model.OrderTypeLimitMaker ||
 				order.Type == model.OrderTypeTakeProfit ||
 				order.Type == model.OrderTypeTakeProfitLimit) &&
-				candle.Close >= order.Price {
+				candle.High >= order.Price {
 				orderPrice = order.Price
 			} else if (order.Type == model.OrderTypeStopLossLimit ||
 				order.Type == model.OrderTypeStopLoss) &&
-				candle.Close <= *order.Stop {
+				candle.Low <= *order.Stop {
 				orderPrice = *order.Stop
 			} else {
 				continue

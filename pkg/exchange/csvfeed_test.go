@@ -63,7 +63,7 @@ func TestCSVFeed_resample(t *testing.T) {
 	}
 
 	last := feed.CandlePairTimeFrame["BTCUSDT--1d"][23]
-	require.Equal(t, int64(1620946800), last.Time.UTC().Unix()) // 23h
+	require.Equal(t, int64(1620864000), last.Time.UTC().Unix()) // 13 May 2021 00:00:00
 
 	assert.Equal(t, 49537.15, last.Open)
 	assert.Equal(t, 49670.97, last.Close)
