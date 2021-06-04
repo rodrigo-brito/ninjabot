@@ -20,6 +20,7 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
+    format: zip
 
 checksum:
   name_template: 'checksums.txt'

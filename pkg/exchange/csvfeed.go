@@ -158,6 +158,7 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 		}
 
 		if i > 0 && !candles[i-1].Complete {
+			candle.Time = candles[i-1].Time
 			candle.Open = candles[i-1].Open
 			candle.High = math.Max(candles[i-1].High, candle.High)
 			candle.Low = math.Min(candles[i-1].Low, candle.Low)

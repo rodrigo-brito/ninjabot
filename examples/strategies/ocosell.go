@@ -1,4 +1,4 @@
-package example
+package strategies
 
 import (
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
@@ -8,23 +8,32 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type MyStrategy struct{}
+type OCOSell struct{}
 
-func (e MyStrategy) Init(settings model.Settings) {}
+func (e OCOSell) Init(settings model.Settings) {}
 
-func (e MyStrategy) Timeframe() string {
+func (e OCOSell) Timeframe() string {
 	return "1d"
 }
 
-func (e MyStrategy) WarmupPeriod() int {
+func (e OCOSell) WarmupPeriod() int {
 	return 9
 }
 
-func (e MyStrategy) Indicators(df *model.Dataframe) {
-	df.Metadata["ema9"] = talib.Ema(df.Close, 9)
+func (e OCOSell) Indicators(df *model.Dataframe) {
+	df.Metadata["stoch"], df.Metadata["stoch_signal"] = talib.Stoch(
+		df.High,
+		df.Low,
+		df.Close,
+		8,
+		3,
+		talib.SMA,
+		3,
+		talib.SMA,
+	)
 }
 
-func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
+func (e *OCOSell) OnCandle(df *model.Dataframe, broker exchange.Broker) {
 	closePrice := df.Close.Last(0)
 	log.Info("New Candle = ", df.Pair, df.LastUpdate, closePrice)
 
@@ -34,7 +43,7 @@ func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
 	}
 
 	buyAmount := 4000.0
-	if quotePosition > buyAmount && df.Close.Crossover(df.Metadata["ema9"]) {
+	if quotePosition > buyAmount && df.Metadata["stoch"].Crossover(df.Metadata["stoch_signal"]) {
 		size := buyAmount / closePrice
 		_, err := broker.OrderMarket(model.SideTypeBuy, df.Pair, size)
 		if err != nil {
@@ -47,19 +56,16 @@ func (e *MyStrategy) OnCandle(df *model.Dataframe, broker exchange.Broker) {
 				"size":  size,
 			}).Error(err)
 		}
-	}
 
-	if assetPosition*closePrice > 10 && // minimum tradable size
-		df.Close.Crossunder(df.Metadata["ema9"]) {
-		_, err := broker.OrderMarket(model.SideTypeSell, df.Pair, assetPosition)
+		_, err = broker.OrderOCO(model.SideTypeSell, df.Pair, size, closePrice*1.05, closePrice*0.95, closePrice*0.95)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
 				"pair":  df.Pair,
-				"side":  model.SideTypeSell,
+				"side":  model.SideTypeBuy,
 				"close": closePrice,
 				"asset": assetPosition,
 				"quote": quotePosition,
-				"size":  assetPosition,
+				"size":  size,
 			}).Error(err)
 		}
 	}

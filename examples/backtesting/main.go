@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 
-	"github.com/rodrigo-brito/ninjabot/pkg/plot"
-
 	"github.com/rodrigo-brito/ninjabot"
-	"github.com/rodrigo-brito/ninjabot/example"
+	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/plot"
 	"github.com/rodrigo-brito/ninjabot/pkg/storage"
 
 	log "github.com/sirupsen/logrus"
@@ -24,7 +23,7 @@ func main() {
 		},
 	}
 
-	strategy := new(example.MyStrategy)
+	strategy := new(strategies.CrossEMA)
 
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
@@ -66,7 +65,7 @@ func main() {
 		ninjabot.WithCandleSubscription(wallet),
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
-		ninjabot.WithLogLevel(log.ErrorLevel),
+		ninjabot.WithLogLevel(log.InfoLevel),
 	)
 	if err != nil {
 		log.Fatal(err)

@@ -5,9 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/rodrigo-brito/ninjabot/example"
-
 	"github.com/rodrigo-brito/ninjabot"
+	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 	"github.com/rodrigo-brito/ninjabot/pkg/notification"
@@ -39,7 +38,7 @@ func main() {
 	// (Optional) Telegram notifier
 	notifier := notification.NewTelegram(telegramID, telegramKey, telegramChannel)
 
-	strategy := &example.MyStrategy{}
+	strategy := &strategies.CrossEMA{}
 	bot, err := ninjabot.NewBot(ctx, settings, binance, strategy)
 	if err != nil {
 		log.Fatalln(err)

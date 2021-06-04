@@ -34,7 +34,8 @@ type OrderMutation struct {
 	id             *int64
 	exchange_id    *int64
 	addexchange_id *int64
-	date           *time.Time
+	created_at     *time.Time
+	updated_at     *time.Time
 	symbol         *string
 	side           *string
 	_type          *string
@@ -194,40 +195,76 @@ func (m *OrderMutation) ResetExchangeID() {
 	m.addexchange_id = nil
 }
 
-// SetDate sets the "date" field.
-func (m *OrderMutation) SetDate(t time.Time) {
-	m.date = &t
+// SetCreatedAt sets the "created_at" field.
+func (m *OrderMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
 }
 
-// Date returns the value of the "date" field in the mutation.
-func (m *OrderMutation) Date() (r time.Time, exists bool) {
-	v := m.date
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *OrderMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDate returns the old "date" field's value of the Order entity.
+// OldCreatedAt returns the old "created_at" field's value of the Order entity.
 // If the Order object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OrderMutation) OldDate(ctx context.Context) (v time.Time, err error) {
+func (m *OrderMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldDate is only allowed on UpdateOne operations")
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldDate requires an ID field in the mutation")
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDate: %w", err)
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
 	}
-	return oldValue.Date, nil
+	return oldValue.CreatedAt, nil
 }
 
-// ResetDate resets all changes to the "date" field.
-func (m *OrderMutation) ResetDate() {
-	m.date = nil
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *OrderMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *OrderMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *OrderMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *OrderMutation) ResetUpdatedAt() {
+	m.updated_at = nil
 }
 
 // SetSymbol sets the "symbol" field.
@@ -640,12 +677,15 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.exchange_id != nil {
 		fields = append(fields, order.FieldExchangeID)
 	}
-	if m.date != nil {
-		fields = append(fields, order.FieldDate)
+	if m.created_at != nil {
+		fields = append(fields, order.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, order.FieldUpdatedAt)
 	}
 	if m.symbol != nil {
 		fields = append(fields, order.FieldSymbol)
@@ -681,8 +721,10 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case order.FieldExchangeID:
 		return m.ExchangeID()
-	case order.FieldDate:
-		return m.Date()
+	case order.FieldCreatedAt:
+		return m.CreatedAt()
+	case order.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case order.FieldSymbol:
 		return m.Symbol()
 	case order.FieldSide:
@@ -710,8 +752,10 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 	switch name {
 	case order.FieldExchangeID:
 		return m.OldExchangeID(ctx)
-	case order.FieldDate:
-		return m.OldDate(ctx)
+	case order.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case order.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case order.FieldSymbol:
 		return m.OldSymbol(ctx)
 	case order.FieldSide:
@@ -744,12 +788,19 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetExchangeID(v)
 		return nil
-	case order.FieldDate:
+	case order.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDate(v)
+		m.SetCreatedAt(v)
+		return nil
+	case order.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
 		return nil
 	case order.FieldSymbol:
 		v, ok := value.(string)
@@ -937,8 +988,11 @@ func (m *OrderMutation) ResetField(name string) error {
 	case order.FieldExchangeID:
 		m.ResetExchangeID()
 		return nil
-	case order.FieldDate:
-		m.ResetDate()
+	case order.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case order.FieldUpdatedAt:
+		m.ResetUpdatedAt()
 		return nil
 	case order.FieldSymbol:
 		m.ResetSymbol()

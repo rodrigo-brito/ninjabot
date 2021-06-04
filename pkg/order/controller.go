@@ -42,6 +42,11 @@ func (s summary) Payoff() float64 {
 	for _, value := range s.Lose {
 		avgLose += value
 	}
+
+	if len(s.Win) == 0 || len(s.Lose) == 0 {
+		return 0
+	}
+
 	return (avgWin / float64(len(s.Win))) / math.Abs(avgLose/float64(len(s.Lose)))
 }
 
@@ -66,30 +71,39 @@ func (s summary) String() string {
 }
 
 type Controller struct {
-	mtx       sync.Mutex
-	ctx       context.Context
-	exchange  exchange.Exchange
-	storage   *ent.Client
-	orderFeed *Feed
-	notifier  notification.Notifier
-	Results   map[string]*summary
+	mtx            sync.Mutex
+	ctx            context.Context
+	exchange       exchange.Exchange
+	storage        *ent.Client
+	orderFeed      *Feed
+	notifier       notification.Notifier
+	Results        map[string]*summary
+	tickerInterval time.Duration
+	finish         chan bool
 }
 
 func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client,
 	orderFeed *Feed, notifier notification.Notifier) *Controller {
 
 	return &Controller{
-		ctx:       ctx,
-		storage:   storage,
-		exchange:  exchange,
-		orderFeed: orderFeed,
-		notifier:  notifier,
-		Results:   make(map[string]*summary),
+		ctx:            ctx,
+		storage:        storage,
+		exchange:       exchange,
+		orderFeed:      orderFeed,
+		notifier:       notifier,
+		Results:        make(map[string]*summary),
+		tickerInterval: time.Second,
+		finish:         make(chan bool),
 	}
 }
 
 func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
-	orders, err := c.storage.Order.Query().Where(order.IDLT(o.ID), order.Symbol(o.Symbol)).All(c.ctx)
+	orders, err := c.storage.Order.Query().Where(
+		order.UpdatedAtLTE(o.UpdatedAt),
+		order.Status(string(model.OrderStatusTypeFilled)),
+		order.Symbol(o.Symbol),
+		order.IDNEQ(o.ID),
+	).Order(ent.Asc(order.FieldUpdatedAt)).All(c.ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -97,8 +111,12 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 	quantity := 0.0
 	avgPrice := 0.0
 	for _, order := range orders {
-		if order.Side == string(model.SideTypeBuy) && order.Status == string(model.OrderStatusTypeFilled) {
-			avgPrice = (order.Quantity*order.Price + avgPrice*quantity) / (order.Quantity + quantity)
+		if order.Side == string(model.SideTypeBuy) {
+			price := order.Price
+			if order.Type == string(model.OrderTypeStopLoss) || order.Type == string(model.OrderTypeStopLossLimit) {
+				price = order.Stop
+			}
+			avgPrice = (order.Quantity*price + avgPrice*quantity) / (order.Quantity + quantity)
 			quantity += order.Quantity
 		} else {
 			quantity = math.Max(quantity-order.Quantity, 0)
@@ -106,7 +124,11 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 	}
 
 	cost := o.Quantity * avgPrice
-	profitValue := o.Quantity*o.Price - cost
+	price := o.Price
+	if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {
+		price = *o.Stop
+	}
+	profitValue := o.Quantity*price - cost
 	return profitValue, profitValue / cost, nil
 }
 
@@ -137,56 +159,78 @@ func (c *Controller) processTrade(order *model.Order) {
 	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Symbol].String()))
 }
 
+func (c *Controller) Stop() {
+	c.updateOrders()
+	c.finish <- true
+}
+
+func (c *Controller) updateOrders() {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
+	orders, err := c.storage.Order.Query().
+		Where(order.StatusIn(
+			string(model.OrderStatusTypeNew),
+			string(model.OrderStatusTypePartiallyFilled),
+			string(model.OrderStatusTypePendingCancel),
+		)).
+		Order(ent.Asc(order.FieldID)).
+		All(c.ctx)
+	if err != nil {
+		log.Error("orderController/start:", err)
+		c.mtx.Unlock()
+		return
+	}
+
+	// For each pending order, check for updates
+	var updatedOrders []model.Order
+	for _, order := range orders {
+		excOrder, err := c.exchange.Order(order.Symbol, order.ExchangeID)
+		if err != nil {
+			log.WithField("id", order.ExchangeID).Error("orderControler/get: ", err)
+			continue
+		}
+
+		// no status change
+		if string(excOrder.Status) == order.Status {
+			continue
+		}
+
+		excOrder.ID = order.ID
+
+		_, err = order.Update().
+			SetUpdatedAt(excOrder.UpdatedAt).
+			SetStatus(string(excOrder.Status)).
+			SetQuantity(excOrder.Quantity).
+			SetPrice(excOrder.Price).Save(c.ctx)
+		if err != nil {
+			log.Error("orderControler/update: ", err)
+			continue
+		}
+
+		log.Infof("[ORDER %s] %s", excOrder.Status, excOrder)
+		updatedOrders = append(updatedOrders, excOrder)
+	}
+
+	for _, processOrder := range updatedOrders {
+		if processOrder.Side == model.SideTypeSell && processOrder.Status == model.OrderStatusTypeFilled {
+			c.processTrade(&processOrder)
+		}
+		c.orderFeed.Publish(processOrder, false)
+	}
+}
+
 func (c *Controller) Start() {
 	go func() {
-		for range time.NewTicker(10 * time.Second).C {
-			c.mtx.Lock()
-			// get pending orders
-			orders, err := c.storage.Order.Query().
-				Where(order.StatusIn(
-					string(model.OrderStatusTypeNew),
-					string(model.OrderStatusTypePartiallyFilled),
-					string(model.OrderStatusTypePendingCancel),
-				)).
-				Order(ent.Desc(order.FieldDate)).
-				All(c.ctx)
-			if err != nil {
-				log.Error("orderController/start:", err)
-				c.mtx.Unlock()
-				continue
+		ticker := time.NewTicker(c.tickerInterval)
+		for {
+			select {
+			case <-ticker.C:
+				c.updateOrders()
+			case <-c.finish:
+				ticker.Stop()
+				return
 			}
-
-			// For each pending order, check for updates
-			for _, order := range orders {
-				excOrder, err := c.exchange.Order(order.Symbol, order.ExchangeID)
-				if err != nil {
-					log.WithField("id", order.ExchangeID).Error("orderControler/get: ", err)
-					continue
-				}
-
-				// no status change
-				if string(excOrder.Status) == order.Status {
-					continue
-				}
-
-				excOrder.ID = order.ID
-
-				_, err = order.Update().
-					SetStatus(string(excOrder.Status)).
-					SetQuantity(excOrder.Quantity).
-					SetPrice(excOrder.Price).Save(c.ctx)
-				if err != nil {
-					log.Error("orderControler/update: ", err)
-					continue
-				}
-
-				log.Infof("[ORDER %s] %s", excOrder.Status, excOrder)
-				if excOrder.Side == model.SideTypeSell {
-					c.processTrade(&excOrder)
-				}
-				c.orderFeed.Publish(excOrder, false)
-			}
-			c.mtx.Unlock()
 		}
 	}()
 }
@@ -194,7 +238,8 @@ func (c *Controller) Start() {
 func (c *Controller) createOrder(order *model.Order) error {
 	register, err := c.storage.Order.Create().
 		SetExchangeID(order.ExchangeID).
-		SetDate(order.Date).
+		SetCreatedAt(order.CreatedAt).
+		SetUpdatedAt(order.UpdatedAt).
 		SetPrice(order.Price).
 		SetQuantity(order.Quantity).
 		SetSide(string(order.Side)).

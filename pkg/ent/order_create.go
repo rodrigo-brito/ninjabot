@@ -26,9 +26,15 @@ func (oc *OrderCreate) SetExchangeID(i int64) *OrderCreate {
 	return oc
 }
 
-// SetDate sets the "date" field.
-func (oc *OrderCreate) SetDate(t time.Time) *OrderCreate {
-	oc.mutation.SetDate(t)
+// SetCreatedAt sets the "created_at" field.
+func (oc *OrderCreate) SetCreatedAt(t time.Time) *OrderCreate {
+	oc.mutation.SetCreatedAt(t)
+	return oc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (oc *OrderCreate) SetUpdatedAt(t time.Time) *OrderCreate {
+	oc.mutation.SetUpdatedAt(t)
 	return oc
 }
 
@@ -156,8 +162,11 @@ func (oc *OrderCreate) check() error {
 	if _, ok := oc.mutation.ExchangeID(); !ok {
 		return &ValidationError{Name: "exchange_id", err: errors.New("ent: missing required field \"exchange_id\"")}
 	}
-	if _, ok := oc.mutation.Date(); !ok {
-		return &ValidationError{Name: "date", err: errors.New("ent: missing required field \"date\"")}
+	if _, ok := oc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+	}
+	if _, ok := oc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New("ent: missing required field \"updated_at\"")}
 	}
 	if _, ok := oc.mutation.Symbol(); !ok {
 		return &ValidationError{Name: "symbol", err: errors.New("ent: missing required field \"symbol\"")}
@@ -218,13 +227,21 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 		})
 		_node.ExchangeID = value
 	}
-	if value, ok := oc.mutation.Date(); ok {
+	if value, ok := oc.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: order.FieldDate,
+			Column: order.FieldCreatedAt,
 		})
-		_node.Date = value
+		_node.CreatedAt = value
+	}
+	if value, ok := oc.mutation.UpdatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: order.FieldUpdatedAt,
+		})
+		_node.UpdatedAt = value
 	}
 	if value, ok := oc.mutation.Symbol(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

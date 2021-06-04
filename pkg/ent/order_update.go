@@ -40,9 +40,15 @@ func (ou *OrderUpdate) AddExchangeID(i int64) *OrderUpdate {
 	return ou
 }
 
-// SetDate sets the "date" field.
-func (ou *OrderUpdate) SetDate(t time.Time) *OrderUpdate {
-	ou.mutation.SetDate(t)
+// SetCreatedAt sets the "created_at" field.
+func (ou *OrderUpdate) SetCreatedAt(t time.Time) *OrderUpdate {
+	ou.mutation.SetCreatedAt(t)
+	return ou
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (ou *OrderUpdate) SetUpdatedAt(t time.Time) *OrderUpdate {
+	ou.mutation.SetUpdatedAt(t)
 	return ou
 }
 
@@ -238,11 +244,18 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: order.FieldExchangeID,
 		})
 	}
-	if value, ok := ou.mutation.Date(); ok {
+	if value, ok := ou.mutation.CreatedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: order.FieldDate,
+			Column: order.FieldCreatedAt,
+		})
+	}
+	if value, ok := ou.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: order.FieldUpdatedAt,
 		})
 	}
 	if value, ok := ou.mutation.Symbol(); ok {
@@ -373,9 +386,15 @@ func (ouo *OrderUpdateOne) AddExchangeID(i int64) *OrderUpdateOne {
 	return ouo
 }
 
-// SetDate sets the "date" field.
-func (ouo *OrderUpdateOne) SetDate(t time.Time) *OrderUpdateOne {
-	ouo.mutation.SetDate(t)
+// SetCreatedAt sets the "created_at" field.
+func (ouo *OrderUpdateOne) SetCreatedAt(t time.Time) *OrderUpdateOne {
+	ouo.mutation.SetCreatedAt(t)
+	return ouo
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (ouo *OrderUpdateOne) SetUpdatedAt(t time.Time) *OrderUpdateOne {
+	ouo.mutation.SetUpdatedAt(t)
 	return ouo
 }
 
@@ -595,11 +614,18 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 			Column: order.FieldExchangeID,
 		})
 	}
-	if value, ok := ouo.mutation.Date(); ok {
+	if value, ok := ouo.mutation.CreatedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: order.FieldDate,
+			Column: order.FieldCreatedAt,
+		})
+	}
+	if value, ok := ouo.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: order.FieldUpdatedAt,
 		})
 	}
 	if value, ok := ouo.mutation.Symbol(); ok {
