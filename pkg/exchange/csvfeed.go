@@ -44,7 +44,7 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 
 		csvLines, err := csv.NewReader(csvFile).ReadAll()
 		if err != nil {
-			fmt.Println(err)
+			return nil, err
 		}
 
 		var candles []model.Candle

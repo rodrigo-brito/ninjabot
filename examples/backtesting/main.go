@@ -65,7 +65,7 @@ func main() {
 		ninjabot.WithCandleSubscription(wallet),
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
-		ninjabot.WithLogLevel(log.InfoLevel),
+		ninjabot.WithLogLevel(log.WarnLevel),
 	)
 	if err != nil {
 		log.Fatal(err)
