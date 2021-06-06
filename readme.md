@@ -9,7 +9,7 @@ A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits 
 
 ## Installation
 
-`go get -u github.com/rodrigo-brito/ninjabot`
+`go get -u github.com/rodrigo-brito/ninjabot/...`
 
 ## Examples of Usage
 
