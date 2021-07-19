@@ -6,7 +6,7 @@ linters:
   enable:
     - lll
     - gofmt
-    - golint
+    - revive
     - exportloopref
     - unparam
 
