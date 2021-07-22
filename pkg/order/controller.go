@@ -23,6 +23,7 @@ type summary struct {
 	Symbol string
 	Win    []float64
 	Lose   []float64
+	Volume float64
 }
 
 func (s summary) Profit() float64 {
@@ -63,6 +64,7 @@ func (s summary) String() string {
 		{"% Win", fmt.Sprintf("%.1f", float64(len(s.Win))/float64(len(s.Win)+len(s.Lose))*100)},
 		{"Payoff", fmt.Sprintf("%.1f", s.Payoff()*100)},
 		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
+		{"Volume", fmt.Sprintf("%.4f %s", s.Volume, quote)},
 	}
 	table.AppendBulk(data)
 	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT})
@@ -97,7 +99,7 @@ func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent
 	}
 }
 
-func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
+func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume float64, err error) {
 	orders, err := c.storage.Order.Query().Where(
 		order.UpdatedAtLTE(o.UpdatedAt),
 		order.Status(string(model.OrderStatusTypeFilled)),
@@ -105,11 +107,13 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 		order.IDNEQ(o.ID),
 	).Order(ent.Asc(order.FieldUpdatedAt)).All(c.ctx)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 
 	quantity := 0.0
 	avgPrice := 0.0
+	tradeVolume := 0.0
+
 	for _, order := range orders {
 		if order.Side == string(model.SideTypeBuy) {
 			price := order.Price
@@ -121,6 +125,13 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 		} else {
 			quantity = math.Max(quantity-order.Quantity, 0)
 		}
+
+		// Fees are often determined by 30day volume.
+		// binance starts 0.001
+		// others at 0.0025
+		// We keep track of volume to have an indication of costs. (0.001%) binance.
+		// TODO do someting with trading fee
+		tradeVolume += order.Quantity * order.Price
 	}
 
 	cost := o.Quantity * avgPrice
@@ -129,7 +140,7 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 		price = *o.Stop
 	}
 	profitValue := o.Quantity*price - cost
-	return profitValue, profitValue / cost, nil
+	return profitValue, profitValue / cost, tradeVolume, nil
 }
 
 func (c *Controller) notify(message string) {
@@ -140,7 +151,7 @@ func (c *Controller) notify(message string) {
 }
 
 func (c *Controller) processTrade(order *model.Order) {
-	profitValue, profit, err := c.calculateProfit(order)
+	profitValue, profit, volume, err := c.calculateProfit(order)
 	if err != nil {
 		log.Errorf("order/controller storage: %s", err)
 	}
@@ -154,6 +165,8 @@ func (c *Controller) processTrade(order *model.Order) {
 	} else {
 		c.Results[order.Symbol].Lose = append(c.Results[order.Symbol].Lose, profitValue)
 	}
+
+	c.Results[order.Symbol].Volume = volume
 
 	_, quote := exchange.SplitAssetQuote(order.Symbol)
 	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Symbol].String()))
