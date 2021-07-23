@@ -110,7 +110,6 @@ func (p *PaperWallet) Summary() {
 	for symbol, vol := range p.volume {
 		volume += vol
 		fmt.Printf("%s        = %.2f %s\n", symbol, vol, p.baseCoin)
-		//fmt.Println("START PORTFOLIO = ", p.initialValue, p.baseCoin)
 	}
 	fmt.Println()
 
@@ -124,7 +123,7 @@ func (p *PaperWallet) Summary() {
 	fmt.Printf("GROSS PROFIT    =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
 	fmt.Printf("MARKET CHANGE   =  %.2f%%\n", avgMarketChange*100)
 	fmt.Printf("VOLUME          =  %.2f %s\n", volume, p.baseCoin)
-	fmt.Printf("COSTS (0.001*V) =  %.2f %s\n", volume*0.001, p.baseCoin)
+	fmt.Printf("COSTS (0.001*V) =  %.2f %s (ESTIMATION) \n", volume*0.001, p.baseCoin)
 	fmt.Println("--------------")
 }
 

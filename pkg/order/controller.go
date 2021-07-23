@@ -126,11 +126,7 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume flo
 			quantity = math.Max(quantity-order.Quantity, 0)
 		}
 
-		// Fees are often determined by 30day volume.
-		// binance starts 0.001
-		// others at 0.0025
 		// We keep track of volume to have an indication of costs. (0.001%) binance.
-		// TODO do someting with trading fee
 		tradeVolume += order.Quantity * order.Price
 	}
 
