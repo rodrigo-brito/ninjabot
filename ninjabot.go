@@ -130,12 +130,13 @@ func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
 
 func (n *NinjaBot) Summary() {
 	var (
-		total float64
-		wins  int
-		loses int
+		total  float64
+		wins   int
+		loses  int
+		volume float64
 	)
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "Profit"})
+	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "Profit", "Volume"})
 	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
 	avgPayoff := 0.0
 	for _, summary := range n.orderController.Results {
@@ -147,12 +148,15 @@ func (n *NinjaBot) Summary() {
 			strconv.Itoa(len(summary.Lose)),
 			fmt.Sprintf("%.1f %%", float64(len(summary.Win))/float64(len(summary.Win)+len(summary.Lose))*100),
 			fmt.Sprintf("%.3f", summary.Payoff()),
-			fmt.Sprintf("%.4f", summary.Profit()),
+			fmt.Sprintf("%.2f", summary.Profit()),
+			fmt.Sprintf("%.2f", summary.Volume),
 		})
 		total += summary.Profit()
 		wins += len(summary.Win)
 		loses += len(summary.Lose)
+		volume += summary.Volume
 	}
+
 	table.SetFooter([]string{
 		"TOTAL",
 		strconv.Itoa(wins + loses),
@@ -160,7 +164,8 @@ func (n *NinjaBot) Summary() {
 		strconv.Itoa(loses),
 		fmt.Sprintf("%.1f %%", float64(wins)/float64(wins+loses)*100),
 		fmt.Sprintf("%.3f", avgPayoff/float64(wins+loses)),
-		fmt.Sprintf("%.4f", total),
+		fmt.Sprintf("%.2f", total),
+		fmt.Sprintf("%.2f", volume),
 	})
 	table.Render()
 }

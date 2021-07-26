@@ -29,6 +29,7 @@ type PaperWallet struct {
 	orders       []model.Order
 	assets       map[string]*assetInfo
 	avgPrice     map[string]float64
+	volume       map[string]float64
 	lastCandle   map[string]model.Candle
 	fistCandle   map[string]model.Candle
 }
@@ -66,6 +67,7 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 		fistCandle: make(map[string]model.Candle),
 		lastCandle: make(map[string]model.Candle),
 		avgPrice:   make(map[string]float64),
+		volume:     make(map[string]float64),
 	}
 
 	for _, option := range options {
@@ -88,11 +90,13 @@ func (p *PaperWallet) Summary() {
 	var (
 		total        float64
 		marketChange float64
+		volume       float64
 	)
 
 	fmt.Println("--------------")
 	fmt.Println("WALLET SUMMARY")
 	fmt.Println("--------------")
+
 	for pair, price := range p.avgPrice {
 		asset, _ := SplitAssetQuote(pair)
 		quantity := p.assets[asset].Free + p.assets[asset].Lock
@@ -100,6 +104,15 @@ func (p *PaperWallet) Summary() {
 		marketChange += (p.lastCandle[pair].Close - p.fistCandle[pair].Close) / p.fistCandle[pair].Close
 		fmt.Printf("%f %s\n", quantity, asset)
 	}
+
+	fmt.Println()
+	fmt.Println("TRADING VOLUME")
+	for symbol, vol := range p.volume {
+		volume += vol
+		fmt.Printf("%s        = %.2f %s\n", symbol, vol, p.baseCoin)
+	}
+	fmt.Println()
+
 	avgMarketChange := marketChange / float64(len(p.avgPrice))
 	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
 	profit := total + baseCoinValue - p.initialValue
@@ -109,6 +122,8 @@ func (p *PaperWallet) Summary() {
 	fmt.Println("FINAL PORTFOLIO = ", total+baseCoinValue, p.baseCoin)
 	fmt.Printf("GROSS PROFIT    =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
 	fmt.Printf("MARKET CHANGE   =  %.2f%%\n", avgMarketChange*100)
+	fmt.Printf("VOLUME          =  %.2f %s\n", volume, p.baseCoin)
+	fmt.Printf("COSTS (0.001*V) =  %.2f %s (ESTIMATION) \n", volume*0.001, p.baseCoin)
 	fmt.Println("--------------")
 }
 
@@ -136,6 +151,10 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			continue
 		}
 
+		if _, ok := p.volume[candle.Symbol]; !ok {
+			p.volume[candle.Symbol] = 0
+		}
+
 		asset, quote := SplitAssetQuote(order.Symbol)
 		if order.Side == model.SideTypeBuy && order.Price <= candle.Close {
 			if _, ok := p.assets[asset]; !ok {
@@ -143,13 +162,14 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			}
 
 			actualQty := p.assets[asset].Free + p.assets[asset].Lock
-			orderValue := order.Price * order.Quantity
+			orderVolume := order.Price * order.Quantity
 			walletValue := p.avgPrice[candle.Symbol] * actualQty
 
+			p.volume[candle.Symbol] += orderVolume
 			p.orders[i].Status = model.OrderStatusTypeFilled
-			p.avgPrice[candle.Symbol] = (walletValue + orderValue) / (actualQty + order.Quantity)
+			p.avgPrice[candle.Symbol] = (walletValue + orderVolume) / (actualQty + order.Quantity)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
-			p.assets[quote].Lock = p.assets[quote].Lock - orderValue
+			p.assets[quote].Lock = p.assets[quote].Lock - orderVolume
 		}
 
 		if order.Side == model.SideTypeSell {
@@ -168,7 +188,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 				continue
 			}
 
-			// cancel other others from same group
+			// Cancel other orders from same group
 			if order.GroupID != nil {
 				for j, groupOrder := range p.orders {
 					if groupOrder.GroupID != nil && *groupOrder.GroupID == *order.GroupID &&
@@ -183,10 +203,12 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 				p.assets[quote] = &assetInfo{}
 			}
 
+			orderVolume := order.Quantity * orderPrice
 			profitValue := order.Quantity*orderPrice - order.Quantity*p.avgPrice[candle.Symbol]
 			percentage := profitValue / (order.Quantity * p.avgPrice[candle.Symbol])
 			log.Infof("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100)
 
+			p.volume[candle.Symbol] += orderVolume
 			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
@@ -323,6 +345,12 @@ func (p *PaperWallet) OrderMarket(side model.SideType, symbol string, size float
 		p.assets[quote].Free = p.assets[quote].Free - (size * p.lastCandle[symbol].Close)
 		p.assets[asset].Free = p.assets[asset].Free + size
 	}
+
+	if _, ok := p.volume[symbol]; !ok {
+		p.volume[symbol] = 0
+	}
+
+	p.volume[symbol] += p.lastCandle[symbol].Close * size
 
 	order := model.Order{
 		ExchangeID: p.ID(),
