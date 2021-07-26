@@ -106,7 +106,7 @@ func (p *PaperWallet) Summary() {
 	}
 
 	fmt.Println()
-	fmt.Println("VOLUMES:")
+	fmt.Println("TRADING VOLUME")
 	for symbol, vol := range p.volume {
 		volume += vol
 		fmt.Printf("%s        = %.2f %s\n", symbol, vol, p.baseCoin)
