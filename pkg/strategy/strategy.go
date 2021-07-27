@@ -11,4 +11,5 @@ type Strategy interface {
 	WarmupPeriod() int
 	Indicators(dataframe *model.Dataframe)
 	OnCandle(dataframe *model.Dataframe, broker exchange.Broker)
+	Stop(dataframe *model.Dataframe, broker exchange.Broker)
 }

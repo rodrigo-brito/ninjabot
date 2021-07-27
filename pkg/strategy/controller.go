@@ -33,6 +33,11 @@ func (s *Controller) Start() {
 	s.started = true
 }
 
+func (s *Controller) Stop() {
+	s.started = false
+	s.strategy.Stop(s.dataframe, s.broker)
+}
+
 func (s *Controller) OnCandle(candle model.Candle) {
 	s.dataframe.Close = append(s.dataframe.Close, candle.Close)
 	s.dataframe.Open = append(s.dataframe.Open, candle.Open)
