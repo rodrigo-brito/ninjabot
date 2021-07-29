@@ -17,7 +17,7 @@ func (e OCOSell) Timeframe() string {
 }
 
 // Stop can be used to close stuff of plot/log some strategy data
-func (e OCOSell) Stop(df *model.Dataframe, broker exchange.Broker) {}
+func (e OCOSell) Finish(df *model.Dataframe, broker exchange.Broker) {}
 
 func (e OCOSell) WarmupPeriod() int {
 	return 9

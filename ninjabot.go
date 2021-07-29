@@ -172,7 +172,6 @@ func (n *NinjaBot) Summary() {
 
 func (n *NinjaBot) Run(ctx context.Context) error {
 	scs := []*strategy.Controller{}
-	// for each trading pair start strategie
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
 		strategyController := strategy.NewStrategyController(pair, n.settings, n.strategy, n.orderController)
@@ -192,9 +191,9 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 	n.orderController.Start()
 	defer n.orderController.Stop()
 	n.dataFeed.Start()
-	// clean up stratiegies
+	// finish up stratiegies
 	for _, strategyController := range scs {
-		strategyController.Stop()
+		strategyController.Finish()
 	}
 	return nil
 }

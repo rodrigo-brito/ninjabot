@@ -17,7 +17,7 @@ func (e CrossEMA) Timeframe() string {
 }
 
 // Stop can be used to close stuff of plot/log some strategy data
-func (e CrossEMA) Stop(df *model.Dataframe, broker exchange.Broker) {}
+func (e CrossEMA) Finish(df *model.Dataframe, broker exchange.Broker) {}
 
 func (e CrossEMA) WarmupPeriod() int {
 	return 9

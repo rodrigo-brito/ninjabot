@@ -12,6 +12,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
+	github.com/wcharczuk/go-chart/v2 v2.1.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )

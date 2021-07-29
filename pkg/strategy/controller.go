@@ -33,9 +33,9 @@ func (s *Controller) Start() {
 	s.started = true
 }
 
-func (s *Controller) Stop() {
+func (s *Controller) Finish() {
 	s.started = false
-	s.strategy.Stop(s.dataframe, s.broker)
+	s.strategy.Finish(s.dataframe, s.broker)
 }
 
 func (s *Controller) OnCandle(candle model.Candle) {
