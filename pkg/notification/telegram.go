@@ -2,51 +2,205 @@ package notification
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
+	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
+	tb "gopkg.in/tucnak/telebot.v2"
 
+	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/order"
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 )
 
-type Telegram struct {
-	ID        string
-	Key       string
-	ChannelID string
+type telegram struct {
+	settings        model.Settings
+	orderController *order.Controller
+	defaultMenu     *tb.ReplyMarkup
+	client          *tb.Bot
 }
 
-func NewTelegram(id string, key string, channel string) Telegram {
-	return Telegram{
-		ID:        id,
-		Key:       key,
-		ChannelID: channel,
+type Option func(telegram *telegram)
+
+func NewTelegram(orderController *order.Controller, settings model.Settings, options ...Option) (service.Telegram, error) {
+	menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+	poller := &tb.LongPoller{Timeout: 10 * time.Second}
+
+	userMiddleware := tb.NewMiddlewarePoller(poller, func(u *tb.Update) bool {
+		if u.Message == nil || u.Message.Sender == nil {
+			log.Error("no message, ", u)
+			return false
+		}
+
+		for _, user := range settings.Telegram.Users {
+			if u.Message.Sender.ID == user {
+				return true
+			}
+		}
+
+		log.Error("invalid user, ", u.Message)
+		return false
+	})
+
+	client, err := tb.NewBot(tb.Settings{
+		ParseMode: tb.ModeMarkdown,
+		Token:     settings.Telegram.Token,
+		Poller:    userMiddleware,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		statusBtn  = menu.Text("/status")
+		profitBtn  = menu.Text("/profit")
+		balanceBtn = menu.Text("/balance")
+		stopBtn    = menu.Text("/stop")
+		buyBtn     = menu.Text("/buy")
+		sellBtn    = menu.Text("/sell")
+	)
+
+	err = client.SetCommands([]tb.Command{
+		{"/help", "Display help instructions"},
+		{"/stop", "Stop buy and sell coins"},
+		{"/start", "Start buy and sell coins"},
+		{"/status", "Check bot status"},
+		{"/balance", "Wallet balance"},
+		{"/profit", "Summary of last trade results"},
+		{"/buy", "open a buy order"},
+		{"/sell", "open a sell order"},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	menu.Reply(
+		menu.Row(statusBtn, balanceBtn, profitBtn),
+		menu.Row(stopBtn, buyBtn, sellBtn),
+	)
+
+	bot := &telegram{
+		orderController: orderController,
+		client:          client,
+		settings:        settings,
+		defaultMenu:     menu,
+	}
+
+	for _, option := range options {
+		option(bot)
+	}
+
+	client.Handle("/help", bot.HelpHandle)
+	client.Handle("/start", bot.StartHandle)
+	client.Handle("/stop", bot.StopHandle)
+	client.Handle("/status", bot.StatusHandle)
+	client.Handle("/balance", bot.BalanceHandle)
+	client.Handle("/profit", bot.ProfitHandle)
+	client.Handle("/buy", bot.BuyHandle)
+	client.Handle("/sell", bot.SellHandle)
+
+	return bot, nil
+}
+
+func (t telegram) Start() {
+	go t.client.Start()
+}
+
+func (t telegram) Notify(text string) {
+	for _, user := range t.settings.Telegram.Users {
+		_, err := t.client.Send(&tb.User{ID: user}, text)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
-func (t Telegram) Notify(text string) {
-	baseURL, err := url.Parse(fmt.Sprintf("https://api.telegram.org/bot%s:%s/sendMessage", t.ID, t.Key))
+func (t telegram) BalanceHandle(m *tb.Message) {
+	message := "*BALANCE*\n"
+	quotesValue := make(map[string]float64)
+
+	for _, pair := range t.settings.Pairs {
+		assetSymbol, quoteSymbol := exchange.SplitAssetQuote(pair)
+		assetValue, quoteValue, err := t.orderController.Position(pair)
+		if err != nil {
+			t.OrError(err)
+		}
+
+		quotesValue[quoteSymbol] = quoteValue
+		message += fmt.Sprintf("%s: `%.4f`\n", assetSymbol, assetValue)
+	}
+
+	for quote, value := range quotesValue {
+		message += fmt.Sprintf("%s: `%.4f`\n", quote, value)
+	}
+
+	_, err := t.client.Send(m.Sender, message)
 	if err != nil {
 		log.Error(err)
 	}
+}
 
-	params := url.Values{}
-	params.Add("chat_id", t.ChannelID)
-	params.Add("text", text)
+func (t telegram) HelpHandle(m *tb.Message) {
+	commands, err := t.client.GetCommands()
+	if err != nil {
+		t.OrError(err)
+	}
 
-	baseURL.RawQuery = params.Encode()
-	resp, err := http.Get(baseURL.String())
+	lines := make([]string, 0, len(commands))
+	for _, command := range commands {
+		lines = append(lines, fmt.Sprintf("/%s - %s", command.Text, command.Description))
+	}
+
+	_, err = t.client.Send(m.Sender, strings.Join(lines, "\n"))
 	if err != nil {
 		log.Error(err)
 	}
-	defer resp.Body.Close()
+}
 
-	if resp.StatusCode >= http.StatusBadRequest {
-		log.Errorf("notification/telegram: %d - %s", resp.StatusCode, resp.Status)
+func (t telegram) ProfitHandle(m *tb.Message) {
+	_, err := t.client.Send(m.Sender, "not implemented yet")
+	if err != nil {
+		log.Error(err)
 	}
 }
 
-func (t Telegram) OnOrder(order model.Order) {
+func (t telegram) BuyHandle(m *tb.Message) {
+	_, err := t.client.Send(m.Sender, "not implemented yet")
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (t telegram) StatusHandle(m *tb.Message) {
+	_, err := t.client.Send(m.Sender, "not implemented yet")
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (t telegram) SellHandle(m *tb.Message) {
+	_, err := t.client.Send(m.Sender, "not implemented yet")
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (t telegram) StartHandle(m *tb.Message) {
+	_, err := t.client.Send(m.Sender, "Bot started", t.defaultMenu)
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (t telegram) StopHandle(m *tb.Message) {
+	_, err := t.client.Send(m.Sender, "Bot stopped. To start again, use /start", t.defaultMenu)
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (t telegram) OnOrder(order model.Order) {
 	title := ""
 	switch order.Status {
 	case model.OrderStatusTypeFilled:
@@ -60,7 +214,7 @@ func (t Telegram) OnOrder(order model.Order) {
 	t.Notify(message)
 }
 
-func (t Telegram) OrError(err error) {
+func (t telegram) OrError(err error) {
 	title := "🛑 ERROR"
 	message := fmt.Sprintf("%s\n-----\n%s", title, err)
 	t.Notify(message)

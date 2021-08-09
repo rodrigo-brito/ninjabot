@@ -1,12 +1,12 @@
 package exchange
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
 	"sync"
-	"time"
+
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 
@@ -19,34 +19,13 @@ var (
 	ErrInvalidAsset      = errors.New("invalid asset")
 )
 
-type Exchange interface {
-	Broker
-	Feeder
-}
-
-type Feeder interface {
-	CandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
-	CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
-	CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error)
-}
-
-type Broker interface {
-	Account() (model.Account, error)
-	Position(symbol string) (asset, quote float64, err error)
-	Order(symbol string, id int64) (model.Order, error)
-	OrderOCO(side model.SideType, symbol string, size, price, stop, stopLimit float64) ([]model.Order, error)
-	OrderLimit(side model.SideType, symbol string, size float64, limit float64) (model.Order, error)
-	OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error)
-	Cancel(model.Order) error
-}
-
 type DataFeed struct {
 	Data chan model.Candle
 	Err  chan error
 }
 
 type DataFeedSubscription struct {
-	exchange                Exchange
+	exchange                service.Exchange
 	Feeds                   []string
 	DataFeeds               map[string]*DataFeed
 	SubscriptionsByDataFeed map[string][]Subscription
@@ -59,7 +38,7 @@ type Subscription struct {
 
 type DataFeedConsumer func(model.Candle)
 
-func NewDataFeed(exchange Exchange) *DataFeedSubscription {
+func NewDataFeed(exchange service.Exchange) *DataFeedSubscription {
 	return &DataFeedSubscription{
 		exchange:                exchange,
 		DataFeeds:               make(map[string]*DataFeed),

@@ -1,8 +1,8 @@
 package strategies
 
 import (
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 
 	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
@@ -33,7 +33,7 @@ func (e OCOSell) Indicators(df *model.Dataframe) {
 	)
 }
 
-func (e *OCOSell) OnCandle(df *model.Dataframe, broker exchange.Broker) {
+func (e *OCOSell) OnCandle(df *model.Dataframe, broker service.Broker) {
 	closePrice := df.Close.Last(0)
 	log.Info("New Candle = ", df.Pair, df.LastUpdate, closePrice)
 

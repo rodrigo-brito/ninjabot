@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
+
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/ent/order"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 
 	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
@@ -55,7 +56,6 @@ func (s summary) String() string {
 	tableString := &strings.Builder{}
 	table := tablewriter.NewWriter(tableString)
 	_, quote := exchange.SplitAssetQuote(s.Symbol)
-
 	data := [][]string{
 		{"Coin", s.Symbol},
 		{"Trades", strconv.Itoa(len(s.Lose) + len(s.Win))},
@@ -75,17 +75,17 @@ func (s summary) String() string {
 type Controller struct {
 	mtx            sync.Mutex
 	ctx            context.Context
-	exchange       exchange.Exchange
+	exchange       service.Exchange
 	storage        *ent.Client
 	orderFeed      *Feed
-	notifier       notification.Notifier
+	notifier       service.Notifier
 	Results        map[string]*summary
 	tickerInterval time.Duration
 	finish         chan bool
 }
 
-func NewController(ctx context.Context, exchange exchange.Exchange, storage *ent.Client,
-	orderFeed *Feed, notifier notification.Notifier) *Controller {
+func NewController(ctx context.Context, exchange service.Exchange, storage *ent.Client,
+	orderFeed *Feed, notifier service.Notifier) *Controller {
 
 	return &Controller{
 		ctx:            ctx,

@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
@@ -25,7 +27,7 @@ type PaperWallet struct {
 	takerFee     float64
 	makerFee     float64
 	initialValue float64
-	feeder       Feeder
+	feeder       service.Feeder
 	orders       []model.Order
 	assets       map[string]*assetInfo
 	avgPrice     map[string]float64
@@ -52,7 +54,7 @@ func WithPaperFee(maker, taker float64) PaperWalletOption {
 	}
 }
 
-func WithDataFeed(feeder Feeder) PaperWalletOption {
+func WithDataFeed(feeder service.Feeder) PaperWalletOption {
 	return func(wallet *PaperWallet) {
 		wallet.feeder = feeder
 	}

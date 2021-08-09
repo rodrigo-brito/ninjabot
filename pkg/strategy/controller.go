@@ -1,20 +1,20 @@
 package strategy
 
 import (
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 	"github.com/rodrigo-brito/ninjabot/pkg/series"
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 )
 
 type Controller struct {
 	strategy  Strategy
 	dataframe *model.Dataframe
-	broker    exchange.Broker
+	broker    service.Broker
 	started   bool
 }
 
 func NewStrategyController(pair string, settings model.Settings, strategy Strategy,
-	broker exchange.Broker) *Controller {
+	broker service.Broker) *Controller {
 
 	strategy.Init(settings)
 	dataframe := &model.Dataframe{

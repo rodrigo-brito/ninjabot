@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
@@ -23,7 +24,7 @@ func main() {
 		},
 	}
 
-	strategy := new(strategies.CrossEMA)
+	strategy := new(strategies.OCOSell)
 
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
@@ -77,7 +78,7 @@ func main() {
 	}
 
 	// Print bot results
-	bot.Summary()
+	fmt.Println(bot.Summary())
 	wallet.Summary()
 	err = chart.Start()
 	if err != nil {

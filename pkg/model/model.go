@@ -32,8 +32,15 @@ var (
 	OrderStatusTypeExpired         OrderStatusType = "EXPIRED"
 )
 
+type TelegramSettings struct {
+	Enabled bool
+	Token   string
+	Users   []int
+}
+
 type Settings struct {
-	Pairs []string
+	Pairs    []string
+	Telegram TelegramSettings
 }
 
 type Balance struct {

@@ -1,22 +1,21 @@
 package ninjabot
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"strconv"
-
-	"github.com/olekukonko/tablewriter"
-
-	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 
 	"github.com/rodrigo-brito/ninjabot/pkg/ent"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 	"github.com/rodrigo-brito/ninjabot/pkg/order"
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 	"github.com/rodrigo-brito/ninjabot/pkg/storage"
 	"github.com/rodrigo-brito/ninjabot/pkg/strategy"
 
+	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,9 +39,10 @@ type CandleSubscriber interface {
 type NinjaBot struct {
 	storage  *ent.Client
 	settings model.Settings
-	exchange exchange.Exchange
+	exchange service.Exchange
 	strategy strategy.Strategy
-	notifier notification.Notifier
+	notifier service.Notifier
+	telegram service.Telegram
 
 	orderController *order.Controller
 	orderFeed       *order.Feed
@@ -51,7 +51,7 @@ type NinjaBot struct {
 
 type Option func(*NinjaBot)
 
-func NewBot(ctx context.Context, settings model.Settings, exch exchange.Exchange, str strategy.Strategy,
+func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange, str strategy.Strategy,
 	options ...Option) (*NinjaBot, error) {
 
 	bot := &NinjaBot{
@@ -78,6 +78,13 @@ func NewBot(ctx context.Context, settings model.Settings, exch exchange.Exchange
 		bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed, bot.notifier)
 	}
 
+	if settings.Telegram.Enabled {
+		bot.telegram, err = notification.NewTelegram(bot.orderController, settings)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return bot, nil
 }
 
@@ -93,7 +100,7 @@ func WithLogLevel(level log.Level) Option {
 	}
 }
 
-func WithNotifier(notifier notification.Notifier) Option {
+func WithNotifier(notifier service.Notifier) Option {
 	return func(bot *NinjaBot) {
 		bot.notifier = notifier
 		bot.SubscribeOrder(notifier)
@@ -128,17 +135,24 @@ func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
 	}
 }
 
-func (n *NinjaBot) Summary() {
+func (n *NinjaBot) Controller() *order.Controller {
+	return n.orderController
+}
+
+func (n *NinjaBot) Summary() string {
 	var (
 		total  float64
 		wins   int
 		loses  int
 		volume float64
 	)
-	table := tablewriter.NewWriter(os.Stdout)
+
+	buffer := bytes.NewBuffer(nil)
+	table := tablewriter.NewWriter(buffer)
 	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "Profit", "Volume"})
 	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
 	avgPayoff := 0.0
+
 	for _, summary := range n.orderController.Results {
 		avgPayoff += summary.Payoff() * float64(len(summary.Win)+len(summary.Lose))
 		table.Append([]string{
@@ -168,6 +182,8 @@ func (n *NinjaBot) Summary() {
 		fmt.Sprintf("%.2f", volume),
 	})
 	table.Render()
+
+	return buffer.String()
 }
 
 func (n *NinjaBot) Run(ctx context.Context) error {
@@ -186,8 +202,14 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 	}
 
 	n.orderFeed.Start()
+
 	n.orderController.Start()
 	defer n.orderController.Stop()
+
+	if n.telegram != nil {
+		n.telegram.Start()
+	}
+
 	n.dataFeed.Start()
 	return nil
 }

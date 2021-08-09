@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"os"
+	"strconv"
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/notification"
 	"github.com/rodrigo-brito/ninjabot/pkg/storage"
 
 	log "github.com/sirupsen/logrus"
@@ -17,9 +17,8 @@ import (
 func main() {
 	var (
 		ctx             = context.Background()
-		telegramKey     = os.Getenv("TELEGRAM_KEY")
-		telegramID      = os.Getenv("TELEGRAM_ID")
-		telegramChannel = os.Getenv("TELEGRAM_CHANNEL")
+		telegramToken   = os.Getenv("TELEGRAM_TOKEN")
+		telegramUser, _ = strconv.Atoi(os.Getenv("TELEGRAM_USER"))
 	)
 
 	settings := model.Settings{
@@ -28,6 +27,11 @@ func main() {
 			"ETHUSDT",
 			"BNBUSDT",
 			"LTCUSDT",
+		},
+		Telegram: model.TelegramSettings{
+			Enabled: true,
+			Token:   telegramToken,
+			Users:   []int{telegramUser},
 		},
 	}
 
@@ -42,7 +46,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	notifier := notification.NewTelegram(telegramID, telegramKey, telegramChannel)
 	paperWallet := exchange.NewPaperWallet(
 		ctx,
 		"USDT",
@@ -58,7 +61,6 @@ func main() {
 		paperWallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithNotifier(notifier),
 		ninjabot.WithCandleSubscription(paperWallet),
 	)
 	if err != nil {

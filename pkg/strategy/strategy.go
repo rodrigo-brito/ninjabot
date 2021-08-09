@@ -1,8 +1,8 @@
 package strategy
 
 import (
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 )
 
 type Strategy interface {
@@ -10,5 +10,5 @@ type Strategy interface {
 	Timeframe() string
 	WarmupPeriod() int
 	Indicators(dataframe *model.Dataframe)
-	OnCandle(dataframe *model.Dataframe, broker exchange.Broker)
+	OnCandle(dataframe *model.Dataframe, broker service.Broker)
 }
