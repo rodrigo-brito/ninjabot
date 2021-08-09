@@ -6,19 +6,19 @@ import (
 	"os"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rodrigo-brito/ninjabot/pkg/service"
 
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
+	log "github.com/sirupsen/logrus"
 	"github.com/xhit/go-str2duration/v2"
 )
 
 const batchSize = 500
 
 type Downloader struct {
-	exchange exchange.Exchange
+	exchange service.Exchange
 }
 
-func NewDownloader(exchange exchange.Exchange) Downloader {
+func NewDownloader(exchange service.Exchange) Downloader {
 	return Downloader{
 		exchange: exchange,
 	}
