@@ -23,7 +23,7 @@ type telegram struct {
 
 type Option func(telegram *telegram)
 
-func NewTelegram(orderController *order.Controller, settings model.Settings, options ...Option) (service.Telegram, error) {
+func NewTelegram(controller *order.Controller, settings model.Settings, options ...Option) (service.Telegram, error) {
 	menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true}
 	poller := &tb.LongPoller{Timeout: 10 * time.Second}
 
@@ -62,14 +62,14 @@ func NewTelegram(orderController *order.Controller, settings model.Settings, opt
 	)
 
 	err = client.SetCommands([]tb.Command{
-		{"/help", "Display help instructions"},
-		{"/stop", "Stop buy and sell coins"},
-		{"/start", "Start buy and sell coins"},
-		{"/status", "Check bot status"},
-		{"/balance", "Wallet balance"},
-		{"/profit", "Summary of last trade results"},
-		{"/buy", "open a buy order"},
-		{"/sell", "open a sell order"},
+		{Text: "/help", Description: "Display help instructions"},
+		{Text: "/stop", Description: "Stop buy and sell coins"},
+		{Text: "/start", Description: "Start buy and sell coins"},
+		{Text: "/status", Description: "Check bot status"},
+		{Text: "/balance", Description: "Wallet balance"},
+		{Text: "/profit", Description: "Summary of last trade results"},
+		{Text: "/buy", Description: "open a buy order"},
+		{Text: "/sell", Description: "open a sell order"},
 	})
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func NewTelegram(orderController *order.Controller, settings model.Settings, opt
 	)
 
 	bot := &telegram{
-		orderController: orderController,
+		orderController: controller,
 		client:          client,
 		settings:        settings,
 		defaultMenu:     menu,
