@@ -72,6 +72,14 @@ func (s summary) String() string {
 	return tableString.String()
 }
 
+type Status string
+
+const (
+	StatusRunning Status = "running"
+	StatusStopped Status = "stopped"
+	StatusError   Status = "error"
+)
+
 type Controller struct {
 	mtx            sync.Mutex
 	ctx            context.Context
@@ -82,6 +90,7 @@ type Controller struct {
 	Results        map[string]*summary
 	tickerInterval time.Duration
 	finish         chan bool
+	status         Status
 }
 
 func NewController(ctx context.Context, exchange service.Exchange, storage *ent.Client,
@@ -168,11 +177,6 @@ func (c *Controller) processTrade(order *model.Order) {
 	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Symbol].String()))
 }
 
-func (c *Controller) Stop() {
-	c.updateOrders()
-	c.finish <- true
-}
-
 func (c *Controller) updateOrders() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
@@ -229,19 +233,36 @@ func (c *Controller) updateOrders() {
 	}
 }
 
+func (c *Controller) Status() Status {
+	return c.status
+}
+
 func (c *Controller) Start() {
-	go func() {
-		ticker := time.NewTicker(c.tickerInterval)
-		for {
-			select {
-			case <-ticker.C:
-				c.updateOrders()
-			case <-c.finish:
-				ticker.Stop()
-				return
+	if c.status != StatusRunning {
+		c.status = StatusRunning
+		go func() {
+			ticker := time.NewTicker(c.tickerInterval)
+			for {
+				select {
+				case <-ticker.C:
+					c.updateOrders()
+				case <-c.finish:
+					ticker.Stop()
+					return
+				}
 			}
-		}
-	}()
+		}()
+		log.Info("Bot started.")
+	}
+}
+
+func (c *Controller) Stop() {
+	if c.status == StatusRunning {
+		c.status = StatusStopped
+		c.updateOrders()
+		c.finish <- true
+		log.Info("Bot stopped.")
+	}
 }
 
 func (c *Controller) createOrder(order *model.Order) error {

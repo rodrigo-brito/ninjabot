@@ -56,6 +56,7 @@ func NewTelegram(controller *order.Controller, settings model.Settings, options 
 		statusBtn  = menu.Text("/status")
 		profitBtn  = menu.Text("/profit")
 		balanceBtn = menu.Text("/balance")
+		startBtn   = menu.Text("/start")
 		stopBtn    = menu.Text("/stop")
 		buyBtn     = menu.Text("/buy")
 		sellBtn    = menu.Text("/sell")
@@ -77,7 +78,7 @@ func NewTelegram(controller *order.Controller, settings model.Settings, options 
 
 	menu.Reply(
 		menu.Row(statusBtn, balanceBtn, profitBtn),
-		menu.Row(stopBtn, buyBtn, sellBtn),
+		menu.Row(startBtn, stopBtn, buyBtn, sellBtn),
 	)
 
 	bot := &telegram{
@@ -105,6 +106,12 @@ func NewTelegram(controller *order.Controller, settings model.Settings, options 
 
 func (t telegram) Start() {
 	go t.client.Start()
+	for _, id := range t.settings.Telegram.Users {
+		_, err := t.client.Send(&tb.User{ID: id}, "Bot initialized.", t.defaultMenu)
+		if err != nil {
+			log.Error(err)
+		}
+	}
 }
 
 func (t telegram) Notify(text string) {
@@ -159,9 +166,19 @@ func (t telegram) HelpHandle(m *tb.Message) {
 }
 
 func (t telegram) ProfitHandle(m *tb.Message) {
-	_, err := t.client.Send(m.Sender, "not implemented yet")
-	if err != nil {
-		log.Error(err)
+	if len(t.orderController.Results) == 0 {
+		_, err := t.client.Send(m.Sender, "No trades registered.")
+		if err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	for _, summary := range t.orderController.Results {
+		_, err := t.client.Send(m.Sender, fmt.Sprintf("`%s`", summary.String()))
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -173,7 +190,8 @@ func (t telegram) BuyHandle(m *tb.Message) {
 }
 
 func (t telegram) StatusHandle(m *tb.Message) {
-	_, err := t.client.Send(m.Sender, "not implemented yet")
+	status := t.orderController.Status()
+	_, err := t.client.Send(m.Sender, fmt.Sprintf("Status: `%s`", status))
 	if err != nil {
 		log.Error(err)
 	}
@@ -187,14 +205,32 @@ func (t telegram) SellHandle(m *tb.Message) {
 }
 
 func (t telegram) StartHandle(m *tb.Message) {
-	_, err := t.client.Send(m.Sender, "Bot started", t.defaultMenu)
+	if t.orderController.Status() == order.StatusRunning {
+		_, err := t.client.Send(m.Sender, "Bot is already running.", t.defaultMenu)
+		if err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	t.orderController.Start()
+	_, err := t.client.Send(m.Sender, "Bot started.", t.defaultMenu)
 	if err != nil {
 		log.Error(err)
 	}
 }
 
 func (t telegram) StopHandle(m *tb.Message) {
-	_, err := t.client.Send(m.Sender, "Bot stopped. To start again, use /start", t.defaultMenu)
+	if t.orderController.Status() == order.StatusStopped {
+		_, err := t.client.Send(m.Sender, "Bot is already stopped.", t.defaultMenu)
+		if err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	t.orderController.Stop()
+	_, err := t.client.Send(m.Sender, "Bot stopped.", t.defaultMenu)
 	if err != nil {
 		log.Error(err)
 	}

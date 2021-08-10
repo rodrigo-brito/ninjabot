@@ -75,7 +75,7 @@ func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.C
 }
 
 func (d *DataFeedSubscription) Connect() {
-	log.Infof("[SETUP] connecting to exchange")
+	log.Infof("Connecting to the exchange.")
 	for _, feed := range d.Feeds {
 		pair, timeframe := d.pairTimeframeFromKey(feed)
 		ccandle, cerr := d.exchange.CandlesSubscription(pair, timeframe)
@@ -112,6 +112,6 @@ func (d *DataFeedSubscription) Start() {
 		}(key, feed)
 	}
 
-	log.Infof("Bot started.")
+	log.Infof("Data feed connected.")
 	wg.Wait()
 }
