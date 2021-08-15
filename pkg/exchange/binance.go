@@ -329,6 +329,38 @@ func (b *Binance) OrderMarket(side model.SideType, symbol string, quantity float
 	}, nil
 }
 
+func (b *Binance) OrderMarketQuote(side model.SideType, symbol string, quantity float64) (model.Order, error) {
+	err := b.validate(side, model.OrderTypeMarket, symbol, quantity, nil)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	order, err := b.client.NewCreateOrderService().
+		Symbol(symbol).
+		Type(binance.OrderTypeMarket).
+		Side(binance.SideType(side)).
+		QuoteOrderQty(fmt.Sprintf("%.f", quantity)).
+		NewOrderRespType(binance.NewOrderRespTypeFULL).
+		Do(b.ctx)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+	quantity, _ = strconv.ParseFloat(order.ExecutedQuantity, 64)
+	return model.Order{
+		ExchangeID: order.OrderID,
+		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		Symbol:     order.Symbol,
+		Side:       model.SideType(order.Side),
+		Type:       model.OrderType(order.Type),
+		Status:     model.OrderStatusType(order.Status),
+		Price:      cost / quantity,
+		Quantity:   quantity,
+	}, nil
+}
+
 func (b *Binance) Cancel(order model.Order) error {
 	_, err := b.client.NewCancelOrderService().
 		Symbol(order.Symbol).

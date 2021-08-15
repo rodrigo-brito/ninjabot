@@ -343,6 +343,33 @@ func (c *Controller) OrderLimit(side model.SideType, symbol string, size, limit 
 	return order, nil
 }
 
+func (c *Controller) OrderMarketQuote(side model.SideType, symbol string, amount float64) (model.Order, error) {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
+	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
+	order, err := c.exchange.OrderMarketQuote(side, symbol, amount)
+	if err != nil {
+		log.Errorf("order/controller exchange: %s", err)
+		return model.Order{}, err
+	}
+
+	err = c.createOrder(&order)
+	if err != nil {
+		log.Errorf("order/controller storage: %s", err)
+		return model.Order{}, err
+	}
+
+	// calculate profit
+	if order.Side == model.SideTypeSell {
+		c.processTrade(&order)
+	}
+
+	go c.orderFeed.Publish(order, true)
+	log.Infof("[ORDER CREATED] %s", order)
+	return order, err
+}
+
 func (c *Controller) OrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()

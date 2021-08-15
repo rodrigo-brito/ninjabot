@@ -369,6 +369,10 @@ func (p *PaperWallet) OrderMarket(side model.SideType, symbol string, size float
 	return order, nil
 }
 
+func (p *PaperWallet) OrderMarketQuote(side model.SideType, symbol string, quantity float64) (model.Order, error) {
+	return p.OrderMarket(side, symbol, quantity/p.lastCandle[symbol].Close)
+}
+
 func (p *PaperWallet) Cancel(order model.Order) error {
 	p.Lock()
 	defer p.Unlock()

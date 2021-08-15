@@ -2,6 +2,8 @@ package notification
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,11 @@ import (
 	"github.com/rodrigo-brito/ninjabot/pkg/model"
 	"github.com/rodrigo-brito/ninjabot/pkg/order"
 	"github.com/rodrigo-brito/ninjabot/pkg/service"
+)
+
+var (
+	buyRegexp  = regexp.MustCompile(`/buy\s+(?P<pair>\w+)\s+(?P<amount>[0-9]+(?:\.\d+)?)(?P<percent>%)?`)
+	sellRegexp = regexp.MustCompile(`/sell\s+(?P<pair>\w+)\s+(?P<amount>[0-9]+(?:\.\d+)?)(?P<percent>%)?`)
 )
 
 type telegram struct {
@@ -174,8 +181,8 @@ func (t telegram) ProfitHandle(m *tb.Message) {
 		return
 	}
 
-	for _, summary := range t.orderController.Results {
-		_, err := t.client.Send(m.Sender, fmt.Sprintf("`%s`", summary.String()))
+	for pair, summary := range t.orderController.Results {
+		_, err := t.client.Send(m.Sender, fmt.Sprintf("*PAIR*: `%s`\n`%s`", pair, summary.String()))
 		if err != nil {
 			log.Error(err)
 		}
@@ -183,22 +190,111 @@ func (t telegram) ProfitHandle(m *tb.Message) {
 }
 
 func (t telegram) BuyHandle(m *tb.Message) {
-	_, err := t.client.Send(m.Sender, "not implemented yet")
-	if err != nil {
-		log.Error(err)
+	match := buyRegexp.FindStringSubmatch(m.Text)
+	if len(match) == 0 {
+		_, err := t.client.Send(m.Sender, "Invalid command.\nExamples of usage:\n`/buy BTCUSDT 100`\n\n`/buy BTCUSDT 50%`")
+		if err != nil {
+			log.Error(err)
+		}
+		return
 	}
+
+	command := make(map[string]string)
+	for i, name := range buyRegexp.SubexpNames() {
+		if i != 0 && name != "" {
+			command[name] = match[i]
+		}
+	}
+
+	pair := strings.ToUpper(command["pair"])
+	amount, err := strconv.ParseFloat(command["amount"], 64)
+	if err != nil {
+		t.OrError(err)
+		return
+	} else if amount <= 0 {
+		_, err := t.client.Send(m.Sender, "Invalid amount")
+		if err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	if command["percent"] != "" {
+		_, quote, err := t.orderController.Position(pair)
+		if err != nil {
+			t.OrError(err)
+			return
+		}
+
+		amount = amount * quote / 100.0
+	}
+
+	order, err := t.orderController.OrderMarketQuote(model.SideTypeBuy, pair, amount)
+	if err != nil {
+		t.OrError(err)
+		return
+	}
+	t.OnOrder(order)
+}
+
+func (t telegram) SellHandle(m *tb.Message) {
+	match := sellRegexp.FindStringSubmatch(m.Text)
+	if len(match) == 0 {
+		_, err := t.client.Send(m.Sender, "Invalid command.\nExample of usage:\n`/sell BTCUSDT 100`\n\n`/sell BTCUSDT 50%")
+		if err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	command := make(map[string]string)
+	for i, name := range sellRegexp.SubexpNames() {
+		if i != 0 && name != "" {
+			command[name] = match[i]
+		}
+	}
+
+	pair := strings.ToUpper(command["pair"])
+	amount, err := strconv.ParseFloat(command["amount"], 64)
+	if err != nil {
+		t.OrError(err)
+		return
+	} else if amount <= 0 {
+		_, err := t.client.Send(m.Sender, "Invalid amount")
+		if err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	if command["percent"] != "" {
+		asset, _, err := t.orderController.Position(pair)
+		if err != nil {
+			t.OrError(err)
+			return
+		}
+
+		amount = amount * asset / 100.0
+		order, err := t.orderController.OrderMarket(model.SideTypeSell, pair, amount)
+		if err != nil {
+			t.OrError(err)
+			return
+		}
+		t.OnOrder(order)
+		return
+	}
+
+	order, err := t.orderController.OrderMarketQuote(model.SideTypeSell, pair, amount)
+	if err != nil {
+		t.OrError(err)
+		return
+	}
+	t.OnOrder(order)
 }
 
 func (t telegram) StatusHandle(m *tb.Message) {
 	status := t.orderController.Status()
 	_, err := t.client.Send(m.Sender, fmt.Sprintf("Status: `%s`", status))
-	if err != nil {
-		log.Error(err)
-	}
-}
-
-func (t telegram) SellHandle(m *tb.Message) {
-	_, err := t.client.Send(m.Sender, "not implemented yet")
 	if err != nil {
 		log.Error(err)
 	}
@@ -251,6 +347,7 @@ func (t telegram) OnOrder(order model.Order) {
 }
 
 func (t telegram) OrError(err error) {
+	log.Error(err)
 	title := "🛑 ERROR"
 	message := fmt.Sprintf("%s\n-----\n%s", title, err)
 	t.Notify(message)
