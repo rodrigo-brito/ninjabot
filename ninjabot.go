@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/rodrigo-brito/ninjabot/pkg/ent"
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
-	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/notification"
-	"github.com/rodrigo-brito/ninjabot/pkg/order"
-	"github.com/rodrigo-brito/ninjabot/pkg/service"
-	"github.com/rodrigo-brito/ninjabot/pkg/storage"
-	"github.com/rodrigo-brito/ninjabot/pkg/strategy"
+	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/rodrigo-brito/ninjabot/notification"
+	"github.com/rodrigo-brito/ninjabot/order"
+	"github.com/rodrigo-brito/ninjabot/service"
+	"github.com/rodrigo-brito/ninjabot/storage"
+	"github.com/rodrigo-brito/ninjabot/strategy"
 
 	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
@@ -37,7 +36,7 @@ type CandleSubscriber interface {
 }
 
 type NinjaBot struct {
-	storage  *ent.Client
+	storage  *storage.Client
 	settings model.Settings
 	exchange service.Exchange
 	strategy strategy.Strategy
@@ -88,7 +87,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 	return bot, nil
 }
 
-func WithStorage(storage *ent.Client) Option {
+func WithStorage(storage *storage.Client) Option {
 	return func(bot *NinjaBot) {
 		bot.storage = storage
 	}
@@ -189,7 +188,7 @@ func (n *NinjaBot) Summary() string {
 func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
-		strategyController := strategy.NewStrategyController(pair, n.settings, n.strategy, n.orderController)
+		strategyController := strategy.NewStrategyController(pair, n.strategy, n.orderController)
 		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)
 
 		// preload candles to warmup strategy

@@ -7,9 +7,8 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
-	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/storage"
+	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/storage"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -21,14 +20,14 @@ func main() {
 		telegramUser, _ = strconv.Atoi(os.Getenv("TELEGRAM_USER"))
 	)
 
-	settings := model.Settings{
+	settings := ninjabot.Settings{
 		Pairs: []string{
 			"BTCUSDT",
 			"ETHUSDT",
 			"BNBUSDT",
 			"LTCUSDT",
 		},
-		Telegram: model.TelegramSettings{
+		Telegram: ninjabot.TelegramSettings{
 			Enabled: true,
 			Token:   telegramToken,
 			Users:   []int{telegramUser},
