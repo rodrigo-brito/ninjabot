@@ -1,7 +1,9 @@
 run:
+  timeout: 1m
   skip-dirs:
     - example
     - pkg/ent
+
 linters:
   enable:
     - lll
