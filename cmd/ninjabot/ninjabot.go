@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	data "github.com/rodrigo-brito/ninjabot/download"
+	"github.com/rodrigo-brito/ninjabot/download"
 	"github.com/rodrigo-brito/ninjabot/exchange"
 
 	"github.com/urfave/cli/v2"
@@ -66,20 +66,20 @@ func main() {
 						return err
 					}
 
-					var options []data.Option
+					var options []download.Option
 					if days := c.Int("days"); days > 0 {
-						options = append(options, data.WithDays(days))
+						options = append(options, download.WithDays(days))
 					}
 
 					start := c.Timestamp("start")
 					end := c.Timestamp("end")
 					if start != nil && end != nil && !start.IsZero() && !end.IsZero() {
-						options = append(options, data.WithInterval(*start, *end))
+						options = append(options, download.WithInterval(*start, *end))
 					} else if start != nil || end != nil {
 						log.Fatal("START and END must be informed together")
 					}
 
-					return data.NewDownloader(exc).Download(c.Context, c.String("pair"),
+					return download.NewDownloader(exc).Download(c.Context, c.String("pair"),
 						c.String("timeframe"), c.String("output"), options...)
 
 				},

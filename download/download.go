@@ -1,4 +1,4 @@
-package data
+package download
 
 import (
 	"context"
