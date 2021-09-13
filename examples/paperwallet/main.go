@@ -7,9 +7,8 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
-	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/storage"
+	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/storage"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -21,14 +20,14 @@ func main() {
 		telegramUser, _ = strconv.Atoi(os.Getenv("TELEGRAM_USER"))
 	)
 
-	settings := model.Settings{
+	settings := ninjabot.Settings{
 		Pairs: []string{
 			"BTCUSDT",
 			"ETHUSDT",
 			"BNBUSDT",
 			"LTCUSDT",
 		},
-		Telegram: model.TelegramSettings{
+		Telegram: ninjabot.TelegramSettings{
 			Enabled: true,
 			Token:   telegramToken,
 			Users:   []int{telegramUser},
@@ -41,11 +40,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// creating a storage to save trades
 	storage, err := storage.FromFile("backtest.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// creating a paper wallet to simulate an exchange waller for fake operataions
 	paperWallet := exchange.NewPaperWallet(
 		ctx,
 		"USDT",
@@ -54,14 +55,17 @@ func main() {
 		exchange.WithDataFeed(binance),
 	)
 
+	// initializing my strategy
 	strategy := new(strategies.CrossEMA)
+
+	// initializer ninjabot
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
 		paperWallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithCandleSubscription(paperWallet),
+		ninjabot.WithPaperWallet(paperWallet),
 	)
 	if err != nil {
 		log.Fatalln(err)

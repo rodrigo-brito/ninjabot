@@ -1,16 +1,14 @@
 package strategies
 
 import (
-	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/service"
+	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/rodrigo-brito/ninjabot/service"
 
 	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
 )
 
 type OCOSell struct{}
-
-func (e OCOSell) Init(settings model.Settings) {}
 
 func (e OCOSell) Timeframe() string {
 	return "1d"
@@ -45,7 +43,7 @@ func (e *OCOSell) OnCandle(df *model.Dataframe, broker service.Broker) {
 	buyAmount := 4000.0
 	if quotePosition > buyAmount && df.Metadata["stoch"].Crossover(df.Metadata["stoch_signal"]) {
 		size := buyAmount / closePrice
-		_, err := broker.OrderMarket(model.SideTypeBuy, df.Pair, size)
+		_, err := broker.CreateOrderMarket(model.SideTypeBuy, df.Pair, size)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
 				"pair":  df.Pair,
@@ -57,7 +55,7 @@ func (e *OCOSell) OnCandle(df *model.Dataframe, broker service.Broker) {
 			}).Error(err)
 		}
 
-		_, err = broker.OrderOCO(model.SideTypeSell, df.Pair, size, closePrice*1.05, closePrice*0.95, closePrice*0.95)
+		_, err = broker.CreateOrderOCO(model.SideTypeSell, df.Pair, size, closePrice*1.05, closePrice*0.95, closePrice*0.95)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
 				"pair":  df.Pair,

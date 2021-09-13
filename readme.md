@@ -21,8 +21,16 @@ Check [examples](examples) directory:
 
 ### CLI
 
-To download historical data you can download ninjabot CLI from [release page](https://github.com/rodrigo-brito/ninjabot/releases)
-- Download 30 days: `ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv`
+To download historical data you can download ninjabot CLI from:
+
+- Pre-build binaries in [release page](https://github.com/rodrigo-brito/ninjabot/releases)
+- Or with `go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest`
+
+**Example of usage**
+```bash
+# Download candles of BTCUSDT to btc.csv file (Last 30 days, timeframe 1D)
+ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv
+```
 
 ### Backtesting Example
 
@@ -64,27 +72,27 @@ Chart available at http://localhost:8080
 
 <img width="500"  src="https://user-images.githubusercontent.com/7620947/118583297-38f69580-b76b-11eb-8a7f-ad3999541cac.png" />
 
-### Roadmap:
+### Features:
 
 - [x] Live Trading
   - [x] Custom Strategy
   - [x] Order Limit, Market, OCO
-  - [ ] Stop Orders
 
 - [x] Backtesting
   - [x] Paper Wallet (Live Trading with fake wallet)
   - [x] Load Feed from CSV
-  - [x] Market Orders
-  - [x] Limit Orders
-  - [x] OCO Orders
-  - [ ] Stop Orders
+  - [x] Order Limit, Market, OCO
 
 - [x] Bot Utilities
   - [x] CLI to download historical data
   - [x] Plot (Candles + Sell / Buy orders)
-  - [x] Telegram Notifier
+  - [x] Telegram Controller (Status, Buy, Sell)
+
+
+# Roadmap
+  - [ ] Stop Orders in Backtesting
   - [ ] Plot Indicators
 
 ### Exchanges:
 
-Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface [`Exchange`](https://github.com/rodrigo-brito/ninjabot/blob/main/pkg/exchange/exchange.go#L22-L41). You can check some examples in [exchange](./pkg/exchange) directory.
+Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface `Exchange`. You can check some examples in [exchange](./pkg/exchange) directory.

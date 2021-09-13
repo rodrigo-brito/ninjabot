@@ -6,10 +6,9 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
-	"github.com/rodrigo-brito/ninjabot/pkg/exchange"
-	"github.com/rodrigo-brito/ninjabot/pkg/model"
-	"github.com/rodrigo-brito/ninjabot/pkg/plot"
-	"github.com/rodrigo-brito/ninjabot/pkg/storage"
+	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/plot"
+	"github.com/rodrigo-brito/ninjabot/storage"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -17,14 +16,14 @@ import (
 func main() {
 	ctx := context.Background()
 
-	settings := model.Settings{
+	settings := ninjabot.Settings{
 		Pairs: []string{
 			"BTCUSDT",
 			"ETHUSDT",
 		},
 	}
 
-	strategy := new(strategies.OCOSell)
+	strategy := new(strategies.CrossEMA)
 
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
@@ -63,7 +62,7 @@ func main() {
 		wallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithCandleSubscription(wallet),
+		ninjabot.WithPaperWallet(wallet),
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
 		ninjabot.WithLogLevel(log.WarnLevel),

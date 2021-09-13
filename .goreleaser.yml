@@ -3,7 +3,7 @@ before:
     - go mod tidy
 
 builds:
-  - main: ./cmd/cli
+  - main: ./cmd/ninjabot
     id: "ninjabot"
     binary: ninjabot
     env:
