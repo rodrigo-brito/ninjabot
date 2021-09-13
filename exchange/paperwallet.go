@@ -327,6 +327,10 @@ func (p *PaperWallet) CreateOrderMarket(side model.SideType, symbol string, size
 	p.Lock()
 	defer p.Unlock()
 
+	return p.createOrderMarket(side, symbol, size)
+}
+
+func (p *PaperWallet) createOrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
 	asset, quote := SplitAssetQuote(symbol)
 	if side == model.SideTypeSell {
 		if value, ok := p.assets[asset]; !ok || value.Free < size {
@@ -373,8 +377,10 @@ func (p *PaperWallet) CreateOrderMarket(side model.SideType, symbol string, size
 
 func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, symbol string,
 	quantity float64) (model.Order, error) {
+	p.Lock()
+	defer p.Unlock()
 
-	return p.CreateOrderMarket(side, symbol, quantity/p.lastCandle[symbol].Close)
+	return p.createOrderMarket(side, symbol, quantity/p.lastCandle[symbol].Close)
 }
 
 func (p *PaperWallet) Cancel(order model.Order) error {

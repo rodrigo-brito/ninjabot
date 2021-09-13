@@ -62,6 +62,10 @@ func (c Candle) ToSlice() []string {
 	}
 }
 
+func (c Candle) Less(j QItem) bool {
+	return c.Time.Before(j.(Candle).Time)
+}
+
 type Account struct {
 	Balances []Balance
 }

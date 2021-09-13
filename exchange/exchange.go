@@ -29,6 +29,7 @@ type DataFeedSubscription struct {
 	Feeds                   []string
 	DataFeeds               map[string]*DataFeed
 	SubscriptionsByDataFeed map[string][]Subscription
+	SubscriptionsFinish     []func()
 }
 
 type Subscription struct {
@@ -62,6 +63,10 @@ func (d *DataFeedSubscription) Subscribe(pair, timeframe string, consumer DataFe
 		onCandleClose: onCandleClose,
 		consumer:      consumer,
 	})
+}
+
+func (d *DataFeedSubscription) OnClose(onClose func()) {
+	d.SubscriptionsFinish = append(d.SubscriptionsFinish, onClose)
 }
 
 func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.Candle) {
@@ -114,4 +119,11 @@ func (d *DataFeedSubscription) Start() {
 
 	log.Infof("Data feed connected.")
 	wg.Wait()
+
+	// send signal for all finish subscriptions
+	for _, finish := range d.SubscriptionsFinish {
+		finish()
+	}
+
+	log.Infof("Data feed disconnected.")
 }

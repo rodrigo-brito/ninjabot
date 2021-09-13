@@ -140,7 +140,7 @@ func isLastCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (boo
 		return next.Minute() == 0 && next.Hour()%24 == 0 && next.Weekday() == time.Sunday, nil
 	}
 
-	return false, fmt.Errorf("invalid timeframe: 1y")
+	return false, fmt.Errorf("invalid timeframe: %s", targetTimeframe)
 }
 
 func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error {
@@ -166,6 +166,11 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 			candle.Trades += candles[i-1].Trades
 		}
 		candles = append(candles, candle)
+	}
+
+	// remove last candle if not complete
+	if !candles[len(candles)-1].Complete {
+		candles = candles[:len(candles)-1]
 	}
 
 	c.CandlePairTimeFrame[targetKey] = candles

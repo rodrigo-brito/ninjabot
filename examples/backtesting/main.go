@@ -23,7 +23,7 @@ func main() {
 		},
 	}
 
-	strategy := new(strategies.OCOSell)
+	strategy := new(strategies.CrossEMA)
 
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
@@ -62,7 +62,7 @@ func main() {
 		wallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithCandleSubscription(wallet),
+		ninjabot.WithPaperWallet(wallet),
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
 		ninjabot.WithLogLevel(log.WarnLevel),

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,4 +23,23 @@ func TestSeries_LastValues(t *testing.T) {
 		series := Series([]float64{})
 		require.Empty(t, series.LastValues(2))
 	})
+}
+
+func TestNumDecPlaces(t *testing.T) {
+	tt := []struct {
+		Value  float64
+		Expect int64
+	}{
+		{0.1, 1},
+		{0.10001, 5},
+		{1000, 0},
+		{-1000, 0},
+		{-1.1, 1},
+	}
+
+	for _, tc := range tt {
+		t.Run(fmt.Sprintf("given %f", tc.Value), func(t *testing.T) {
+			require.Equal(t, tc.Expect, NumDecPlaces(tc.Value))
+		})
+	}
 }

@@ -40,11 +40,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// creating a storage to save trades
 	storage, err := storage.FromFile("backtest.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// creating a paper wallet to simulate an exchange waller for fake operataions
 	paperWallet := exchange.NewPaperWallet(
 		ctx,
 		"USDT",
@@ -53,14 +55,17 @@ func main() {
 		exchange.WithDataFeed(binance),
 	)
 
+	// initializing my strategy
 	strategy := new(strategies.CrossEMA)
+
+	// initializer ninjabot
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
 		paperWallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithCandleSubscription(paperWallet),
+		ninjabot.WithPaperWallet(paperWallet),
 	)
 	if err != nil {
 		log.Fatalln(err)

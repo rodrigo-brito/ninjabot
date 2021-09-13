@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -18,7 +19,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultDatabase = "ninjabot.db"
+const (
+	defaultDatabase  = "ninjabot.db"
+	candleBufferSize = 1024
+)
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
@@ -36,6 +40,7 @@ type CandleSubscriber interface {
 }
 
 type NinjaBot struct {
+	sync.Mutex
 	storage  *storage.Client
 	settings model.Settings
 	exchange service.Exchange
@@ -43,9 +48,13 @@ type NinjaBot struct {
 	notifier service.Notifier
 	telegram service.Telegram
 
-	orderController *order.Controller
-	orderFeed       *order.Feed
-	dataFeed        *exchange.DataFeedSubscription
+	orderController       *order.Controller
+	priorityQueueCandle   *model.PriorityQueue
+	pendingCandles        chan bool
+	strategiesControllers map[string]*strategy.Controller
+	orderFeed             *order.Feed
+	dataFeed              *exchange.DataFeedSubscription
+	paperWallet           *exchange.PaperWallet
 }
 
 type Option func(*NinjaBot)
@@ -54,11 +63,14 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 	options ...Option) (*NinjaBot, error) {
 
 	bot := &NinjaBot{
-		settings:  settings,
-		exchange:  exch,
-		strategy:  str,
-		orderFeed: order.NewOrderFeed(),
-		dataFeed:  exchange.NewDataFeed(exch),
+		settings:              settings,
+		exchange:              exch,
+		strategy:              str,
+		orderFeed:             order.NewOrderFeed(),
+		dataFeed:              exchange.NewDataFeed(exch),
+		strategiesControllers: make(map[string]*strategy.Controller),
+		priorityQueueCandle:   model.NewPriorityQueue(),
+		pendingCandles:        make(chan bool, candleBufferSize),
 	}
 
 	for _, option := range options {
@@ -109,6 +121,12 @@ func WithNotifier(notifier service.Notifier) Option {
 func WithCandleSubscription(subscriber CandleSubscriber) Option {
 	return func(bot *NinjaBot) {
 		bot.SubscribeCandle(subscriber)
+	}
+}
+
+func WithPaperWallet(wallet *exchange.PaperWallet) Option {
+	return func(bot *NinjaBot) {
+		bot.paperWallet = wallet
 	}
 }
 
@@ -185,11 +203,37 @@ func (n *NinjaBot) Summary() string {
 	return buffer.String()
 }
 
+func (n *NinjaBot) onCandle(candle model.Candle) {
+	n.Lock()
+	n.priorityQueueCandle.Push(candle)
+	n.Unlock()
+	n.pendingCandles <- true
+}
+
+func (n *NinjaBot) processCandles() {
+	for <-n.pendingCandles {
+		n.Lock()
+		item := n.priorityQueueCandle.Pop()
+		n.Unlock()
+
+		candle := item.(model.Candle)
+		if n.paperWallet != nil {
+			n.paperWallet.OnCandle(candle)
+		}
+		n.strategiesControllers[candle.Symbol].OnCandle(candle)
+	}
+}
+
 func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
 		strategyController := strategy.NewStrategyController(pair, n.strategy, n.orderController)
-		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), strategyController.OnCandle, true)
+		strategyController.Start()
+		n.strategiesControllers[pair] = strategyController
+
+		// link to ninja bot controller
+		// TODO: include onCandleClose: false for better precision in OCO orders
+		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
 
 		// preload candles to warmup strategy
 		candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
@@ -197,18 +241,19 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 			return err
 		}
 		n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
-		strategyController.Start()
 	}
 
 	n.orderFeed.Start()
-
 	n.orderController.Start()
 	defer n.orderController.Stop()
-
 	if n.telegram != nil {
 		n.telegram.Start()
 	}
 
-	n.dataFeed.Start()
+	n.dataFeed.OnClose(func() {
+		close(n.pendingCandles)
+	})
+	go n.dataFeed.Start()
+	n.processCandles()
 	return nil
 }
