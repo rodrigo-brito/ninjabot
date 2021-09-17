@@ -37,18 +37,28 @@ func (s summary) Profit() float64 {
 func (s summary) Payoff() float64 {
 	avgWin := 0.0
 	avgLose := 0.0
+
 	for _, value := range s.Win {
 		avgWin += value
 	}
+
 	for _, value := range s.Lose {
 		avgLose += value
 	}
 
-	if len(s.Win) == 0 || len(s.Lose) == 0 {
+	if len(s.Win) == 0 || len(s.Lose) == 0 || avgLose == 0 {
 		return 0
 	}
 
 	return (avgWin / float64(len(s.Win))) / math.Abs(avgLose/float64(len(s.Lose)))
+}
+
+func (s summary) WinPercentage() float64 {
+	if len(s.Win)+len(s.Lose) == 0 {
+		return 0
+	}
+
+	return float64(len(s.Win)) / float64(len(s.Win)+len(s.Lose)) * 100
 }
 
 func (s summary) String() string {
@@ -60,7 +70,7 @@ func (s summary) String() string {
 		{"Trades", strconv.Itoa(len(s.Lose) + len(s.Win))},
 		{"Win", strconv.Itoa(len(s.Win))},
 		{"Loss", strconv.Itoa(len(s.Lose))},
-		{"% Win", fmt.Sprintf("%.1f", float64(len(s.Win))/float64(len(s.Win)+len(s.Lose))*100)},
+		{"% Win", fmt.Sprintf("%.1f", s.WinPercentage())},
 		{"Payoff", fmt.Sprintf("%.1f", s.Payoff()*100)},
 		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
 		{"Volume", fmt.Sprintf("%.4f %s", s.Volume, quote)},
@@ -154,11 +164,20 @@ func (c *Controller) notify(message string) {
 	}
 }
 
+func (c *Controller) notifyError(err error) {
+	log.Error(err)
+	if c.notifier != nil {
+		c.notifier.OrError(err)
+	}
+}
+
 func (c *Controller) processTrade(order *model.Order) {
 	profitValue, profit, volume, err := c.calculateProfit(order)
 	if err != nil {
-		log.Errorf("order/controller storage: %s", err)
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+		return
 	}
+
 	order.Profit = profit
 	if _, ok := c.Results[order.Symbol]; !ok {
 		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
@@ -189,7 +208,7 @@ func (c *Controller) updateOrders() {
 		Order(storage.Asc(order.FieldID)).
 		All(c.ctx)
 	if err != nil {
-		log.Error("orderController/start:", err)
+		c.notifyError(fmt.Errorf("orderController/start: %s", err))
 		c.mtx.Unlock()
 		return
 	}
@@ -216,7 +235,7 @@ func (c *Controller) updateOrders() {
 			SetQuantity(excOrder.Quantity).
 			SetPrice(excOrder.Price).Save(c.ctx)
 		if err != nil {
-			log.Error("orderControler/update: ", err)
+			c.notifyError(fmt.Errorf("orderControler/update: %s", err))
 			continue
 		}
 
@@ -305,14 +324,14 @@ func (c *Controller) CreateOrderOCO(side model.SideType, symbol string, size, pr
 	log.Infof("[ORDER] Creating OCO order for %s", symbol)
 	orders, err := c.exchange.CreateOrderOCO(side, symbol, size, price, stop, stopLimit)
 	if err != nil {
-		log.Errorf("order/controller exchange: %s", err)
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return nil, err
 	}
 
 	for i := range orders {
 		err := c.createOrder(&orders[i])
 		if err != nil {
-			log.Errorf("order/controller storage: %s", err)
+			c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 			return nil, err
 		}
 		go c.orderFeed.Publish(orders[i], true)
@@ -328,13 +347,13 @@ func (c *Controller) CreateOrderLimit(side model.SideType, symbol string, size, 
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, symbol)
 	order, err := c.exchange.CreateOrderLimit(side, symbol, size, limit)
 	if err != nil {
-		log.Errorf("order/controller exchange: %s", err)
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return model.Order{}, err
 	}
 
 	err = c.createOrder(&order)
 	if err != nil {
-		log.Errorf("order/controller storage: %s", err)
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
 	}
 	go c.orderFeed.Publish(order, true)
@@ -349,13 +368,13 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, symbol string, 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
 	order, err := c.exchange.CreateOrderMarketQuote(side, symbol, amount)
 	if err != nil {
-		log.Errorf("order/controller exchange: %s", err)
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return model.Order{}, err
 	}
 
 	err = c.createOrder(&order)
 	if err != nil {
-		log.Errorf("order/controller storage: %s", err)
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
 	}
 
@@ -376,13 +395,13 @@ func (c *Controller) CreateOrderMarket(side model.SideType, symbol string, size 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
 	order, err := c.exchange.CreateOrderMarket(side, symbol, size)
 	if err != nil {
-		log.Errorf("order/controller exchange: %s", err)
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return model.Order{}, err
 	}
 
 	err = c.createOrder(&order)
 	if err != nil {
-		log.Errorf("order/controller storage: %s", err)
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
 	}
 
@@ -410,7 +429,7 @@ func (c *Controller) Cancel(order model.Order) error {
 		SetStatus(string(model.OrderStatusTypePendingCancel)).
 		Save(c.ctx)
 	if err != nil {
-		log.Errorf("order/controller storage: %s", err)
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return err
 	}
 	log.Infof("[ORDER CANCELED] %s", order)

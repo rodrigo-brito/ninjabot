@@ -9,6 +9,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/model"
 
 	"github.com/adshao/go-binance/v2"
+	"github.com/jpillora/backoff"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,6 +54,7 @@ func WithBinanceCredentials(key, secret string) BinanceOption {
 }
 
 func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error) {
+	binance.WebsocketKeepalive = true
 	exchange := &Binance{ctx: ctx}
 	for _, option := range options {
 		option(exchange)
@@ -456,25 +458,38 @@ func (b *Binance) Position(symbol string) (asset, quote float64, err error) {
 	return acc.Balance(assetTick).Free, acc.Balance(quoteTick).Free, nil
 }
 
-func (b *Binance) CandlesSubscription(symbol, period string) (chan model.Candle, chan error) {
+func (b *Binance) CandlesSubscription(ctx context.Context, symbol, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
 
 	go func() {
-		done, _, err := binance.WsKlineServe(symbol, period, func(event *binance.WsKlineEvent) {
-			ccandle <- CandleFromWsKline(symbol, event.Kline)
-		}, func(err error) {
-			cerr <- err
-		})
-		if err != nil {
-			cerr <- err
-			close(cerr)
-			close(ccandle)
-			return
+		b := &backoff.Backoff{
+			Min: 100 * time.Millisecond,
+			Max: 1 * time.Second,
 		}
-		<-done
-		close(cerr)
-		close(ccandle)
+		for {
+			done, _, err := binance.WsKlineServe(symbol, period, func(event *binance.WsKlineEvent) {
+				b.Reset()
+				ccandle <- CandleFromWsKline(symbol, event.Kline)
+			}, func(err error) {
+				cerr <- err
+			})
+			if err != nil {
+				cerr <- err
+				close(cerr)
+				close(ccandle)
+				return
+			}
+
+			select {
+			case <-ctx.Done():
+				close(cerr)
+				close(ccandle)
+				return
+			case <-done:
+				time.Sleep(b.Duration())
+			}
+		}
 	}()
 
 	return ccandle, cerr

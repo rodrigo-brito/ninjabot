@@ -1,6 +1,7 @@
 package exchange
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -83,7 +84,7 @@ func (d *DataFeedSubscription) Connect() {
 	log.Infof("Connecting to the exchange.")
 	for _, feed := range d.Feeds {
 		pair, timeframe := d.pairTimeframeFromKey(feed)
-		ccandle, cerr := d.exchange.CandlesSubscription(pair, timeframe)
+		ccandle, cerr := d.exchange.CandlesSubscription(context.Background(), pair, timeframe)
 		d.DataFeeds[feed] = &DataFeed{
 			Data: ccandle,
 			Err:  cerr,

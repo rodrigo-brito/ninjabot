@@ -13,6 +13,7 @@ jobs:
       - run: go test -race -cover ./...
 
       - name: lint
+        if: github.event_name == 'pull_request'
         uses: golangci/golangci-lint-action@v2.5.2
         with:
           version: latest

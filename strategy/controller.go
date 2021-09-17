@@ -13,7 +13,6 @@ type Controller struct {
 }
 
 func NewStrategyController(pair string, strategy Strategy, broker service.Broker) *Controller {
-
 	dataframe := &model.Dataframe{
 		Pair:     pair,
 		Metadata: make(map[string]model.Series),

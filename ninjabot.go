@@ -94,6 +94,8 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		if err != nil {
 			return nil, err
 		}
+		// register telegram as notifier
+		WithNotifier(bot.telegram)(bot)
 	}
 
 	return bot, nil
@@ -232,7 +234,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.strategiesControllers[pair] = strategyController
 
 		// link to ninja bot controller
-		// TODO: include onCandleClose: false for better precision in OCO orders
+		// TODO: include onCandleClose: `false` to improve precision in OCO orders (backtesting)
 		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
 
 		// preload candles to warmup strategy

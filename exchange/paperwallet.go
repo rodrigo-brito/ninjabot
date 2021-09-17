@@ -413,6 +413,6 @@ func (p *PaperWallet) CandlesByLimit(ctx context.Context, pair, period string, l
 	return p.feeder.CandlesByLimit(ctx, pair, period, limit)
 }
 
-func (p *PaperWallet) CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error) {
-	return p.feeder.CandlesSubscription(pair, timeframe)
+func (p *PaperWallet) CandlesSubscription(ctx context.Context, pair, timeframe string) (chan model.Candle, chan error) {
+	return p.feeder.CandlesSubscription(ctx, pair, timeframe)
 }
