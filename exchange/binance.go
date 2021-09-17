@@ -6,11 +6,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jpillora/backoff"
-
 	"github.com/rodrigo-brito/ninjabot/model"
 
 	"github.com/adshao/go-binance/v2"
+	"github.com/jpillora/backoff"
 	log "github.com/sirupsen/logrus"
 )
 
