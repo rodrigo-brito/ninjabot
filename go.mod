@@ -5,6 +5,7 @@ go 1.16
 require (
 	entgo.io/ent v0.8.0
 	github.com/adshao/go-binance/v2 v2.2.1
+	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/mattn/go-sqlite3 v1.14.7

@@ -15,7 +15,7 @@ type Exchange interface {
 type Feeder interface {
 	CandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
 	CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
-	CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error)
+	CandlesSubscription(ctx context.Context, pair, timeframe string) (chan model.Candle, chan error)
 }
 
 type Broker interface {
@@ -36,6 +36,6 @@ type Notifier interface {
 }
 
 type Telegram interface {
-	Notify(text string)
+	Notifier
 	Start()
 }

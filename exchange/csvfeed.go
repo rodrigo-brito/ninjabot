@@ -202,7 +202,7 @@ func (c *CSVFeed) CandlesByLimit(_ context.Context, pair, timeframe string, limi
 	return result, nil
 }
 
-func (c CSVFeed) CandlesSubscription(pair, timeframe string) (chan model.Candle, chan error) {
+func (c CSVFeed) CandlesSubscription(_ context.Context, pair, timeframe string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
 	key := c.feedTimeframeKey(pair, timeframe)
