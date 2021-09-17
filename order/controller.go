@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
@@ -176,7 +174,7 @@ func (c *Controller) notifyError(err error) {
 func (c *Controller) processTrade(order *model.Order) {
 	profitValue, profit, volume, err := c.calculateProfit(order)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller storage: %s", err))
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return
 	}
 
@@ -210,7 +208,7 @@ func (c *Controller) updateOrders() {
 		Order(storage.Asc(order.FieldID)).
 		All(c.ctx)
 	if err != nil {
-		c.notifyError(errors.Errorf("orderController/start: %s", err))
+		c.notifyError(fmt.Errorf("orderController/start: %s", err))
 		c.mtx.Unlock()
 		return
 	}
@@ -237,7 +235,7 @@ func (c *Controller) updateOrders() {
 			SetQuantity(excOrder.Quantity).
 			SetPrice(excOrder.Price).Save(c.ctx)
 		if err != nil {
-			c.notifyError(errors.Errorf("orderControler/update: %s", err))
+			c.notifyError(fmt.Errorf("orderControler/update: %s", err))
 			continue
 		}
 
@@ -326,14 +324,14 @@ func (c *Controller) CreateOrderOCO(side model.SideType, symbol string, size, pr
 	log.Infof("[ORDER] Creating OCO order for %s", symbol)
 	orders, err := c.exchange.CreateOrderOCO(side, symbol, size, price, stop, stopLimit)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return nil, err
 	}
 
 	for i := range orders {
 		err := c.createOrder(&orders[i])
 		if err != nil {
-			c.notifyError(errors.Errorf("order/controller storage: %s", err))
+			c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 			return nil, err
 		}
 		go c.orderFeed.Publish(orders[i], true)
@@ -349,13 +347,13 @@ func (c *Controller) CreateOrderLimit(side model.SideType, symbol string, size, 
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, symbol)
 	order, err := c.exchange.CreateOrderLimit(side, symbol, size, limit)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return model.Order{}, err
 	}
 
 	err = c.createOrder(&order)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller storage: %s", err))
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
 	}
 	go c.orderFeed.Publish(order, true)
@@ -370,13 +368,13 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, symbol string, 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
 	order, err := c.exchange.CreateOrderMarketQuote(side, symbol, amount)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return model.Order{}, err
 	}
 
 	err = c.createOrder(&order)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller storage: %s", err))
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
 	}
 
@@ -397,13 +395,13 @@ func (c *Controller) CreateOrderMarket(side model.SideType, symbol string, size 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, symbol)
 	order, err := c.exchange.CreateOrderMarket(side, symbol, size)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
 		return model.Order{}, err
 	}
 
 	err = c.createOrder(&order)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller storage: %s", err))
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
 	}
 
@@ -431,7 +429,7 @@ func (c *Controller) Cancel(order model.Order) error {
 		SetStatus(string(model.OrderStatusTypePendingCancel)).
 		Save(c.ctx)
 	if err != nil {
-		c.notifyError(errors.Errorf("order/controller storage: %s", err))
+		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return err
 	}
 	log.Infof("[ORDER CANCELED] %s", order)
