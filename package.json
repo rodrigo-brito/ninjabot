@@ -1,0 +1,20 @@
+{
+  "name": "ninjabot-docs",
+  "version": "1.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "autoprefixer": "^10.3.5",
+    "postcss": "^8.3.7",
+    "postcss-cli": "^9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rodrigo-brito/ninjabot.git"
+  },
+  "author": "Rodrigo BRito",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rodrigo-brito/ninjabot/issues"
+  },
+  "homepage": "https://github.com/rodrigo-brito/ninjabot#readme"
+}
