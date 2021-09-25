@@ -5,6 +5,8 @@
 
 A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets. 
 
+Documentation: https://rodrigo-brito.github.io/ninjabot/
+
 :warning: **Caution:** Working in progress - It's not production ready :construction:
 
 ## Installation
