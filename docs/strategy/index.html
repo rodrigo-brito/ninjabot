@@ -1,0 +1,202 @@
+<!doctype html><html lang=en class=no-js>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
+<meta name=generator content="Hugo 0.88.1"><link rel=alternate type=application/rss+xml href=https://rodrigo-brito.github.io/ninjabot/docs/strategy/index.xml>
+<meta name=ROBOTS content="INDEX, FOLLOW">
+<link rel="shortcut icon" href=/ninjabot/favicons/favicon.ico>
+<link rel=apple-touch-icon href=/ninjabot/favicons/apple-touch-icon-180x180.png sizes=180x180>
+<link rel=icon type=image/png href=/ninjabot/favicons/favicon-16x16.png sizes=16x16>
+<link rel=icon type=image/png href=/ninjabot/favicons/favicon-32x32.png sizes=32x32>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-36x36.png sizes=36x36>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-48x48.png sizes=48x48>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-72x72.png sizes=72x72>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-96x96.png sizes=96x96>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-144x144.png sizes=144x144>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-192x192.png sizes=192x192>
+<title>Streategy | Ninjabot</title>
+<meta name=description content="This page describes how to create a custom strategy in Ninjabot
+">
+<meta property="og:title" content="Streategy">
+<meta property="og:description" content="This page describes how to create a custom strategy in Ninjabot
+">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rodrigo-brito.github.io/ninjabot/docs/strategy/">
+<meta itemprop=name content="Streategy">
+<meta itemprop=description content="This page describes how to create a custom strategy in Ninjabot
+"><meta name=twitter:card content="summary">
+<meta name=twitter:title content="Streategy">
+<meta name=twitter:description content="This page describes how to create a custom strategy in Ninjabot
+">
+<link rel=preload href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css as=style>
+<link href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css rel=stylesheet integrity>
+<script src=https://code.jquery.com/jquery-3.5.1.min.js integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin=anonymous></script>
+</head>
+<body class=td-section>
+<header>
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+<a class=navbar-brand href=/ninjabot/>
+<span class=navbar-logo></span><span class="text-uppercase font-weight-bold">Ninjabot</span>
+</a>
+<div class="td-navbar-nav-scroll ml-md-auto" id=main_navbar>
+<ul class="navbar-nav mt-2 mt-lg-0">
+<li class="nav-item mr-4 mb-2 mb-lg-0">
+<a class=nav-link href=/ninjabot/docs/><i class="fa fa-book"></i><span>Documentation</span></a>
+</li>
+<li class="nav-item mr-4 mb-2 mb-lg-0">
+<a class=nav-link href=https://github.com/rodrigo-brito/ninjabot target=_blank><i class="fab fa-github"></i><span>Github</span></a>
+</li>
+</ul>
+</div>
+<div class="navbar-nav d-none d-lg-block">
+</div>
+</nav>
+</header>
+<div class="container-fluid td-outer">
+<div class=td-main>
+<div class="row flex-xl-nowrap">
+<aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+<div id=td-sidebar-menu class=td-sidebar__inner>
+<form class="td-sidebar__search d-flex align-items-center">
+<button class="btn btn-link td-sidebar__toggle d-md-none p-0 ml-3 fas fa-bars" type=button data-toggle=collapse data-target=#td-section-nav aria-controls=td-docs-nav aria-expanded=false aria-label="Toggle section navigation">
+</button>
+</form>
+<nav class="collapse td-sidebar-nav" id=td-section-nav>
+<ul class="td-sidebar-nav__section pr-md-3 ul-0">
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
+<a href=/ninjabot/docs/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span>Documentation</span></a>
+<ul class=ul-1>
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
+<a href=/ninjabot/docs/getting-started/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span>Getting Started</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocsstrategy-li>
+<a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span class=td-sidebar-nav-active-item>Strategy</span></a>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</aside>
+<aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+<div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
+</div>
+<div class="taxonomy taxonomy-terms-cloud taxo-categories">
+<h5 class=taxonomy-title>Categories</h5>
+<ul class=taxonomy-terms>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/examples/ data-taxonomy-term=examples><span class=taxonomy-label>Examples</span><span class=taxonomy-count>2</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>2</span></a></li>
+</ul>
+</div>
+</aside>
+<main class="col-12 col-md-9 col-xl-8 pl-md-5" role=main>
+<nav aria-label=breadcrumb class="d-none d-md-block d-print-none">
+<ol class="breadcrumb spb-1">
+<li class=breadcrumb-item>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/>Documentation</a>
+</li>
+<li class="breadcrumb-item active" aria-current=page>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/strategy/>Strategy</a>
+</li>
+</ol>
+</nav>
+<div class=td-content>
+<h1>Streategy</h1>
+<div class=lead>This page describes how to create a custom strategy in Ninjabot</div>
+<header class=article-meta>
+<div class="taxonomy taxonomy-terms-article taxo-categories">
+<h5 class=taxonomy-title>Categories:</h5>
+<ul class=taxonomy-terms>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/examples/ data-taxonomy-term=examples><span class=taxonomy-label>Examples</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span></a></li>
+</ul>
+</div>
+</header>
+<h2 id=strategy-functions>Strategy Functions</h2>
+<p>To create a custom strategy, you need to create a <code>Struct</code> that implements the following methods:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Strategy</span> <span style=color:#66d9ef>interface</span> {
+	<span style=color:#a6e22e>Timeframe</span>() <span style=color:#66d9ef>string</span>
+	<span style=color:#a6e22e>WarmupPeriod</span>() <span style=color:#66d9ef>int</span>
+	<span style=color:#a6e22e>Indicators</span>(<span style=color:#a6e22e>dataframe</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>)
+	<span style=color:#a6e22e>OnCandle</span>(<span style=color:#a6e22e>dataframe</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>, <span style=color:#a6e22e>broker</span> <span style=color:#a6e22e>service</span>.<span style=color:#a6e22e>Broker</span>)
+}
+</code></pre></div><ul>
+<li><code>Timeframe</code>: specifies the strategy timeframe, eg: &ldquo;15m&rdquo;, &ldquo;1h&rdquo;, &ldquo;1d&rdquo;, &ldquo;1w&rdquo;.</li>
+<li><code>WarmupPeriod</code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the <code>WarmupPeriod</code> should be 9.</li>
+<li><code>Indicators</code>: this function creates custom indicators, it is called for each new candle received.</li>
+<li><code>OnCandle</code>: this function is also called for each new candle, after <code>Indicators</code> execution. This function should contain your buy and sell rules. <code>Dataframe</code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the <code>Broker</code> operator.</li>
+</ul>
+<h2 id=example>Example</h2>
+<p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>import</span> (
+    <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot&#34;</span>
+    <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/service&#34;</span>
+    
+    <span style=color:#e6db74>&#34;github.com/markcheno/go-talib&#34;</span>
+    <span style=color:#a6e22e>log</span> <span style=color:#e6db74>&#34;github.com/sirupsen/logrus&#34;</span>
+)
+
+<span style=color:#66d9ef>type</span> <span style=color:#a6e22e>CrossEMA</span> <span style=color:#66d9ef>struct</span>{}
+
+<span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>Timeframe</span>() <span style=color:#66d9ef>string</span> {
+	<span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;1d&#34;</span>
+}
+
+<span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>WarmupPeriod</span>() <span style=color:#66d9ef>int</span> {
+	<span style=color:#66d9ef>return</span> <span style=color:#ae81ff>9</span>
+}
+
+<span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>Indicators</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>) {
+	<span style=color:#75715e>// define a custom indicator, Exponential Moving Average of 9 periods
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>] = <span style=color:#a6e22e>talib</span>.<span style=color:#a6e22e>Ema</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>, <span style=color:#ae81ff>9</span>)
+}
+
+<span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>OnCandle</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>, <span style=color:#a6e22e>broker</span> <span style=color:#a6e22e>service</span>.<span style=color:#a6e22e>Broker</span>) {
+	<span style=color:#75715e>// Get the quote and assets information
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>assetPosition</span>, <span style=color:#a6e22e>quotePosition</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>Position</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Pair</span>)
+	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>)
+	}
+	
+	<span style=color:#75715e>// Check if we have more than 10 USDT available in the wallet and the buy signal is triggered
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>quotePosition</span> &gt; <span style=color:#ae81ff>10</span> <span style=color:#f92672>&amp;&amp;</span> <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>.<span style=color:#a6e22e>Crossover</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>]) {
+		<span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>CreateOrderMarketQuote</span>(<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>SideTypeBuy</span>, <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Pair</span>, <span style=color:#a6e22e>quotePosition</span><span style=color:#f92672>/</span><span style=color:#ae81ff>2</span>)
+		<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+			<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>)
+		}
+	}
+	
+	<span style=color:#75715e>// Check if we have position in the pair and the sell signal is triggered
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>assetPosition</span> &gt; <span style=color:#ae81ff>0</span> <span style=color:#f92672>&amp;&amp;</span>
+		<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>.<span style=color:#a6e22e>Crossunder</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>]) {
+		<span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>CreateOrderMarket</span>(<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>SideTypeSell</span>, <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Pair</span>, <span style=color:#a6e22e>assetPosition</span>)
+		<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+			<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>)
+		}
+	}
+}
+</code></pre></div>
+<div class=section-index>
+</div>
+</div>
+</main>
+</div>
+</div>
+<footer class="bg-dark py-5 row d-print-none">
+<div class="container-fluid mx-sm-5">
+<div class=row>
+<div class="col-6 col-sm-4 text-xs-center order-sm-2">
+</div>
+<div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+</div>
+<div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+</div>
+</div>
+</div>
+</footer>
+</div>
+<script src=https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js integrity=sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js integrity=sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF crossorigin=anonymous></script>
+<script src=/ninjabot/js/tabpane-persist.js></script>
+<script src=/ninjabot/js/main.min.762669fd9611b5c9b8a5321a86dc2884c90a18b059e1790f1bb83526a4b381f0.js integrity="sha256-diZp/ZYRtcm4pTIahtwohMkKGLBZ4XkPG7g1JqSzgfA=" crossorigin=anonymous></script>
+</body>
+</html>
