@@ -66,7 +66,7 @@ func (d *DataFeedSubscription) Subscribe(pair, timeframe string, consumer DataFe
 	})
 }
 
-func (d *DataFeedSubscription) OnClose(onClose func()) {
+func (d *DataFeedSubscription) OnFinish(onClose func()) {
 	d.SubscriptionsFinish = append(d.SubscriptionsFinish, onClose)
 }
 

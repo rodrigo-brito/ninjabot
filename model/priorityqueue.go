@@ -1,76 +1,95 @@
 package model
 
-import (
-	"container/heap"
-)
+import "sync"
 
-// QItem represents the interface to be implemented stored in this queue
-type QItem interface {
-	Less(item QItem) bool
-}
-
-// priorityQueueImpl for the underlying implementation of priority queues
-type priorityQueueImpl []QItem
-
-// Len get queue length
-func (pqi priorityQueueImpl) Len() int {
-	return len(pqi)
-}
-
-// Less is used for element comparison
-func (pqi priorityQueueImpl) Less(i, j int) bool {
-	return pqi[i].Less(pqi[j])
-}
-
-// Swap
-func (pqi priorityQueueImpl) Swap(i, j int) {
-	pqi[i], pqi[j] = pqi[j], pqi[i]
-}
-
-// Push is used to push an object into the queue
-func (pqi *priorityQueueImpl) Push(x interface{}) {
-	item := x.(QItem)
-	*pqi = append(*pqi, item)
-}
-
-// Pop pops an object out of the queue
-func (pqi *priorityQueueImpl) Pop() interface{} {
-	old := *pqi
-	n := len(old)
-	item := old[n-1]
-	*pqi = old[0 : n-1]
-	return item
-}
-
-// PriorityQueue implements priority queue
 type PriorityQueue struct {
-	priorityQueueImpl
+	sync.Mutex
+	length int
+	data   []Item
 }
 
-// NewPriorityQueue is used to build PriorityQueue
-func NewPriorityQueue() *PriorityQueue {
-	var pq PriorityQueue
-	heap.Init(&pq.priorityQueueImpl)
-	return &pq
+type Item interface {
+	Less(Item) bool
 }
 
-// Push is used to push an object into the queue
-func (pq *PriorityQueue) Push(item QItem) {
-	heap.Push(&pq.priorityQueueImpl, item)
+func NewPriorityQueue(data []Item) *PriorityQueue {
+	q := &PriorityQueue{}
+	q.data = data
+	q.length = len(data)
+	if q.length > 0 {
+		i := q.length >> 1
+		for ; i >= 0; i-- {
+			q.down(i)
+		}
+	}
+	return q
 }
 
-// Pop is used to pop an object from the queue
-func (pq *PriorityQueue) Pop() QItem {
-	return heap.Pop(&pq.priorityQueueImpl).(QItem)
+func (q *PriorityQueue) Push(item Item) {
+	q.Lock()
+	defer q.Unlock()
+	q.data = append(q.data, item)
+	q.length++
+	q.up(q.length - 1)
+}
+func (q *PriorityQueue) Pop() Item {
+	q.Lock()
+	defer q.Unlock()
+	if q.length == 0 {
+		return nil
+	}
+	top := q.data[0]
+	q.length--
+	if q.length > 0 {
+		q.data[0] = q.data[q.length]
+		q.down(0)
+	}
+	q.data = q.data[:len(q.data)-1]
+	return top
+}
+func (q *PriorityQueue) Peek() Item {
+	if q.length == 0 {
+		return nil
+	}
+	return q.data[0]
+}
+func (q *PriorityQueue) Len() int {
+	q.Lock()
+	defer q.Unlock()
+	return q.length
+}
+func (q *PriorityQueue) down(pos int) {
+	data := q.data
+	halfLength := q.length >> 1
+	item := data[pos]
+	for pos < halfLength {
+		left := (pos << 1) + 1
+		right := left + 1
+		best := data[left]
+		if right < q.length && data[right].Less(best) {
+			left = right
+			best = data[right]
+		}
+		if !best.Less(item) {
+			break
+		}
+		data[pos] = best
+		pos = left
+	}
+	data[pos] = item
 }
 
-// Front is used to get the minimum value in the current queue
-func (pq *PriorityQueue) Front() QItem {
-	// The first bit in the queue should be the minimum
-	return pq.priorityQueueImpl[0]
-}
-
-// Length is used to get the length of the current queue
-func (pq *PriorityQueue) Length() int {
-	return pq.priorityQueueImpl.Len()
+func (q *PriorityQueue) up(pos int) {
+	data := q.data
+	item := data[pos]
+	for pos > 0 {
+		parent := (pos - 1) >> 1
+		current := data[parent]
+		if !item.Less(current) {
+			break
+		}
+		data[pos] = current
+		pos = parent
+	}
+	data[pos] = item
 }

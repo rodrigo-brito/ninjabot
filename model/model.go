@@ -62,7 +62,10 @@ func (c Candle) ToSlice() []string {
 	}
 }
 
-func (c Candle) Less(j QItem) bool {
+func (c Candle) Less(j Item) bool {
+	if j.(Candle).Time.Equal(c.Time) {
+		return c.Symbol < j.(Candle).Symbol
+	}
 	return c.Time.Before(j.(Candle).Time)
 }
 

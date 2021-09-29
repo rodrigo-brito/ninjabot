@@ -30,18 +30,20 @@ func (s *Controller) Start() {
 }
 
 func (s *Controller) OnCandle(candle model.Candle) {
-	s.dataframe.Close = append(s.dataframe.Close, candle.Close)
-	s.dataframe.Open = append(s.dataframe.Open, candle.Open)
-	s.dataframe.High = append(s.dataframe.High, candle.High)
-	s.dataframe.Low = append(s.dataframe.Low, candle.Low)
-	s.dataframe.Volume = append(s.dataframe.Volume, candle.Volume)
-	s.dataframe.Time = append(s.dataframe.Time, candle.Time)
-	s.dataframe.LastUpdate = candle.Time
+	if len(s.dataframe.Time) == 0 || candle.Time.After(s.dataframe.Time[len(s.dataframe.Time)-1]) {
+		s.dataframe.Close = append(s.dataframe.Close, candle.Close)
+		s.dataframe.Open = append(s.dataframe.Open, candle.Open)
+		s.dataframe.High = append(s.dataframe.High, candle.High)
+		s.dataframe.Low = append(s.dataframe.Low, candle.Low)
+		s.dataframe.Volume = append(s.dataframe.Volume, candle.Volume)
+		s.dataframe.Time = append(s.dataframe.Time, candle.Time)
+		s.dataframe.LastUpdate = candle.Time
 
-	if len(s.dataframe.Close) > s.strategy.WarmupPeriod() {
-		s.strategy.Indicators(s.dataframe)
-		if s.started {
-			s.strategy.OnCandle(s.dataframe, s.broker)
+		if len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
+			s.strategy.Indicators(s.dataframe)
+			if s.started {
+				s.strategy.OnCandle(s.dataframe, s.broker)
+			}
 		}
 	}
 }

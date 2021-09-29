@@ -40,7 +40,6 @@ type CandleSubscriber interface {
 }
 
 type NinjaBot struct {
-	sync.Mutex
 	storage  *storage.Client
 	settings model.Settings
 	exchange service.Exchange
@@ -50,11 +49,14 @@ type NinjaBot struct {
 
 	orderController       *order.Controller
 	priorityQueueCandle   *model.PriorityQueue
-	pendingCandles        chan bool
 	strategiesControllers map[string]*strategy.Controller
 	orderFeed             *order.Feed
 	dataFeed              *exchange.DataFeedSubscription
 	paperWallet           *exchange.PaperWallet
+
+	backtest       bool
+	pendingCandles chan bool
+	startBacktest  sync.WaitGroup
 }
 
 type Option func(*NinjaBot)
@@ -69,7 +71,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		orderFeed:             order.NewOrderFeed(),
 		dataFeed:              exchange.NewDataFeed(exch),
 		strategiesControllers: make(map[string]*strategy.Controller),
-		priorityQueueCandle:   model.NewPriorityQueue(),
+		priorityQueueCandle:   model.NewPriorityQueue(nil),
 		pendingCandles:        make(chan bool, candleBufferSize),
 	}
 
@@ -99,6 +101,17 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 	}
 
 	return bot, nil
+}
+
+func WithBacktest(wallet *exchange.PaperWallet) Option {
+	return func(bot *NinjaBot) {
+		bot.backtest = true
+		bot.startBacktest.Add(1)
+
+		// load paper wallet
+		opt := WithPaperWallet(wallet)
+		opt(bot)
+	}
 }
 
 func WithStorage(storage *storage.Client) Option {
@@ -206,17 +219,19 @@ func (n *NinjaBot) Summary() string {
 }
 
 func (n *NinjaBot) onCandle(candle model.Candle) {
-	n.Lock()
 	n.priorityQueueCandle.Push(candle)
-	n.Unlock()
 	n.pendingCandles <- true
 }
 
 func (n *NinjaBot) processCandles() {
+	// when backtesting, we need to wait all candles load
+	// to avoid sync issues between multiple coins
+	if n.backtest {
+		n.startBacktest.Wait()
+	}
+
 	for <-n.pendingCandles {
-		n.Lock()
 		item := n.priorityQueueCandle.Pop()
-		n.Unlock()
 
 		candle := item.(model.Candle)
 		if n.paperWallet != nil {
@@ -234,7 +249,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.strategiesControllers[pair] = strategyController
 
 		// link to ninja bot controller
-		// TODO: include onCandleClose: `false` to improve precision in OCO orders (backtesting)
+		// TODO: include onCandleClose=false to improve precision in OCO orders (backtesting)
 		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
 
 		// preload candles to warmup strategy
@@ -242,6 +257,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+
 		n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
 	}
 
@@ -252,8 +268,12 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.telegram.Start()
 	}
 
-	n.dataFeed.OnClose(func() {
+	n.dataFeed.OnFinish(func() {
+		fmt.Println("finished")
 		close(n.pendingCandles)
+		if n.backtest {
+			n.startBacktest.Done()
+		}
 	})
 	go n.dataFeed.Start()
 	n.processCandles()
