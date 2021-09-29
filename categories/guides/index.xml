@@ -8,9 +8,9 @@
 &lt;p>Create a new Go project and initialize &lt;code>go module&lt;/code> with&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go mod init example
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>Download the latest version of Ninjabot library&lt;/p>
-&lt;pre tabindex="0">&lt;code class="language-bigquery" data-lang="bigquery">go get -u github.com/rodrigo-brito/ninjabot@latest
-&lt;/code>&lt;/pre>&lt;p>Downloading historical data for backtesting.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download --pair BTCUSDT --timeframe 1d --days &lt;span style="color:#ae81ff">30&lt;/span> --output ./btc.csv
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go get -u github.com/rodrigo-brito/ninjabot@latest
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Downloading 720 days from BTCUSDT historical data for backtesting.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download --pair BTCUSDT --timeframe 1d --days &lt;span style="color:#ae81ff">720&lt;/span> --output ./btc.csv
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="creating-a-backtesting-script">Creating a backtesting script&lt;/h2>
 &lt;p>Create a new file &lt;code>main.go&lt;/code> and include the following code:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>
@@ -26,7 +26,7 @@
 )
 &lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>() {
 &lt;span style="color:#a6e22e">ctx&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">context&lt;/span>.&lt;span style="color:#a6e22e">Background&lt;/span>()
-&lt;span style="color:#75715e">// Ninjabot setup
+&lt;span style="color:#75715e">// Ninjabot settings
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">settings&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Settings&lt;/span>{
 &lt;span style="color:#a6e22e">Pairs&lt;/span>: []&lt;span style="color:#66d9ef">string&lt;/span>{
 &lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>,
@@ -35,13 +35,14 @@
 &lt;span style="color:#75715e">// Load a custom strategy from examples folder
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#75715e">// To create a custom strategy, check https://rodrigo-brito.github.io/ninjabot/docs/strategy/.
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">strategy&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> new(&lt;span style="color:#a6e22e">strategies&lt;/span>.&lt;span style="color:#a6e22e">CrossEMA&lt;/span>)
-&lt;span style="color:#a6e22e">csvFeed&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewCSVFeed&lt;/span>(
+&lt;span style="color:#75715e">// Load your CSV with historical data
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">csvFeed&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewCSVFeed&lt;/span>(
 &lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">Timeframe&lt;/span>(),
 &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">PairFeed&lt;/span>{
 &lt;span style="color:#a6e22e">Pair&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>,
 &lt;span style="color:#a6e22e">File&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;btc.csv&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">Timeframe&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>,
-},
+&lt;span style="color:#a6e22e">Timeframe&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>, &lt;span style="color:#75715e">// specify the dataset timeframe
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> },
 )
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
 &lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
@@ -66,7 +67,7 @@
 &lt;span style="color:#a6e22e">wallet&lt;/span>,
 &lt;span style="color:#a6e22e">strategy&lt;/span>,
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
-&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>),
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithBacktest&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithCandleSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithOrderSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithLogLevel&lt;/span>(&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">WarnLevel&lt;/span>),

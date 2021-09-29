@@ -90,7 +90,6 @@
 <div class="taxonomy taxonomy-terms-cloud taxo-categories">
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
-<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/examples/ data-taxonomy-term=examples><span class=taxonomy-label>Examples</span><span class=taxonomy-count>2</span></a></li>
 <li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>2</span></a></li>
 </ul>
 </div>
@@ -113,7 +112,6 @@
 <div class="taxonomy taxonomy-terms-article taxo-categories">
 <h5 class=taxonomy-title>Categories:</h5>
 <ul class=taxonomy-terms>
-<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/examples/ data-taxonomy-term=examples><span class=taxonomy-label>Examples</span></a></li>
 <li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span></a></li>
 </ul>
 </div>
@@ -127,9 +125,9 @@
 <p>Create a new Go project and initialize <code>go module</code> with</p>
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go mod init example
 </code></pre></div><p>Download the latest version of Ninjabot library</p>
-<pre tabindex=0><code class=language-bigquery data-lang=bigquery>go get -u github.com/rodrigo-brito/ninjabot@latest
-</code></pre><p>Downloading historical data for backtesting.</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download --pair BTCUSDT --timeframe 1d --days <span style=color:#ae81ff>30</span> --output ./btc.csv
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go get -u github.com/rodrigo-brito/ninjabot@latest
+</code></pre></div><p>Downloading 720 days from BTCUSDT historical data for backtesting.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download --pair BTCUSDT --timeframe 1d --days <span style=color:#ae81ff>720</span> --output ./btc.csv
 </code></pre></div><h2 id=creating-a-backtesting-script>Creating a backtesting script</h2>
 <p>Create a new file <code>main.go</code> and include the following code:</p>
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>package</span> <span style=color:#a6e22e>main</span>
@@ -150,7 +148,7 @@
 <span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
 	<span style=color:#a6e22e>ctx</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>Background</span>()
 
-	<span style=color:#75715e>// Ninjabot setup
+	<span style=color:#75715e>// Ninjabot settings
 </span><span style=color:#75715e></span>	<span style=color:#a6e22e>settings</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Settings</span>{
 		<span style=color:#a6e22e>Pairs</span>: []<span style=color:#66d9ef>string</span>{
 			<span style=color:#e6db74>&#34;BTCUSDT&#34;</span>,
@@ -161,13 +159,14 @@
 </span><span style=color:#75715e></span>	<span style=color:#75715e>// To create a custom strategy, check https://rodrigo-brito.github.io/ninjabot/docs/strategy/.
 </span><span style=color:#75715e></span>	<span style=color:#a6e22e>strategy</span> <span style=color:#f92672>:=</span> new(<span style=color:#a6e22e>strategies</span>.<span style=color:#a6e22e>CrossEMA</span>)
 
-	<span style=color:#a6e22e>csvFeed</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewCSVFeed</span>(
+	<span style=color:#75715e>// Load your CSV with historical data
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>csvFeed</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewCSVFeed</span>(
 		<span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>Timeframe</span>(),
 		<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>PairFeed</span>{
 			<span style=color:#a6e22e>Pair</span>:      <span style=color:#e6db74>&#34;BTCUSDT&#34;</span>,
 			<span style=color:#a6e22e>File</span>:      <span style=color:#e6db74>&#34;btc.csv&#34;</span>,
-			<span style=color:#a6e22e>Timeframe</span>: <span style=color:#e6db74>&#34;1d&#34;</span>,
-		},
+			<span style=color:#a6e22e>Timeframe</span>: <span style=color:#e6db74>&#34;1d&#34;</span>, <span style=color:#75715e>// specify the dataset timeframe
+</span><span style=color:#75715e></span>		},
 	)
 	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
 		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
@@ -196,7 +195,7 @@
 		<span style=color:#a6e22e>wallet</span>,
 		<span style=color:#a6e22e>strategy</span>,
 		<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithStorage</span>(<span style=color:#a6e22e>storage</span>),
-		<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>),
+		<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithBacktest</span>(<span style=color:#a6e22e>wallet</span>),
 		<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithCandleSubscription</span>(<span style=color:#a6e22e>chart</span>),
 		<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithOrderSubscription</span>(<span style=color:#a6e22e>chart</span>),
 		<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithLogLevel</span>(<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>WarnLevel</span>),
