@@ -18,7 +18,7 @@ Documentation: https://rodrigo-brito.github.io/ninjabot/
 Check [examples](examples) directory:
 
 - Paper Wallet (Live Simulation)
-- Backtesting
+- Backtesting (Simulation with historical data)
 - Real Account (Binance)
 
 ### CLI
@@ -44,28 +44,36 @@ go run examples/backtesting/main.go
 Output:
 
 ```
-[SETUP] Using paper wallet                   
-[SETUP] Initial Portfolio = 10000.000000 USDT 
-+---------+--------+-----+------+--------+--------+------------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |   PROFIT   |
-+---------+--------+-----+------+--------+--------+------------+
-| ETHUSDT |     19 |   9 |   10 | 47.4 % |  6.975 |  6334.1268 |
-| BTCUSDT |     17 |   6 |   11 | 35.3 % |  7.734 |  4803.0181 |
-+---------+--------+-----+------+--------+--------+------------+
-|   TOTAL |     36 |  15 |   21 | 41.7 % |  7.333 | 11137.1449 |
-+---------+--------+-----+------+--------+--------+------------+
+INFO[2021-09-29 00:00] [SETUP] Using paper wallet                   
+INFO[2021-09-29 00:00] [SETUP] Initial Portfolio = 10000.000000 USDT 
+finished
++---------+--------+-----+------+--------+--------+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+----------+-----------+
+| BTCUSDT |     17 |   6 |   11 | 35.3 % |  7.038 |  7424.37 | 250246.73 |
+| ETHUSDT |     17 |   9 |    8 | 52.9 % |  7.400 |  9270.30 | 168350.93 |
++---------+--------+-----+------+--------+--------+----------+-----------+
+|   TOTAL |     34 |  15 |   19 | 44.1 % |  7.219 | 16694.67 | 418597.66 |
++---------+--------+-----+------+--------+--------+----------+-----------+
+
 --------------
 WALLET SUMMARY
 --------------
 0.000000 ETH
 0.000000 BTC
-21137.144920 USDT
+
+TRADING VOLUME
+ETHUSDT        = 185030.63 USDT
+BTCUSDT        = 255182.59 USDT
+
+26694.674186 USDT
 --------------
 START PORTFOLIO =  10000 USDT
-FINAL PORTFOLIO =  21137.14492013396 USDT
-GROSS PROFIT    =  11137.144920 USDT (111.37%)
-MARKET CHANGE   =  396.71%
-
+FINAL PORTFOLIO =  26694.674186473057 USDT
+GROSS PROFIT    =  16694.674186 USDT (166.95%)
+MARKET CHANGE   =  420.18%
+VOLUME          =  440213.22 USDT
+COSTS (0.001*V) =  440.21 USDT (ESTIMATION) 
 --------------
 Chart available at http://localhost:8080
 ```
@@ -92,7 +100,8 @@ Chart available at http://localhost:8080
 
 
 # Roadmap
-  - [ ] Stop Orders in Backtesting
+  - [ ] Include trailing stop tool
+  - [ ] Stop Orders in backtesting
   - [ ] Plot Indicators
 
 ### Exchanges:
