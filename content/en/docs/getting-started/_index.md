@@ -1,7 +1,7 @@
 ---
 title: "Getting Started"
 linkTitle: "Getting Started"
-categories: ["Examples", "Guides"]
+categories: ["Guides"]
 weight: 2
 description: >
     This page describes the first steps do install and setup a basic bot with Ninjabot
@@ -26,13 +26,13 @@ go mod init example
 ```
 
 Download the latest version of Ninjabot library
-```bigquery
+```bash
 go get -u github.com/rodrigo-brito/ninjabot@latest
 ```
 
-Downloading historical data for backtesting.
+Downloading 720 days from BTCUSDT historical data for backtesting.
 ```bash
-ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc.csv
+ninjabot download --pair BTCUSDT --timeframe 1d --days 720 --output ./btc.csv
 ```
 
 ## Creating a backtesting script
@@ -58,7 +58,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// Ninjabot setup
+	// Ninjabot settings
 	settings := ninjabot.Settings{
 		Pairs: []string{
 			"BTCUSDT",
@@ -69,12 +69,13 @@ func main() {
 	// To create a custom strategy, check https://rodrigo-brito.github.io/ninjabot/docs/strategy/.
 	strategy := new(strategies.CrossEMA)
 
+	// Load your CSV with historical data
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
 		exchange.PairFeed{
 			Pair:      "BTCUSDT",
 			File:      "btc.csv",
-			Timeframe: "1d",
+			Timeframe: "1d", // specify the dataset timeframe
 		},
 	)
 	if err != nil {
@@ -104,7 +105,7 @@ func main() {
 		wallet,
 		strategy,
 		ninjabot.WithStorage(storage),
-		ninjabot.WithPaperWallet(wallet),
+		ninjabot.WithBacktest(wallet),
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
 		ninjabot.WithLogLevel(log.WarnLevel),

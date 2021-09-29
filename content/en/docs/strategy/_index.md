@@ -1,7 +1,7 @@
 ---
 title: "Streategy"
 linkTitle: "Strategy"
-categories: ["Examples", "Guides"]
+categories: ["Guides"]
 weight: 2
 description: >
     This page describes how to create a custom strategy in Ninjabot
