@@ -59,9 +59,11 @@ type storage struct {
 }
 
 func (s storage) CreateOrder(order *model.Order) error {
-	res, err := s.db.Exec(`INSERT INTO orders (exchange_id, symbol, side, type, status, price, quantity, created_at, updated_at, stop, group_id)
+	res, err := s.db.Exec(`INSERT INTO orders (exchange_id, symbol, side, type, status, price, 
+                    quantity, created_at, updated_at, stop, group_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-		order.ExchangeID, order.Symbol, order.Side, order.Type, order.Status, order.Price, order.Quantity, order.CreatedAt, order.UpdatedAt, order.Stop, order.GroupID)
+		order.ExchangeID, order.Symbol, order.Side, order.Type, order.Status, order.Price,
+		order.Quantity, order.CreatedAt, order.UpdatedAt, order.Stop, order.GroupID)
 	if err != nil {
 		return fmt.Errorf("error on save order: %w", err)
 	}
@@ -80,14 +82,18 @@ func (s storage) UpdateOrderStatus(id int64, status model.OrderStatusType) error
 	return err
 }
 
-func (s storage) UpdateOrder(id int64, updatedAt time.Time, status model.OrderStatusType, quantity, price float64) error {
-	_, err := s.db.Exec("UPDATE orders SET updated_at = ?, status = ?, quantity = ?, price = ? WHERE id = ?;", updatedAt, status, quantity, price, id)
+func (s storage) UpdateOrder(id int64, updatedAt time.Time, status model.OrderStatusType,
+	quantity, price float64) error {
+
+	_, err := s.db.Exec(`UPDATE orders SET updated_at = ?, status = ?, quantity = ?, price = ? 
+		WHERE id = ?;`, updatedAt, status, quantity, price, id)
 	return err
 }
 
 func (s storage) GetPendingOrders() ([]*model.Order, error) {
 	orders := make([]*model.Order, 0)
-	err := s.db.Select(&orders, `SELECT id, exchange_id, symbol, side, type, status, price, quantity, created_at, updated_at, stop, group_id 
+	err := s.db.Select(&orders, `SELECT id, exchange_id, symbol, side, type, status, price, quantity, created_at,
+       		updated_at, stop, group_id 
 		FROM orders WHERE status IN(?, ?, ?) ORDER BY id ASC;`,
 		model.OrderStatusTypeNew, model.OrderStatusTypePartiallyFilled, model.OrderStatusTypePendingCancel)
 	if err != nil {
@@ -97,10 +103,14 @@ func (s storage) GetPendingOrders() ([]*model.Order, error) {
 	return orders, nil
 }
 
-func (s storage) FilterOrders(updatedAt time.Time, status model.OrderStatusType, symbol string, id int64) ([]*model.Order, error) {
+func (s storage) FilterOrders(updatedAt time.Time, status model.OrderStatusType, symbol string, id int64) (
+	[]*model.Order, error) {
+
 	orders := make([]*model.Order, 0)
-	err := s.db.Select(&orders, `SELECT id, exchange_id, symbol, side, type, status, price, quantity, created_at, updated_at, stop, group_id 
-		FROM orders where updated_at <= ? AND status = ? AND symbol = ? AND id != ? ORDER BY updated_at ASC;`, updatedAt, status, symbol, id)
+	err := s.db.Select(&orders, `SELECT id, exchange_id, symbol, side, type, status, price, quantity, created_at, 
+       		updated_at, stop, group_id 
+		FROM orders where updated_at <= ? AND status = ? AND symbol = ? AND id != ? 
+		ORDER BY updated_at ASC;`, updatedAt, status, symbol, id)
 	if err != nil {
 		return nil, err
 	}

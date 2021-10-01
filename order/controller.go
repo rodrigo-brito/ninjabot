@@ -101,7 +101,9 @@ type Controller struct {
 	status         Status
 }
 
-func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage, orderFeed *Feed, notifier service.Notifier) *Controller {
+func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage,
+	orderFeed *Feed, notifier service.Notifier) *Controller {
+
 	return &Controller{
 		ctx:            ctx,
 		storage:        storage,
