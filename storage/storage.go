@@ -19,12 +19,12 @@ type Storage interface {
 	FilterOrders(updatedBefore time.Time, status model.OrderStatusType, symbol string, id int64) ([]*model.Order, error)
 }
 
-func FromMemory() string {
-	return "file::memory:?mode=memory&cache=shared&_fk=1&_mutex=full"
+func FromMemory() (Storage, error) {
+	return New("file::memory:?mode=memory&cache=shared&_fk=1&_mutex=full")
 }
 
-func FromFile(file string) string {
-	return fmt.Sprintf("file:%s?cache=shared&_fk=1&_mutex=full", file)
+func FromFile(file string) (Storage, error) {
+	return New(fmt.Sprintf("file:%s?cache=shared&_fk=1&_mutex=full", file))
 }
 
 func New(storageType string) (Storage, error) {

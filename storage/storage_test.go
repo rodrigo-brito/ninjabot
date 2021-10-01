@@ -8,7 +8,7 @@ import (
 )
 
 func TestStorage(t *testing.T) {
-	storage, err := New(FromMemory())
+	storage, err := FromMemory()
 	if err != nil {
 		t.Error(err)
 	}
