@@ -19,3 +19,8 @@ jobs:
           version: latest
           skip-build-cache: true
           skip-pkg-cache: true
+
+      - name: coverage
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
