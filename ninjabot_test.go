@@ -53,7 +53,7 @@ func (e *fakeStrategy) OnCandle(df *Dataframe, broker service.Broker) {
 func TestMarketOrder(t *testing.T) {
 	ctx := context.Background()
 
-	storage, err := storage.FromMemory()
+	storage, err := storage.New(storage.FromMemory())
 	require.NoError(t, err)
 
 	strategy := new(fakeStrategy)

@@ -13,7 +13,6 @@ import (
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/storage"
-	"github.com/rodrigo-brito/ninjabot/storage/order"
 
 	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
@@ -93,7 +92,7 @@ type Controller struct {
 	mtx            sync.Mutex
 	ctx            context.Context
 	exchange       service.Exchange
-	storage        *storage.Client
+	storage        storage.Storage
 	orderFeed      *Feed
 	notifier       service.Notifier
 	Results        map[string]*summary
@@ -102,9 +101,7 @@ type Controller struct {
 	status         Status
 }
 
-func NewController(ctx context.Context, exchange service.Exchange, storage *storage.Client,
-	orderFeed *Feed, notifier service.Notifier) *Controller {
-
+func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage, orderFeed *Feed, notifier service.Notifier) *Controller {
 	return &Controller{
 		ctx:            ctx,
 		storage:        storage,
@@ -118,12 +115,7 @@ func NewController(ctx context.Context, exchange service.Exchange, storage *stor
 }
 
 func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume float64, err error) {
-	orders, err := c.storage.Order.Query().Where(
-		order.UpdatedAtLTE(o.UpdatedAt),
-		order.Status(string(model.OrderStatusTypeFilled)),
-		order.Symbol(o.Symbol),
-		order.IDNEQ(o.ID),
-	).Order(storage.Asc(order.FieldUpdatedAt)).All(c.ctx)
+	orders, err := c.storage.FilterOrders(o.UpdatedAt, model.OrderStatusTypeFilled, o.Symbol, o.ID)
 	if err != nil {
 		return 0, 0, 0, err
 	}
@@ -133,10 +125,10 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume flo
 	tradeVolume := 0.0
 
 	for _, order := range orders {
-		if order.Side == string(model.SideTypeBuy) {
+		if order.Side == model.SideTypeBuy {
 			price := order.Price
-			if order.Type == string(model.OrderTypeStopLoss) || order.Type == string(model.OrderTypeStopLossLimit) {
-				price = order.Stop
+			if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
+				price = *order.Stop
 			}
 			avgPrice = (order.Quantity*price + avgPrice*quantity) / (order.Quantity + quantity)
 			quantity += order.Quantity
@@ -199,14 +191,7 @@ func (c *Controller) updateOrders() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	orders, err := c.storage.Order.Query().
-		Where(order.StatusIn(
-			string(model.OrderStatusTypeNew),
-			string(model.OrderStatusTypePartiallyFilled),
-			string(model.OrderStatusTypePendingCancel),
-		)).
-		Order(storage.Asc(order.FieldID)).
-		All(c.ctx)
+	orders, err := c.storage.GetPendingOrders()
 	if err != nil {
 		c.notifyError(fmt.Errorf("orderController/start: %s", err))
 		c.mtx.Unlock()
@@ -223,17 +208,13 @@ func (c *Controller) updateOrders() {
 		}
 
 		// no status change
-		if string(excOrder.Status) == order.Status {
+		if excOrder.Status == order.Status {
 			continue
 		}
 
 		excOrder.ID = order.ID
 
-		_, err = order.Update().
-			SetUpdatedAt(excOrder.UpdatedAt).
-			SetStatus(string(excOrder.Status)).
-			SetQuantity(excOrder.Quantity).
-			SetPrice(excOrder.Price).Save(c.ctx)
+		err = c.storage.UpdateOrder(excOrder.ID, excOrder.UpdatedAt, excOrder.Status, excOrder.Quantity, excOrder.Price)
 		if err != nil {
 			c.notifyError(fmt.Errorf("orderControler/update: %s", err))
 			continue
@@ -283,27 +264,6 @@ func (c *Controller) Stop() {
 	}
 }
 
-func (c *Controller) createOrder(order *model.Order) error {
-	register, err := c.storage.Order.Create().
-		SetExchangeID(order.ExchangeID).
-		SetCreatedAt(order.CreatedAt).
-		SetUpdatedAt(order.UpdatedAt).
-		SetPrice(order.Price).
-		SetQuantity(order.Quantity).
-		SetSide(string(order.Side)).
-		SetSymbol(order.Symbol).
-		SetType(string(order.Type)).
-		SetStatus(string(order.Status)).
-		SetNillableStop(order.Stop).
-		SetNillableGroupID(order.GroupID).
-		Save(c.ctx)
-	if err != nil {
-		return fmt.Errorf("error on save order: %w", err)
-	}
-	order.ID = register.ID
-	return nil
-}
-
 func (c *Controller) Account() (model.Account, error) {
 	return c.exchange.Account()
 }
@@ -329,7 +289,7 @@ func (c *Controller) CreateOrderOCO(side model.SideType, symbol string, size, pr
 	}
 
 	for i := range orders {
-		err := c.createOrder(&orders[i])
+		err := c.storage.CreateOrder(&orders[i])
 		if err != nil {
 			c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 			return nil, err
@@ -351,7 +311,7 @@ func (c *Controller) CreateOrderLimit(side model.SideType, symbol string, size, 
 		return model.Order{}, err
 	}
 
-	err = c.createOrder(&order)
+	err = c.storage.CreateOrder(&order)
 	if err != nil {
 		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
@@ -372,7 +332,7 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, symbol string, 
 		return model.Order{}, err
 	}
 
-	err = c.createOrder(&order)
+	err = c.storage.CreateOrder(&order)
 	if err != nil {
 		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
@@ -399,7 +359,7 @@ func (c *Controller) CreateOrderMarket(side model.SideType, symbol string, size 
 		return model.Order{}, err
 	}
 
-	err = c.createOrder(&order)
+	err = c.storage.CreateOrder(&order)
 	if err != nil {
 		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return model.Order{}, err
@@ -425,9 +385,7 @@ func (c *Controller) Cancel(order model.Order) error {
 		return err
 	}
 
-	_, err = c.storage.Order.UpdateOneID(order.ID).
-		SetStatus(string(model.OrderStatusTypePendingCancel)).
-		Save(c.ctx)
+	err = c.storage.UpdateOrderStatus(order.ID, model.OrderStatusTypePendingCancel)
 	if err != nil {
 		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return err

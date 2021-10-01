@@ -31,21 +31,21 @@ var (
 )
 
 type Order struct {
-	ID         int64
-	ExchangeID int64
-	Symbol     string
-	Side       SideType
-	Type       OrderType
-	Status     OrderStatusType
-	Price      float64
-	Quantity   float64
+	ID         int64           `db:"id"`
+	ExchangeID int64           `db:"exchange_id"`
+	Symbol     string          `db:"symbol"`
+	Side       SideType        `db:"side"`
+	Type       OrderType       `db:"type"`
+	Status     OrderStatusType `db:"status"`
+	Price      float64         `db:"price"`
+	Quantity   float64         `db:"quantity"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 
 	// OCO Orders only
-	Stop    *float64
-	GroupID *int64
+	Stop    *float64 `db:"stop"`
+	GroupID *int64   `db:"group_id"`
 
 	// Internal use (Plot)
 	Profit float64

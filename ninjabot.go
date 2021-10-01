@@ -40,7 +40,7 @@ type CandleSubscriber interface {
 }
 
 type NinjaBot struct {
-	storage  *storage.Client
+	storage  storage.Storage
 	settings model.Settings
 	exchange service.Exchange
 	strategy strategy.Strategy
@@ -81,7 +81,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 
 	var err error
 	if bot.storage == nil {
-		bot.storage, err = storage.FromFile(defaultDatabase)
+		bot.storage, err = storage.New(storage.FromFile(defaultDatabase))
 		if err != nil {
 			return nil, err
 		}
@@ -114,7 +114,7 @@ func WithBacktest(wallet *exchange.PaperWallet) Option {
 	}
 }
 
-func WithStorage(storage *storage.Client) Option {
+func WithStorage(storage storage.Storage) Option {
 	return func(bot *NinjaBot) {
 		bot.storage = storage
 	}

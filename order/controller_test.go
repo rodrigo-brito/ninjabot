@@ -14,7 +14,7 @@ import (
 
 func TestController_calculateProfit(t *testing.T) {
 	t.Run("market orders", func(t *testing.T) {
-		storage, err := storage.FromMemory()
+		storage, err := storage.New(storage.FromMemory())
 		require.NoError(t, err)
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
@@ -51,7 +51,7 @@ func TestController_calculateProfit(t *testing.T) {
 	})
 
 	t.Run("limit order", func(t *testing.T) {
-		storage, err := storage.FromMemory()
+		storage, err := storage.New(storage.FromMemory())
 		require.NoError(t, err)
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
@@ -79,7 +79,7 @@ func TestController_calculateProfit(t *testing.T) {
 	})
 
 	t.Run("oco order limit maker", func(t *testing.T) {
-		storage, err := storage.FromMemory()
+		storage, err := storage.New(storage.FromMemory())
 		require.NoError(t, err)
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
@@ -107,7 +107,7 @@ func TestController_calculateProfit(t *testing.T) {
 	})
 
 	t.Run("oco stop sell", func(t *testing.T) {
-		storage, err := storage.FromMemory()
+		storage, err := storage.New(storage.FromMemory())
 		require.NoError(t, err)
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))

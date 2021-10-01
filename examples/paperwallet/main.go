@@ -41,7 +41,7 @@ func main() {
 	}
 
 	// creating a storage to save trades
-	storage, err := storage.FromFile("backtest.db")
+	storage, err := storage.New(storage.FromFile("backtest.db"))
 	if err != nil {
 		log.Fatal(err)
 	}
