@@ -10,7 +10,7 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.16
-      - run: go test -race -cover ./...
+      - run: go test -race -coverprofile="coverage.txt" -covermode=atomic ./...
 
       - name: lint
         if: github.event_name == 'pull_request'
@@ -19,3 +19,9 @@ jobs:
           version: latest
           skip-build-cache: true
           skip-pkg-cache: true
+
+      - name: coverage
+        uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.txt
