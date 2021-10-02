@@ -53,14 +53,6 @@ func TestDownloader_withInterval(t *testing.T) {
 	assert.Equal(t, startingParams[0], startingParams[1])
 }
 
-// func TestDownloader_withDays(t *testing.T) {
-// 	startingParam := []Parameters{
-// 		{},
-// 		{Start: time.Now().AddDate(0, 0, -10), End: time.Now()},
-// 	}
-
-// }
-
 func TestDownloader_download(t *testing.T) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "*.csv")
 	require.NoError(t, err)
