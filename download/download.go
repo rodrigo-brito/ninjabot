@@ -3,7 +3,6 @@ package download
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
 	"os"
 	"time"
 
@@ -89,15 +88,12 @@ func (d Downloader) Download(ctx context.Context, symbol, timeframe string, outp
 		if end.After(parameters.End) {
 			end = parameters.End
 		}
-		fmt.Println(symbol)
-		fmt.Println(timeframe)
-		fmt.Println(begin)
-		fmt.Println(end)
+
 		candles, err := d.exchange.CandlesByPeriod(ctx, symbol, timeframe, begin, end)
 		if err != nil {
 			return err
 		}
-		fmt.Println("candles: ", candles)
+
 		for _, candle := range candles {
 			err := writer.Write(candle.ToSlice())
 			if err != nil {
