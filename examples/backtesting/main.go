@@ -54,7 +54,10 @@ func main() {
 		exchange.WithDataFeed(csvFeed),
 	)
 
-	chart := plot.NewChart()
+	chart := plot.NewChart(plot.WithIndicators(
+		plot.EMA(9, "red"),
+		plot.RSI(14, "purple"),
+	))
 
 	bot, err := ninjabot.NewBot(
 		ctx,

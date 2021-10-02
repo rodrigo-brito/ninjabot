@@ -10,9 +10,6 @@
     <title>Ninja Bot - Trade Results</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   </head>
-  <script>
-      const candles = {{ .Candles }};
-  </script>
   <script defer src="/assets/chart.js"></script>
   <style>
     .coin {
@@ -45,7 +42,7 @@
   </style>
   <body>
     <ul>
-      {{range $val := .Pairs}}
+      {{range $val := .pairs}}
         <li><a class="coin" href="/?pair={{ $val }}">{{ $val }}</a></li>
       {{end}}
     </ul>
