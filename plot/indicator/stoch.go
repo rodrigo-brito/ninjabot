@@ -42,7 +42,9 @@ func (e *stoch) Load(dataframe *model.Dataframe) {
 		return
 	}
 
-	e.ValuesK, e.ValuesD = talib.Stoch(dataframe.High, dataframe.Low, dataframe.Close, e.PeriodK, e.PeriodD, talib.SMA, e.PeriodD, talib.SMA)
+	e.ValuesK, e.ValuesD = talib.Stoch(
+		dataframe.High, dataframe.Low, dataframe.Close, e.PeriodK, e.PeriodD, talib.SMA, e.PeriodD, talib.SMA,
+	)
 	e.ValuesK = e.ValuesK[e.PeriodK+e.PeriodD:]
 	e.ValuesD = e.ValuesD[e.PeriodK+e.PeriodD:]
 	e.Time = dataframe.Time[e.PeriodK+e.PeriodD:]
