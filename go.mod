@@ -3,7 +3,7 @@ module github.com/rodrigo-brito/ninjabot
 go 1.16
 
 require (
-	github.com/adshao/go-binance/v2 v2.2.1
+	github.com/adshao/go-binance/v2 v2.3.1
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
