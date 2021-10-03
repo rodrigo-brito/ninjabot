@@ -12,7 +12,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/lib/pq v1.10.0 // indirect
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
-	github.com/mattn/go-sqlite3 v1.14.7
+	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.8.1
