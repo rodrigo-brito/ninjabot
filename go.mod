@@ -22,6 +22,6 @@ require (
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/tucnak/telebot.v2 v2.3.5
+	gopkg.in/tucnak/telebot.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )
