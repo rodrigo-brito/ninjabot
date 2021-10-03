@@ -18,8 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
             low: unpack(data.candles, "low"),
             high: unpack(data.candles, "high"),
             type: "candlestick",
-            xaxis: "x",
-            yaxis: "y",
+            xaxis: "x1",
+            yaxis: "y1",
         };
 
         const points = [];
@@ -42,6 +42,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     y: candle.low,
                     xref: "x",
                     yref: "y",
+                    xaxis: "x1",
+                    yaxis: "y1",
                     text: "B",
                     hovertext: `${order.time}
                         <br>ID: ${order.id}
@@ -70,6 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     annotation.ay = -20;
                     annotation.valign = "top";
                 }
+
                 annotations.push(annotation);
             });
         });
@@ -80,6 +83,8 @@ document.addEventListener("DOMContentLoaded", function () {
             name: "Buy Points",
             x: unpack(buyPoints, "time"),
             y: unpack(buyPoints, "position"),
+            xaxis: "x1",
+            yaxis: "y1",
             mode: 'markers',
             type: 'scatter',
             marker: {
@@ -90,6 +95,8 @@ document.addEventListener("DOMContentLoaded", function () {
             name: "Sell Points",
             x: unpack(sellPoints, "time"),
             y: unpack(sellPoints, "position"),
+            xaxis: "x1",
+            yaxis: "y1",
             mode: 'markers',
             type: 'scatter',
             marker: {
@@ -97,24 +104,72 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         };
 
-        var layout = {
-            dragmode: "pan",
+        const standaloneIndicators = data.indicators.reduce((total, indicator) => {
+            if (!indicator.overlay) {
+                return total + 1;
+            }
+            return total;
+        }, 0);
+
+        let layout = {
+            template: "ggplot2",
+            dragmode: "zoom",
             margin: {
-                r: 10,
                 t: 25,
-                b: 40,
-                l: 60,
             },
             showlegend: true,
             xaxis: {
-                autorange: true
+                autorange: true,
+                rangeslider: {visible: false},
+                showline: true,
+                anchor: standaloneIndicators > 0 ? "y2" : "y1"
             },
             yaxis: {
-                autorange: true
+                domain: standaloneIndicators > 0 ? [0.5, 1] : [0, 1],
+                autorange: true,
+                mirror: true,
+                showline: true,
+                gridcolor: "#ddd"
             },
+            hovermode: "x unified",
             annotations: annotations,
         };
 
-        Plotly.newPlot("graph", [candleStickData, buyData, sellData], layout);
+        let plotData = [candleStickData, buyData, sellData];
+        const indicatorsHeight = 0.49/standaloneIndicators;
+        let standaloneIndicatorIndex = 0;
+        data.indicators.forEach((indicator) => {
+            const axisNumber = standaloneIndicatorIndex+2;
+            if (!indicator.overlay) {
+                const heightStart = standaloneIndicatorIndex * indicatorsHeight;
+                layout["yaxis"+axisNumber] = {
+                    domain: [heightStart, heightStart + indicatorsHeight],
+                    autorange: true,
+                    mirror: true,
+                    showline: true,
+                    linecolor: "black",
+                    title: indicator.name
+                };
+                standaloneIndicatorIndex++;
+            }
+
+            indicator.metrics.forEach(metric => {
+                const data = {
+                    title: indicator.name,
+                    name: indicator.name + (metric.name && " - " + metric.name),
+                    x: metric.time,
+                    y: metric.value,
+                    type: metric.style,
+                    color: metric.color,
+                    xaxis: "x1",
+                    yaxis: "y1",
+                };
+                if (!indicator.overlay) {
+                    data.yaxis = "y"+axisNumber;
+                }
+                plotData.push(data);
+            })
+        });
+        Plotly.newPlot("graph", plotData, layout);
     })
 });

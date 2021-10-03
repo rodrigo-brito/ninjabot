@@ -12,6 +12,11 @@
   </head>
   <script defer src="/assets/chart.js"></script>
   <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
     .coin {
       background: rgb(68 122 219);
       padding: 10px;
@@ -41,11 +46,13 @@
     }
   </style>
   <body>
-    <ul>
-      {{range $val := .pairs}}
+    <nav class="menu">
+      <ul>
+        {{range $val := .pairs}}
         <li><a class="coin" href="/?pair={{ $val }}">{{ $val }}</a></li>
-      {{end}}
-    </ul>
+        {{end}}
+      </ul>
+    </nav>
     <div id="graph"></div>
   </body>
 </html>
