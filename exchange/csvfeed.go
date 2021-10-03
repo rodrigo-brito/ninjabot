@@ -211,6 +211,7 @@ func (c CSVFeed) CandlesSubscription(_ context.Context, pair, timeframe string) 
 			ccandle <- candle
 		}
 		close(ccandle)
+		close(cerr)
 	}()
 	return ccandle, cerr
 }

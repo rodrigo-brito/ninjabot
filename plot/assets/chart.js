@@ -143,12 +143,13 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!indicator.overlay) {
                 const heightStart = standaloneIndicatorIndex * indicatorsHeight;
                 layout["yaxis"+axisNumber] = {
+                    title: indicator.name,
                     domain: [heightStart, heightStart + indicatorsHeight],
                     autorange: true,
                     mirror: true,
                     showline: true,
                     linecolor: "black",
-                    title: indicator.name
+                    gridcolor: "#ddd"
                 };
                 standaloneIndicatorIndex++;
             }
@@ -159,8 +160,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     name: indicator.name + (metric.name && " - " + metric.name),
                     x: metric.time,
                     y: metric.value,
-                    type: metric.style,
-                    color: metric.color,
+                    mode: metric.style,
+                    line: {
+                        color: metric.color,
+                    },
                     xaxis: "x1",
                     yaxis: "y1",
                 };

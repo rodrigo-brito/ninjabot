@@ -12,22 +12,47 @@
   </head>
   <script defer src="/assets/chart.js"></script>
   <style>
-    body {
+    html {
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+
+    body, h1, h2, h3, h4, h5, h6, p, ol, ul {
       margin: 0;
       padding: 0;
+      font-weight: normal;
+      font-family: sans-serif;
+    }
+
+    ol, ul {
+      display: inline-block;
+      list-style: none;
+    }
+
+    .menu {
+      margin: 10px;
     }
 
     .coin {
-      background: rgb(68 122 219);
+      display: inline-block;
+      background: #ccc;
       padding: 10px;
       border-radius: 5px;
-      color: #fff;
+      color: #000;
       text-decoration: none;
       font-family: sans-serif;
     }
 
+    .coin.active {
+      background: rgb(106, 141, 204);
+    }
+
     .coin:hover {
-      background: rgb(106 141 204);
+      background: rgb(106, 141, 204);
     }
 
     #graph {
@@ -39,7 +64,7 @@
     }
 
     ul li {
-      display: inline;
+      display: inline-block;
       list-style-type: none;
       padding-right: 20px;
       float: left;
@@ -49,7 +74,7 @@
     <nav class="menu">
       <ul>
         {{range $val := .pairs}}
-        <li><a class="coin" href="/?pair={{ $val }}">{{ $val }}</a></li>
+        <li><a class="coin {{if eq $.pair $val}}active{{end}}" href="/?pair={{ $val }}">{{ $val }}</a></li>
         {{end}}
       </ul>
     </nav>

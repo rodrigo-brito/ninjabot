@@ -21,7 +21,7 @@ import (
 
 const (
 	defaultDatabase  = "ninjabot.db"
-	candleBufferSize = 1024
+	candleBufferSize = 1e10
 )
 
 func init() {
@@ -269,7 +269,6 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 	}
 
 	n.dataFeed.OnFinish(func() {
-		fmt.Println("finished")
 		close(n.pendingCandles)
 		if n.backtest {
 			n.startBacktest.Done()

@@ -100,11 +100,11 @@ func (p *PaperWallet) Summary() {
 	fmt.Println("--------------")
 
 	for pair, price := range p.avgPrice {
-		asset, _ := SplitAssetQuote(pair)
+		asset, quote := SplitAssetQuote(pair)
 		quantity := p.assets[asset].Free + p.assets[asset].Lock
 		total += quantity * price
 		marketChange += (p.lastCandle[pair].Close - p.fistCandle[pair].Close) / p.fistCandle[pair].Close
-		fmt.Printf("%f %s\n", quantity, asset)
+		fmt.Printf("%f %s = %f %s\n", quantity, asset, total, quote)
 	}
 
 	fmt.Println()

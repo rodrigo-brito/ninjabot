@@ -81,7 +81,7 @@ Chart available at http://localhost:8080
 
 ### Plot result:
 
-<img width="500"  src="https://user-images.githubusercontent.com/7620947/118583297-38f69580-b76b-11eb-8a7f-ad3999541cac.png" />
+<img width="100%"  src="https://user-images.githubusercontent.com/7620947/135760988-9b0654d8-139c-4f8a-a204-756458386066.png" />
 
 ### Features:
 
@@ -96,14 +96,13 @@ Chart available at http://localhost:8080
 
 - [x] Bot Utilities
   - [x] CLI to download historical data
-  - [x] Plot (Candles + Sell / Buy orders)
+  - [x] Plot (Candles + Sell / Buy orders, Indicators)
   - [x] Telegram Controller (Status, Buy, Sell)
 
 
 # Roadmap
   - [ ] Include trailing stop tool
   - [ ] Stop Orders in backtesting
-  - [ ] Plot Indicators
 
 ### Exchanges:
 

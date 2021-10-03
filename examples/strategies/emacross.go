@@ -11,15 +11,16 @@ import (
 type CrossEMA struct{}
 
 func (e CrossEMA) Timeframe() string {
-	return "1d"
+	return "4h"
 }
 
 func (e CrossEMA) WarmupPeriod() int {
-	return 9
+	return 21
 }
 
 func (e CrossEMA) Indicators(df *ninjabot.Dataframe) {
-	df.Metadata["ema9"] = talib.Ema(df.Close, 9)
+	df.Metadata["ema8"] = talib.Ema(df.Close, 8)
+	df.Metadata["ema21"] = talib.Sma(df.Close, 21)
 }
 
 func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
@@ -29,7 +30,7 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 		log.Error(err)
 	}
 
-	if quotePosition > 10 && df.Close.Crossover(df.Metadata["ema9"]) {
+	if quotePosition > 10 && df.Metadata["ema8"].Crossover(df.Metadata["ema21"]) {
 		_, err := broker.CreateOrderMarketQuote(ninjabot.SideTypeBuy, df.Pair, quotePosition/2)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
@@ -43,7 +44,7 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 	}
 
 	if assetPosition > 0 &&
-		df.Close.Crossunder(df.Metadata["ema9"]) {
+		df.Metadata["ema8"].Crossunder(df.Metadata["ema21"]) {
 		_, err := broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
 		if err != nil {
 			log.WithFields(map[string]interface{}{

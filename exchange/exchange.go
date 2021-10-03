@@ -112,7 +112,9 @@ func (d *DataFeedSubscription) Start() {
 						subscription.consumer(candle)
 					}
 				case err := <-feed.Err:
-					log.Error("dataFeedSubscription/start: ", err)
+					if err != nil {
+						log.Error("dataFeedSubscription/start: ", err)
+					}
 				}
 			}
 		}(key, feed)

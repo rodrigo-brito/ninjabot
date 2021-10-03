@@ -59,6 +59,21 @@ type plotIndicator struct {
 	Metrics []indicatorMetric `json:"metrics"`
 }
 
+type Indicator interface {
+	Name() string
+	Overlay() bool
+	Metrics() []IndicatorMetric
+	Load(dataframe *model.Dataframe)
+}
+
+type IndicatorMetric struct {
+	Name   string
+	Color  string
+	Style  string
+	Values model.Series
+	Time   []time.Time
+}
+
 func (c *Chart) OnOrder(order model.Order) {
 	c.Lock()
 	defer c.Unlock()
@@ -186,7 +201,8 @@ func (c *Chart) Start() error {
 	http.HandleFunc("/data", func(w http.ResponseWriter, req *http.Request) {
 		pair := req.URL.Query().Get("pair")
 		if pair == "" {
-			pair = pairs[0]
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 
 		w.Header().Set("Content-type", "text/json")
@@ -199,9 +215,16 @@ func (c *Chart) Start() error {
 		}
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		pair := r.URL.Query().Get("pair")
+		if pair == "" {
+			http.Redirect(w, r, fmt.Sprintf("/?pair=%s", pairs[0]), http.StatusFound)
+			return
+		}
+
 		w.Header().Add("Content-Type", "text/html")
-		err := t.Execute(w, map[string][]string{
+		err := t.Execute(w, map[string]interface{}{
+			"pair":  pair,
 			"pairs": pairs,
 		})
 		if err != nil {

@@ -8,6 +8,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/plot"
+	"github.com/rodrigo-brito/ninjabot/plot/indicator"
 	"github.com/rodrigo-brito/ninjabot/storage"
 
 	log "github.com/sirupsen/logrus"
@@ -55,10 +56,10 @@ func main() {
 	)
 
 	chart := plot.NewChart(plot.WithIndicators(
-		plot.EMA(9, "red"),
-		plot.EMA(80, "orange"),
-		plot.RSI(14, "green"),
-		plot.Stoch(8, 3, "red", "blue"),
+		indicator.EMA(8, "red"),
+		indicator.EMA(21, "#000"),
+		indicator.RSI(14, "purple"),
+		indicator.Stoch(8, 3, "red", "blue"),
 	))
 
 	bot, err := ninjabot.NewBot(
