@@ -22,3 +22,28 @@ func TestCandle_ToSlice(t *testing.T) {
 	require.Equal(t, []string{"1609459200", "10000.100000", "10000.100000", "10000.100000", "10000.100000",
 		"10000.1", "10000"}, candle.ToSlice())
 }
+
+func TestCandle_Less(t *testing.T) {
+	now := time.Now()
+
+	t.Run("equal time", func(t *testing.T) {
+		candle := Candle{Time: now, Symbol: "A"}
+		item := Item(Candle{Time: now, Symbol: "B"})
+		require.True(t, candle.Less(item))
+	})
+
+	t.Run("candle after item", func(t *testing.T) {
+		candle := Candle{Time: now.Add(time.Minute), Symbol: "A"}
+		item := Item(Candle{Time: now, Symbol: "B"})
+		require.False(t, candle.Less(item))
+	})
+}
+
+func TestAccount_Balance(t *testing.T) {
+	account := Account{}
+	require.Equal(t, Balance{}, account.Balance("A"))
+
+	account.Balances = []Balance{{Tick: "B", Free: 1.1, Lock: 1.3}}
+	require.Equal(t, Balance{}, account.Balance("A"))
+	require.Equal(t, Balance{Tick: "B", Free: 1.1, Lock: 1.3}, account.Balance("B"))
+}
