@@ -60,6 +60,7 @@ func main() {
 		indicator.EMA(21, "#000"),
 		indicator.RSI(14, "purple"),
 		indicator.Stoch(8, 3, "red", "blue"),
+		indicator.BollingerBands(20, 2, "blue", "red"),
 	))
 
 	bot, err := ninjabot.NewBot(
