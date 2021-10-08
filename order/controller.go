@@ -116,17 +116,23 @@ func NewController(ctx context.Context, exchange service.Exchange, storage stora
 	}
 }
 
-func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume float64, err error) {
-	orders, err := c.storage.FilterOrders(o.UpdatedAt, model.OrderStatusTypeFilled, o.Symbol, o.ID)
+func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
+	orders, err := c.storage.Filter(storage.WithUpdateAtBeforeOrEqual(o.UpdatedAt),
+		storage.WithStatus(model.OrderStatusTypeFilled), storage.WithPair(o.Symbol))
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, err
 	}
 
 	quantity := 0.0
 	avgPrice := 0.0
-	tradeVolume := 0.0
 
 	for _, order := range orders {
+		// skip current order
+		if o.ID == order.ID {
+			continue
+		}
+
+		// calculate avg price
 		if order.Side == model.SideTypeBuy {
 			price := order.Price
 			if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
@@ -137,9 +143,6 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume flo
 		} else {
 			quantity = math.Max(quantity-order.Quantity, 0)
 		}
-
-		// We keep track of volume to have an indication of costs. (0.001%) binance.
-		tradeVolume += order.Quantity * order.Price
 	}
 
 	cost := o.Quantity * avgPrice
@@ -148,7 +151,7 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent, volume flo
 		price = *o.Stop
 	}
 	profitValue := o.Quantity*price - cost
-	return profitValue, profitValue / cost, tradeVolume, nil
+	return profitValue, profitValue / cost, nil
 }
 
 func (c *Controller) notify(message string) {
@@ -166,24 +169,35 @@ func (c *Controller) notifyError(err error) {
 }
 
 func (c *Controller) processTrade(order *model.Order) {
-	profitValue, profit, volume, err := c.calculateProfit(order)
+	if order.Status != model.OrderStatusTypeFilled {
+		return
+	}
+
+	// initializer results map if needed
+	if _, ok := c.Results[order.Symbol]; !ok {
+		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
+	}
+
+	// register order volume
+	c.Results[order.Symbol].Volume += order.Price * order.Quantity
+
+	// calculate profit only for sell orders
+	if order.Side != model.SideTypeSell {
+		return
+	}
+
+	profitValue, profit, err := c.calculateProfit(order)
 	if err != nil {
 		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return
 	}
 
 	order.Profit = profit
-	if _, ok := c.Results[order.Symbol]; !ok {
-		c.Results[order.Symbol] = &summary{Symbol: order.Symbol}
-	}
-
 	if profitValue >= 0 {
 		c.Results[order.Symbol].Win = append(c.Results[order.Symbol].Win, profitValue)
 	} else {
 		c.Results[order.Symbol].Lose = append(c.Results[order.Symbol].Lose, profitValue)
 	}
-
-	c.Results[order.Symbol].Volume = volume
 
 	_, quote := exchange.SplitAssetQuote(order.Symbol)
 	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Symbol].String()))
@@ -227,9 +241,7 @@ func (c *Controller) updateOrders() {
 	}
 
 	for _, processOrder := range updatedOrders {
-		if processOrder.Side == model.SideTypeSell && processOrder.Status == model.OrderStatusTypeFilled {
-			c.processTrade(&processOrder)
-		}
+		c.processTrade(&processOrder)
 		c.orderFeed.Publish(processOrder, false)
 	}
 }
@@ -341,10 +353,7 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, symbol string, 
 	}
 
 	// calculate profit
-	if order.Side == model.SideTypeSell {
-		c.processTrade(&order)
-	}
-
+	c.processTrade(&order)
 	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
@@ -368,10 +377,7 @@ func (c *Controller) CreateOrderMarket(side model.SideType, symbol string, size 
 	}
 
 	// calculate profit
-	if order.Side == model.SideTypeSell {
-		c.processTrade(&order)
-	}
-
+	c.processTrade(&order)
 	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err

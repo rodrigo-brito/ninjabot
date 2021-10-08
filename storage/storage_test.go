@@ -5,128 +5,59 @@ import (
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/stretchr/testify/require"
 )
 
-func TestStorage(t *testing.T) {
-	storage, err := FromMemory()
-	if err != nil {
-		t.Error(err)
-	}
+func TestNewBunt(t *testing.T) {
+	now := time.Now()
+	repo, err := FromMemory()
+	require.NoError(t, err)
 
-	order1 := &model.Order{
-		ExchangeID: 20,
-		Status:     model.OrderStatusTypeFilled,
-		Price:      100,
-		Quantity:   2,
-	}
-
-	err = storage.CreateOrder(order1)
-	if err != nil {
-		t.Error(err)
-	}
-
-	order2 := &model.Order{
-		ExchangeID: 21,
-		Status:     model.OrderStatusTypeFilled,
-		Price:      150,
-		Quantity:   1,
-	}
-
-	err = storage.CreateOrder(order2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	order3 := &model.Order{
-		ExchangeID: 20,
+	err = repo.CreateOrder(&model.Order{
+		ExchangeID: 1,
+		Symbol:     "BTCUSDT",
+		Side:       model.SideTypeBuy,
+		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeNew,
 		Price:      10,
 		Quantity:   1,
-	}
+		CreatedAt:  now.Add(-time.Minute),
+		UpdatedAt:  now.Add(-time.Minute),
+	})
+	require.NoError(t, err)
 
-	err = storage.CreateOrder(order3)
-	if err != nil {
-		t.Error(err)
-	}
-
-	order4 := &model.Order{
-		ExchangeID: 21,
-		Status:     model.OrderStatusTypePartiallyFilled,
-		Price:      100,
-		Quantity:   2,
-	}
-
-	err = storage.CreateOrder(order4)
-	if err != nil {
-		t.Error(err)
-	}
-
-	order5 := &model.Order{
-		ExchangeID: 20,
-		Status:     model.OrderStatusTypePendingCancel,
-		Price:      150,
+	err = repo.CreateOrder(&model.Order{
+		ExchangeID: 2,
+		Symbol:     "BTCUSDT",
+		Side:       model.SideTypeBuy,
+		Type:       model.OrderTypeLimit,
+		Status:     model.OrderStatusTypeFilled,
+		Price:      10,
 		Quantity:   1,
-	}
+		CreatedAt:  now.Add(time.Minute),
+		UpdatedAt:  now.Add(time.Minute),
+	})
+	require.NoError(t, err)
 
-	err = storage.CreateOrder(order5)
-	if err != nil {
-		t.Error(err)
-	}
-
-	t.Run("get pending orders", func(t *testing.T) {
-		orders, err := storage.GetPendingOrders()
-		if err != nil {
-			t.Error(err)
-		}
-
-		if len(orders) != 3 || orders[0].ID != order3.ID || orders[1].ID != order4.ID || orders[2].ID != order5.ID {
-			t.Error("received invalid pending orders: ", orders)
-		}
+	t.Run("pending order", func(t *testing.T) {
+		pendings, err := repo.GetPendingOrders()
+		require.NoError(t, err)
+		require.Len(t, pendings, 1)
+		require.Equal(t, model.OrderStatusTypeNew, pendings[0].Status)
 	})
 
-	t.Run("filter orders", func(t *testing.T) {
-		orders, err := storage.FilterOrders(time.Now(), model.OrderStatusTypeFilled, order1.Symbol, order1.ID)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if len(orders) != 1 || orders[0].ID != order2.ID {
-			t.Error("received invalid orders from filter: ", orders)
-		}
+	t.Run("filter with date restriction", func(t *testing.T) {
+		orders, err := repo.Filter(WithUpdateAtBeforeOrEqual(now))
+		require.NoError(t, err)
+		require.Len(t, orders, 1)
+		require.Equal(t, orders[0].ExchangeID, int64(1))
 	})
 
-	t.Run("update status", func(t *testing.T) {
-		err := storage.UpdateOrderStatus(order3.ID, model.OrderStatusTypeFilled)
-		if err != nil {
-			t.Error(err)
-		}
-
-		orders, err := storage.FilterOrders(time.Now(), model.OrderStatusTypeFilled, order1.Symbol, order1.ID)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if len(orders) != 2 || orders[0].ID != order2.ID || orders[1].ID != order3.ID {
-
-			t.Error("received invalid orders from filter: ", orders)
-		}
-	})
-
-	t.Run("update order", func(t *testing.T) {
-		err := storage.UpdateOrder(order4.ID, time.Now(), model.OrderStatusTypeFilled, 5, 200)
-		if err != nil {
-			t.Error(err)
-		}
-
-		orders, err := storage.FilterOrders(time.Now(), model.OrderStatusTypeFilled, order1.Symbol, order1.ID)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if len(orders) != 3 || orders[0].ID != order2.ID || orders[1].ID != order3.ID ||
-			orders[2].ID != order4.ID || orders[2].Quantity != 5 || orders[2].Price != 200 {
-
-			t.Error("received invalid orders from filter: ", orders)
-		}
+	t.Run("get all", func(t *testing.T) {
+		orders, err := repo.Filter()
+		require.NoError(t, err)
+		require.Len(t, orders, 2)
+		require.Equal(t, orders[0].ExchangeID, int64(1))
+		require.Equal(t, orders[1].ExchangeID, int64(2))
 	})
 }
