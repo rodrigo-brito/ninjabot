@@ -33,21 +33,19 @@ func TestController_calculateProfit(t *testing.T) {
 		sellOrder, err := controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 		require.NoError(t, err)
 
-		value, profit, volume, err := controller.calculateProfit(&sellOrder)
+		value, profit, err := controller.calculateProfit(&sellOrder)
 		require.NoError(t, err)
 		assert.Equal(t, 1500.0, value)
 		assert.Equal(t, 1.0, profit)
-		assert.Equal(t, 3000.0, volume)
 
 		// sell remaining BTC, 50% of loss
 		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 750})
 		sellOrder, err = controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 		require.NoError(t, err)
-		value, profit, volume, err = controller.calculateProfit(&sellOrder)
+		value, profit, err = controller.calculateProfit(&sellOrder)
 		require.NoError(t, err)
 		assert.Equal(t, -750.0, value)
 		assert.Equal(t, -0.5, profit)
-		assert.Equal(t, 6000.0, volume)
 	})
 
 	t.Run("limit order", func(t *testing.T) {
@@ -71,11 +69,10 @@ func TestController_calculateProfit(t *testing.T) {
 		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 2000, Close: 2000})
 		controller.updateOrders()
 
-		value, profit, volume, err := controller.calculateProfit(&sellOrder)
+		value, profit, err := controller.calculateProfit(&sellOrder)
 		require.NoError(t, err)
 		assert.Equal(t, 1000.0, value)
 		assert.Equal(t, 1.0, profit)
-		assert.Equal(t, 7750.0, volume)
 	})
 
 	t.Run("oco order limit maker", func(t *testing.T) {
@@ -99,11 +96,10 @@ func TestController_calculateProfit(t *testing.T) {
 		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 2000, Close: 2000})
 		controller.updateOrders()
 
-		value, profit, volume, err := controller.calculateProfit(&sellOrder[0])
+		value, profit, err := controller.calculateProfit(&sellOrder[0])
 		require.NoError(t, err)
 		assert.Equal(t, 1000.0, value)
 		assert.Equal(t, 1.0, profit)
-		assert.Equal(t, 10750.0, volume)
 	})
 
 	t.Run("oco stop sell", func(t *testing.T) {
@@ -133,10 +129,9 @@ func TestController_calculateProfit(t *testing.T) {
 		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", Close: 400, Low: 400})
 		controller.updateOrders()
 
-		value, profit, volume, err := controller.calculateProfit(&sellOrder[1])
+		value, profit, err := controller.calculateProfit(&sellOrder[1])
 		require.NoError(t, err)
 		assert.Equal(t, -500.0, value)
 		assert.Equal(t, -0.5, profit)
-		assert.Equal(t, 15750.0, volume)
 	})
 }
