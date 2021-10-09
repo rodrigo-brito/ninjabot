@@ -1,12 +1,25 @@
 package storage
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/stretchr/testify/require"
 )
+
+func TestFromFile(t *testing.T) {
+	file, err := ioutil.TempFile(os.TempDir(), "*.db")
+	require.NoError(t, err)
+	defer func() {
+		os.Remove(file.Name())
+	}()
+	db, err := FromFile(file.Name())
+	require.NoError(t, err)
+	require.NotNil(t, db)
+}
 
 func TestNewBunt(t *testing.T) {
 	now := time.Now()
@@ -29,7 +42,7 @@ func TestNewBunt(t *testing.T) {
 
 	secondOrder := &model.Order{
 		ExchangeID: 2,
-		Symbol:     "BTCUSDT",
+		Symbol:     "ETHUSDT",
 		Side:       model.SideTypeBuy,
 		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeFilled,
@@ -54,6 +67,20 @@ func TestNewBunt(t *testing.T) {
 		require.Len(t, orders, 2)
 		require.Equal(t, orders[0].ExchangeID, int64(1))
 		require.Equal(t, orders[1].ExchangeID, int64(2))
+	})
+
+	t.Run("pair filter", func(t *testing.T) {
+		orders, err := repo.Orders(WithPair("ETHUSDT"))
+		require.NoError(t, err)
+		require.Len(t, orders, 1)
+		require.Equal(t, orders[0].Symbol, "ETHUSDT")
+	})
+
+	t.Run("status filter", func(t *testing.T) {
+		orders, err := repo.Orders(WithStatusIn(model.OrderStatusTypeFilled))
+		require.NoError(t, err)
+		require.Len(t, orders, 1)
+		require.Equal(t, orders[0].ID, secondOrder.ID)
 	})
 
 	t.Run("update", func(t *testing.T) {

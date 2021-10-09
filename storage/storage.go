@@ -36,25 +36,10 @@ type Bunt struct {
 func new(sourceFile string) (Storage, error) {
 	db, err := buntdb.Open(sourceFile)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = db.CreateIndex("id_index", "*", buntdb.IndexJSON("id"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.CreateIndex("symbol_index", "*", buntdb.IndexJSON("symbol"))
-	if err != nil {
 		return nil, err
 	}
 
 	err = db.CreateIndex("update_index", "*", buntdb.IndexJSON("updated_at"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.CreateIndex("status_index", "*", buntdb.IndexJSON("status"))
 	if err != nil {
 		return nil, err
 	}
