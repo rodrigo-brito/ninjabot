@@ -38,9 +38,9 @@ type PaperWallet struct {
 
 type PaperWalletOption func(*PaperWallet)
 
-func WithPaperAsset(symbol string, amount float64) PaperWalletOption {
+func WithPaperAsset(pair string, amount float64) PaperWalletOption {
 	return func(wallet *PaperWallet) {
-		wallet.assets[symbol] = &assetInfo{
+		wallet.assets[pair] = &assetInfo{
 			Free: amount,
 			Lock: 0,
 		}
@@ -109,9 +109,9 @@ func (p *PaperWallet) Summary() {
 
 	fmt.Println()
 	fmt.Println("TRADING VOLUME")
-	for symbol, vol := range p.volume {
+	for pair, vol := range p.volume {
 		volume += vol
-		fmt.Printf("%s        = %.2f %s\n", symbol, vol, p.baseCoin)
+		fmt.Printf("%s        = %.2f %s\n", pair, vol, p.baseCoin)
 	}
 	fmt.Println()
 
@@ -143,9 +143,9 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 	p.Lock()
 	defer p.Unlock()
 
-	p.lastCandle[candle.Symbol] = candle
-	if _, ok := p.fistCandle[candle.Symbol]; !ok {
-		p.fistCandle[candle.Symbol] = candle
+	p.lastCandle[candle.Pair] = candle
+	if _, ok := p.fistCandle[candle.Pair]; !ok {
+		p.fistCandle[candle.Pair] = candle
 	}
 
 	for i, order := range p.orders {
@@ -153,11 +153,11 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			continue
 		}
 
-		if _, ok := p.volume[candle.Symbol]; !ok {
-			p.volume[candle.Symbol] = 0
+		if _, ok := p.volume[candle.Pair]; !ok {
+			p.volume[candle.Pair] = 0
 		}
 
-		asset, quote := SplitAssetQuote(order.Symbol)
+		asset, quote := SplitAssetQuote(order.Pair)
 		if order.Side == model.SideTypeBuy && order.Price <= candle.Close {
 			if _, ok := p.assets[asset]; !ok {
 				p.assets[asset] = &assetInfo{}
@@ -165,11 +165,11 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 
 			actualQty := p.assets[asset].Free + p.assets[asset].Lock
 			orderVolume := order.Price * order.Quantity
-			walletValue := p.avgPrice[candle.Symbol] * actualQty
+			walletValue := p.avgPrice[candle.Pair] * actualQty
 
-			p.volume[candle.Symbol] += orderVolume
+			p.volume[candle.Pair] += orderVolume
 			p.orders[i].Status = model.OrderStatusTypeFilled
-			p.avgPrice[candle.Symbol] = (walletValue + orderVolume) / (actualQty + order.Quantity)
+			p.avgPrice[candle.Pair] = (walletValue + orderVolume) / (actualQty + order.Quantity)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
 			p.assets[quote].Lock = p.assets[quote].Lock - orderVolume
 		}
@@ -206,11 +206,11 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			}
 
 			orderVolume := order.Quantity * orderPrice
-			profitValue := order.Quantity*orderPrice - order.Quantity*p.avgPrice[candle.Symbol]
-			percentage := profitValue / (order.Quantity * p.avgPrice[candle.Symbol])
+			profitValue := order.Quantity*orderPrice - order.Quantity*p.avgPrice[candle.Pair]
+			percentage := profitValue / (order.Quantity * p.avgPrice[candle.Pair])
 			log.Infof("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100)
 
-			p.volume[candle.Symbol] += orderVolume
+			p.volume[candle.Pair] += orderVolume
 			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
@@ -221,9 +221,9 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 
 func (p *PaperWallet) Account() (model.Account, error) {
 	balances := make([]model.Balance, 0)
-	for symbol, info := range p.assets {
+	for pair, info := range p.assets {
 		balances = append(balances, model.Balance{
-			Tick: symbol,
+			Tick: pair,
 			Free: info.Free,
 			Lock: info.Lock,
 		})
@@ -234,11 +234,11 @@ func (p *PaperWallet) Account() (model.Account, error) {
 	}, nil
 }
 
-func (p *PaperWallet) Position(symbol string) (asset, quote float64, err error) {
+func (p *PaperWallet) Position(pair string) (asset, quote float64, err error) {
 	p.Lock()
 	defer p.Unlock()
 
-	assetTick, quoteTick := SplitAssetQuote(symbol)
+	assetTick, quoteTick := SplitAssetQuote(pair)
 	acc, err := p.Account()
 	if err != nil {
 		return 0, 0, err
@@ -246,12 +246,12 @@ func (p *PaperWallet) Position(symbol string) (asset, quote float64, err error) 
 	return acc.Balance(assetTick).Free, acc.Balance(quoteTick).Free, nil
 }
 
-func (p *PaperWallet) CreateOrderOCO(side model.SideType, symbol string,
+func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 	size, price, stop, stopLimit float64) ([]model.Order, error) {
 	p.Lock()
 	defer p.Unlock()
 
-	asset, _ := SplitAssetQuote(symbol)
+	asset, _ := SplitAssetQuote(pair)
 
 	err := p.lockFunds(asset, size)
 	if err != nil {
@@ -261,9 +261,9 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, symbol string,
 	groupID := p.ID()
 	limitMaker := model.Order{
 		ExchangeID: p.ID(),
-		CreatedAt:  p.lastCandle[symbol].Time,
-		UpdatedAt:  p.lastCandle[symbol].Time,
-		Symbol:     symbol,
+		CreatedAt:  p.lastCandle[pair].Time,
+		UpdatedAt:  p.lastCandle[pair].Time,
+		Pair:       pair,
 		Side:       side,
 		Type:       model.OrderTypeLimitMaker,
 		Status:     model.OrderStatusTypeNew,
@@ -274,9 +274,9 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, symbol string,
 
 	stopOrder := model.Order{
 		ExchangeID: p.ID(),
-		CreatedAt:  p.lastCandle[symbol].Time,
-		UpdatedAt:  p.lastCandle[symbol].Time,
-		Symbol:     symbol,
+		CreatedAt:  p.lastCandle[pair].Time,
+		UpdatedAt:  p.lastCandle[pair].Time,
+		Pair:       pair,
 		Side:       side,
 		Type:       model.OrderTypeStopLoss,
 		Status:     model.OrderStatusTypeNew,
@@ -290,13 +290,13 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, symbol string,
 	return []model.Order{limitMaker, stopOrder}, nil
 }
 
-func (p *PaperWallet) CreateOrderLimit(side model.SideType, symbol string,
+func (p *PaperWallet) CreateOrderLimit(side model.SideType, pair string,
 	size float64, limit float64) (model.Order, error) {
 
 	p.Lock()
 	defer p.Unlock()
 
-	asset, quote := SplitAssetQuote(symbol)
+	asset, quote := SplitAssetQuote(pair)
 	if side == model.SideTypeSell {
 		err := p.lockFunds(asset, size)
 		if err != nil {
@@ -310,9 +310,9 @@ func (p *PaperWallet) CreateOrderLimit(side model.SideType, symbol string,
 	}
 	order := model.Order{
 		ExchangeID: p.ID(),
-		CreatedAt:  p.lastCandle[symbol].Time,
-		UpdatedAt:  p.lastCandle[symbol].Time,
-		Symbol:     symbol,
+		CreatedAt:  p.lastCandle[pair].Time,
+		UpdatedAt:  p.lastCandle[pair].Time,
+		Pair:       pair,
 		Side:       side,
 		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeNew,
@@ -323,15 +323,15 @@ func (p *PaperWallet) CreateOrderLimit(side model.SideType, symbol string,
 	return order, nil
 }
 
-func (p *PaperWallet) CreateOrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
+func (p *PaperWallet) CreateOrderMarket(side model.SideType, pair string, size float64) (model.Order, error) {
 	p.Lock()
 	defer p.Unlock()
 
-	return p.createOrderMarket(side, symbol, size)
+	return p.createOrderMarket(side, pair, size)
 }
 
-func (p *PaperWallet) createOrderMarket(side model.SideType, symbol string, size float64) (model.Order, error) {
-	asset, quote := SplitAssetQuote(symbol)
+func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size float64) (model.Order, error) {
+	asset, quote := SplitAssetQuote(pair)
 	if side == model.SideTypeSell {
 		if value, ok := p.assets[asset]; !ok || value.Free < size {
 			return model.Order{}, ErrInsufficientFunds
@@ -340,47 +340,47 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, symbol string, size
 			p.assets[quote] = &assetInfo{}
 		}
 		p.assets[asset].Free = p.assets[asset].Free - size
-		p.assets[quote].Free = p.assets[quote].Free + p.lastCandle[symbol].Close*size
+		p.assets[quote].Free = p.assets[quote].Free + p.lastCandle[pair].Close*size
 	} else {
-		if value, ok := p.assets[quote]; !ok || value.Free < size*p.lastCandle[symbol].Close {
+		if value, ok := p.assets[quote]; !ok || value.Free < size*p.lastCandle[pair].Close {
 			return model.Order{}, ErrInsufficientFunds
 		}
 		if _, ok := p.assets[asset]; !ok {
 			p.assets[asset] = &assetInfo{}
 		}
 		actualQty := p.assets[asset].Free + p.assets[asset].Lock
-		p.avgPrice[symbol] = (p.avgPrice[symbol]*actualQty + p.lastCandle[symbol].Close*size) / (actualQty + size)
-		p.assets[quote].Free = p.assets[quote].Free - (size * p.lastCandle[symbol].Close)
+		p.avgPrice[pair] = (p.avgPrice[pair]*actualQty + p.lastCandle[pair].Close*size) / (actualQty + size)
+		p.assets[quote].Free = p.assets[quote].Free - (size * p.lastCandle[pair].Close)
 		p.assets[asset].Free = p.assets[asset].Free + size
 	}
 
-	if _, ok := p.volume[symbol]; !ok {
-		p.volume[symbol] = 0
+	if _, ok := p.volume[pair]; !ok {
+		p.volume[pair] = 0
 	}
 
-	p.volume[symbol] += p.lastCandle[symbol].Close * size
+	p.volume[pair] += p.lastCandle[pair].Close * size
 
 	order := model.Order{
 		ExchangeID: p.ID(),
-		CreatedAt:  p.lastCandle[symbol].Time,
-		UpdatedAt:  p.lastCandle[symbol].Time,
-		Symbol:     symbol,
+		CreatedAt:  p.lastCandle[pair].Time,
+		UpdatedAt:  p.lastCandle[pair].Time,
+		Pair:       pair,
 		Side:       side,
 		Type:       model.OrderTypeMarket,
 		Status:     model.OrderStatusTypeFilled,
-		Price:      p.lastCandle[symbol].Close,
+		Price:      p.lastCandle[pair].Close,
 		Quantity:   size,
 	}
 	p.orders = append(p.orders, order)
 	return order, nil
 }
 
-func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, symbol string,
+func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string,
 	quantity float64) (model.Order, error) {
 	p.Lock()
 	defer p.Unlock()
 
-	return p.createOrderMarket(side, symbol, quantity/p.lastCandle[symbol].Close)
+	return p.createOrderMarket(side, pair, quantity/p.lastCandle[pair].Close)
 }
 
 func (p *PaperWallet) Cancel(order model.Order) error {
@@ -395,7 +395,7 @@ func (p *PaperWallet) Cancel(order model.Order) error {
 	return nil
 }
 
-func (p *PaperWallet) Order(symbol string, id int64) (model.Order, error) {
+func (p *PaperWallet) Order(pair string, id int64) (model.Order, error) {
 	for _, order := range p.orders {
 		if order.ExchangeID == id {
 			return order, nil

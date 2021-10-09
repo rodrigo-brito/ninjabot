@@ -56,7 +56,7 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 
 			candle := model.Candle{
 				Time:     time.Unix(int64(timestamp), 0).UTC(),
-				Symbol:   feed.Pair,
+				Pair:     feed.Pair,
 				Complete: true,
 			}
 

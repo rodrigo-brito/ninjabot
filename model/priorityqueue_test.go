@@ -13,10 +13,10 @@ func TestPriorityQueue(t *testing.T) {
 	require.Nil(t, pq.Pop())
 
 	pq.Push(Candle{Time: now, Close: 2})
-	pq.Push(Candle{Time: now.Add(time.Minute), Close: 6, Symbol: "D"})
-	pq.Push(Candle{Time: now.Add(time.Minute), Close: 5, Symbol: "C"})
-	pq.Push(Candle{Time: now.Add(time.Minute), Close: 4, Symbol: "B"})
-	pq.Push(Candle{Time: now.Add(time.Minute), Close: 3, Symbol: "A"})
+	pq.Push(Candle{Time: now.Add(time.Minute), Close: 6, Pair: "D"})
+	pq.Push(Candle{Time: now.Add(time.Minute), Close: 5, Pair: "C"})
+	pq.Push(Candle{Time: now.Add(time.Minute), Close: 4, Pair: "B"})
+	pq.Push(Candle{Time: now.Add(time.Minute), Close: 3, Pair: "A"})
 	pq.Push(Candle{Time: now.Add(-time.Minute), Close: 1})
 
 	require.Equal(t, 1.0, pq.Pop().(Candle).Close)
@@ -31,14 +31,14 @@ func TestPriorityQueue_Peek(t *testing.T) {
 	pq := &PriorityQueue{}
 	require.Nil(t, pq.Peek())
 
-	pq = NewPriorityQueue([]Item{Candle{Symbol: "A"}})
-	require.Equal(t, "A", pq.Peek().(Candle).Symbol)
+	pq = NewPriorityQueue([]Item{Candle{Pair: "A"}})
+	require.Equal(t, "A", pq.Peek().(Candle).Pair)
 }
 
 func TestPriorityQueue_Len(t *testing.T) {
 	pq := &PriorityQueue{}
 	require.Zero(t, pq.Len())
 
-	pq = NewPriorityQueue([]Item{Candle{Symbol: "A"}})
+	pq = NewPriorityQueue([]Item{Candle{Pair: "A"}})
 	require.Equal(t, 1, pq.Len())
 }

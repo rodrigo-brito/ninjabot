@@ -11,7 +11,7 @@ func TestOrder_String(t *testing.T) {
 	order := Order{
 		ID:         1,
 		ExchangeID: 2,
-		Symbol:     "BTCUSDT",
+		Pair:       "BTCUSDT",
 		Side:       SideTypeSell,
 		Type:       OrderTypeLimit,
 		Status:     OrderStatusTypeFilled,

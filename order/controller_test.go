@@ -20,16 +20,16 @@ func TestController_calculateProfit(t *testing.T) {
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
 		controller := NewController(ctx, wallet, storage, NewOrderFeed(), nil)
 
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 1000})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
 		_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 		require.NoError(t, err)
 
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 2000})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 2000})
 		_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 		require.NoError(t, err)
 
 		// close half position 1BTC with 100% of profit
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 3000})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 3000})
 		sellOrder, err := controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 		require.NoError(t, err)
 
@@ -39,7 +39,7 @@ func TestController_calculateProfit(t *testing.T) {
 		assert.Equal(t, 1.0, profit)
 
 		// sell remaining BTC, 50% of loss
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 750})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 750})
 		sellOrder, err = controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 		require.NoError(t, err)
 		value, profit, err = controller.calculateProfit(&sellOrder)
@@ -54,19 +54,19 @@ func TestController_calculateProfit(t *testing.T) {
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
 		controller := NewController(ctx, wallet, storage, NewOrderFeed(), nil)
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 1500, Close: 1500})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 1500, Close: 1500})
 
 		_, err = controller.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 1000)
 		require.NoError(t, err)
 
 		// should execute previous order
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 1000, Close: 1000})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 1000, Close: 1000})
 
 		sellOrder, err := controller.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 1, 2000)
 		require.NoError(t, err)
 
 		// should execute previous order
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 2000, Close: 2000})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 2000, Close: 2000})
 		controller.updateOrders()
 
 		value, profit, err := controller.calculateProfit(&sellOrder)
@@ -81,19 +81,19 @@ func TestController_calculateProfit(t *testing.T) {
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
 		controller := NewController(ctx, wallet, storage, NewOrderFeed(), nil)
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 1500, Close: 1500})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 1500, Close: 1500})
 
 		_, err = controller.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 1000)
 		require.NoError(t, err)
 
 		// should execute previous order
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 1000, Close: 1000})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 1000, Close: 1000})
 
 		sellOrder, err := controller.CreateOrderOCO(model.SideTypeSell, "BTCUSDT", 1, 2000, 500, 500)
 		require.NoError(t, err)
 
 		// should execute previous order
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", High: 2000, Close: 2000})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 2000, Close: 2000})
 		controller.updateOrders()
 
 		value, profit, err := controller.calculateProfit(&sellOrder[0])
@@ -108,7 +108,7 @@ func TestController_calculateProfit(t *testing.T) {
 		ctx := context.Background()
 		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
 		controller := NewController(ctx, wallet, storage, NewOrderFeed(), nil)
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", Close: 1500, Low: 1500})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", Close: 1500, Low: 1500})
 
 		_, err = controller.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 0.5, 1000)
 		require.NoError(t, err)
@@ -117,7 +117,7 @@ func TestController_calculateProfit(t *testing.T) {
 		require.NoError(t, err)
 
 		// should execute previous order
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", Close: 1000, Low: 1000})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", Close: 1000, Low: 1000})
 
 		_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1.0)
 		require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestController_calculateProfit(t *testing.T) {
 		require.NoError(t, err)
 
 		// should execute previous order
-		wallet.OnCandle(model.Candle{Time: time.Now(), Symbol: "BTCUSDT", Close: 400, Low: 400})
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", Close: 400, Low: 400})
 		controller.updateOrders()
 
 		value, profit, err := controller.calculateProfit(&sellOrder[1])

@@ -135,14 +135,14 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 	quotesValue := make(map[string]float64)
 
 	for _, pair := range t.settings.Pairs {
-		assetSymbol, quoteSymbol := exchange.SplitAssetQuote(pair)
+		assetPair, quotePair := exchange.SplitAssetQuote(pair)
 		assetValue, quoteValue, err := t.orderController.Position(pair)
 		if err != nil {
 			t.OrError(err)
 		}
 
-		quotesValue[quoteSymbol] = quoteValue
-		message += fmt.Sprintf("%s: `%.4f`\n", assetSymbol, assetValue)
+		quotesValue[quotePair] = quoteValue
+		message += fmt.Sprintf("%s: `%.4f`\n", assetPair, assetValue)
 	}
 
 	for quote, value := range quotesValue {
@@ -336,11 +336,11 @@ func (t telegram) OnOrder(order model.Order) {
 	title := ""
 	switch order.Status {
 	case model.OrderStatusTypeFilled:
-		title = fmt.Sprintf("✅ ORDER FILLED - %s", order.Symbol)
+		title = fmt.Sprintf("✅ ORDER FILLED - %s", order.Pair)
 	case model.OrderStatusTypeNew:
-		title = fmt.Sprintf("🆕 NEW ORDER - %s", order.Symbol)
+		title = fmt.Sprintf("🆕 NEW ORDER - %s", order.Pair)
 	case model.OrderStatusTypeCanceled, model.OrderStatusTypeRejected:
-		title = fmt.Sprintf("❌ ORDER CANCELED / REJECTED - %s", order.Symbol)
+		title = fmt.Sprintf("❌ ORDER CANCELED / REJECTED - %s", order.Pair)
 	}
 	message := fmt.Sprintf("%s\n-----\n%s", title, order)
 	t.Notify(message)

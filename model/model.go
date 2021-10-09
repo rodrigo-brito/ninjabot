@@ -39,7 +39,7 @@ type Dataframe struct {
 }
 
 type Candle struct {
-	Symbol   string
+	Pair     string
 	Time     time.Time
 	Open     float64
 	Close    float64
@@ -64,7 +64,7 @@ func (c Candle) ToSlice() []string {
 
 func (c Candle) Less(j Item) bool {
 	if j.(Candle).Time.Equal(c.Time) {
-		return c.Symbol < j.(Candle).Symbol
+		return c.Pair < j.(Candle).Pair
 	}
 	return c.Time.Before(j.(Candle).Time)
 }

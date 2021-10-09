@@ -28,34 +28,34 @@ func NewOrderFeed() *Feed {
 	}
 }
 
-func (d *Feed) Subscribe(symbol string, consumer FeedConsumer, onlyNewOrder bool) {
-	if _, ok := d.OrderFeeds[symbol]; !ok {
-		d.OrderFeeds[symbol] = &DataFeed{
+func (d *Feed) Subscribe(pair string, consumer FeedConsumer, onlyNewOrder bool) {
+	if _, ok := d.OrderFeeds[pair]; !ok {
+		d.OrderFeeds[pair] = &DataFeed{
 			Data: make(chan model.Order),
 			Err:  make(chan error),
 		}
 	}
 
-	d.SubscriptionsBySymbol[symbol] = append(d.SubscriptionsBySymbol[symbol], Subscription{
+	d.SubscriptionsBySymbol[pair] = append(d.SubscriptionsBySymbol[pair], Subscription{
 		onlyNewOrder: onlyNewOrder,
 		consumer:     consumer,
 	})
 }
 
 func (d *Feed) Publish(order model.Order, newOrder bool) {
-	if _, ok := d.OrderFeeds[order.Symbol]; ok {
-		d.OrderFeeds[order.Symbol].Data <- order
+	if _, ok := d.OrderFeeds[order.Pair]; ok {
+		d.OrderFeeds[order.Pair].Data <- order
 	}
 }
 
 func (d *Feed) Start() {
-	for symbol := range d.OrderFeeds {
-		go func(symbol string, feed *DataFeed) {
+	for pair := range d.OrderFeeds {
+		go func(pair string, feed *DataFeed) {
 			for order := range feed.Data {
-				for _, subscription := range d.SubscriptionsBySymbol[symbol] {
+				for _, subscription := range d.SubscriptionsBySymbol[pair] {
 					subscription.consumer(order)
 				}
 			}
-		}(symbol, d.OrderFeeds[symbol])
+		}(pair, d.OrderFeeds[pair])
 	}
 }

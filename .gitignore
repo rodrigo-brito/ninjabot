@@ -15,3 +15,7 @@
 /ninjabot.db
 /backtest.db
 /dist/
+/vendor
+
+# IDE
+.idea

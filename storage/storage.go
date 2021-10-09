@@ -128,7 +128,7 @@ func WithStatus(status model.OrderStatusType) OrderFilter {
 
 func WithPair(pair string) OrderFilter {
 	return func(order model.Order) bool {
-		return order.Symbol == pair
+		return order.Pair == pair
 	}
 }
 

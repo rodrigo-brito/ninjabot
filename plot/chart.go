@@ -93,7 +93,7 @@ func (c *Chart) OnOrder(order model.Order) {
 			item.Price = *order.Stop
 		}
 
-		c.orders[order.Symbol] = append(c.orders[order.Symbol], item)
+		c.orders[order.Pair] = append(c.orders[order.Pair], item)
 	}
 }
 
@@ -101,10 +101,10 @@ func (c *Chart) OnCandle(candle model.Candle) {
 	c.Lock()
 	defer c.Unlock()
 
-	if candle.Complete && (len(c.candles[candle.Symbol]) == 0 ||
-		candle.Time.After(c.candles[candle.Symbol][len(c.candles[candle.Symbol])-1].Time)) {
+	if candle.Complete && (len(c.candles[candle.Pair]) == 0 ||
+		candle.Time.After(c.candles[candle.Pair][len(c.candles[candle.Pair])-1].Time)) {
 
-		c.candles[candle.Symbol] = append(c.candles[candle.Symbol], Candle{
+		c.candles[candle.Pair] = append(c.candles[candle.Pair], Candle{
 			Time:   candle.Time,
 			Open:   candle.Open,
 			Close:  candle.Close,
@@ -114,20 +114,20 @@ func (c *Chart) OnCandle(candle model.Candle) {
 			Orders: make([]Order, 0),
 		})
 
-		if c.dataframe[candle.Symbol] == nil {
-			c.dataframe[candle.Symbol] = &model.Dataframe{
-				Pair:     candle.Symbol,
+		if c.dataframe[candle.Pair] == nil {
+			c.dataframe[candle.Pair] = &model.Dataframe{
+				Pair:     candle.Pair,
 				Metadata: make(map[string]model.Series),
 			}
 		}
 
-		c.dataframe[candle.Symbol].Close = append(c.dataframe[candle.Symbol].Close, candle.Close)
-		c.dataframe[candle.Symbol].Open = append(c.dataframe[candle.Symbol].Open, candle.Open)
-		c.dataframe[candle.Symbol].High = append(c.dataframe[candle.Symbol].High, candle.High)
-		c.dataframe[candle.Symbol].Low = append(c.dataframe[candle.Symbol].Low, candle.Low)
-		c.dataframe[candle.Symbol].Volume = append(c.dataframe[candle.Symbol].Volume, candle.Volume)
-		c.dataframe[candle.Symbol].Time = append(c.dataframe[candle.Symbol].Time, candle.Time)
-		c.dataframe[candle.Symbol].LastUpdate = candle.Time
+		c.dataframe[candle.Pair].Close = append(c.dataframe[candle.Pair].Close, candle.Close)
+		c.dataframe[candle.Pair].Open = append(c.dataframe[candle.Pair].Open, candle.Open)
+		c.dataframe[candle.Pair].High = append(c.dataframe[candle.Pair].High, candle.High)
+		c.dataframe[candle.Pair].Low = append(c.dataframe[candle.Pair].Low, candle.Low)
+		c.dataframe[candle.Pair].Volume = append(c.dataframe[candle.Pair].Volume, candle.Volume)
+		c.dataframe[candle.Pair].Time = append(c.dataframe[candle.Pair].Time, candle.Time)
+		c.dataframe[candle.Pair].LastUpdate = candle.Time
 	}
 }
 

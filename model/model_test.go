@@ -9,7 +9,7 @@ import (
 
 func TestCandle_ToSlice(t *testing.T) {
 	candle := Candle{
-		Symbol:   "BTCUSDT",
+		Pair:     "BTCUSDT",
 		Time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 		Open:     10000.1,
 		Close:    10000.1,
@@ -27,14 +27,14 @@ func TestCandle_Less(t *testing.T) {
 	now := time.Now()
 
 	t.Run("equal time", func(t *testing.T) {
-		candle := Candle{Time: now, Symbol: "A"}
-		item := Item(Candle{Time: now, Symbol: "B"})
+		candle := Candle{Time: now, Pair: "A"}
+		item := Item(Candle{Time: now, Pair: "B"})
 		require.True(t, candle.Less(item))
 	})
 
 	t.Run("candle after item", func(t *testing.T) {
-		candle := Candle{Time: now.Add(time.Minute), Symbol: "A"}
-		item := Item(Candle{Time: now, Symbol: "B"})
+		candle := Candle{Time: now.Add(time.Minute), Pair: "A"}
+		item := Item(Candle{Time: now, Pair: "B"})
 		require.False(t, candle.Less(item))
 	})
 }
