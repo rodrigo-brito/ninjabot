@@ -5,7 +5,7 @@ type AssetQuote struct {
 	Asset string
 }
 
-var symbolAssetQuoteMap = map[string]AssetQuote{
+var pairAssetQuoteMap = map[string]AssetQuote{
 	"ETHBTC":        {"BTC", "ETH"},
 	"LTCBTC":        {"BTC", "LTC"},
 	"BNBBTC":        {"BTC", "BNB"},
@@ -1437,6 +1437,6 @@ var symbolAssetQuoteMap = map[string]AssetQuote{
 }
 
 func SplitAssetQuote(pair string) (string, string) {
-	data := symbolAssetQuoteMap[pair]
+	data := pairAssetQuoteMap[pair]
 	return data.Asset, data.Quote
 }

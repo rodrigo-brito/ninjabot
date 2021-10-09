@@ -8,9 +8,9 @@ import (
 
 func TestSplitAssetQuote(t *testing.T) {
 	tt := []struct {
-		Pair string
-		Asset  string
-		Quote  string
+		Pair  string
+		Asset string
+		Quote string
 	}{
 		{"BTCUSDT", "BTC", "USDT"},
 		{"ETHBTC", "ETH", "BTC"},

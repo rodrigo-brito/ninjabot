@@ -135,14 +135,14 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 	quotesValue := make(map[string]float64)
 
 	for _, pair := range t.settings.Pairs {
-		assetSymbol, quoteSymbol := exchange.SplitAssetQuote(pair)
+		assetPair, quotePair := exchange.SplitAssetQuote(pair)
 		assetValue, quoteValue, err := t.orderController.Position(pair)
 		if err != nil {
 			t.OrError(err)
 		}
 
-		quotesValue[quoteSymbol] = quoteValue
-		message += fmt.Sprintf("%s: `%.4f`\n", assetSymbol, assetValue)
+		quotesValue[quotePair] = quoteValue
+		message += fmt.Sprintf("%s: `%.4f`\n", assetPair, assetValue)
 	}
 
 	for quote, value := range quotesValue {

@@ -19,7 +19,7 @@ import (
 )
 
 type summary struct {
-	Pair string
+	Pair   string
 	Win    []float64
 	Lose   []float64
 	Volume float64

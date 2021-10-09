@@ -28,7 +28,7 @@ func TestNewBunt(t *testing.T) {
 
 	firstOrder := &model.Order{
 		ExchangeID: 1,
-		Pair:     "BTCUSDT",
+		Pair:       "BTCUSDT",
 		Side:       model.SideTypeBuy,
 		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeNew,
@@ -42,7 +42,7 @@ func TestNewBunt(t *testing.T) {
 
 	secondOrder := &model.Order{
 		ExchangeID: 2,
-		Pair:     "ETHUSDT",
+		Pair:       "ETHUSDT",
 		Side:       model.SideTypeBuy,
 		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeFilled,

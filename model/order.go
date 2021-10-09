@@ -33,7 +33,7 @@ var (
 type Order struct {
 	ID         int64           `db:"id" json:"id"`
 	ExchangeID int64           `db:"exchange_id" json:"exchange_id"`
-	Pair     string          `db:"pair" json:"pair"`
+	Pair       string          `db:"pair" json:"pair"`
 	Side       SideType        `db:"side" json:"side"`
 	Type       OrderType       `db:"type" json:"type"`
 	Status     OrderStatusType `db:"status" json:"status"`

@@ -39,7 +39,7 @@ type Dataframe struct {
 }
 
 type Candle struct {
-	Pair   string
+	Pair     string
 	Time     time.Time
 	Open     float64
 	Close    float64

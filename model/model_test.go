@@ -9,7 +9,7 @@ import (
 
 func TestCandle_ToSlice(t *testing.T) {
 	candle := Candle{
-		Pair:   "BTCUSDT",
+		Pair:     "BTCUSDT",
 		Time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 		Open:     10000.1,
 		Close:    10000.1,
