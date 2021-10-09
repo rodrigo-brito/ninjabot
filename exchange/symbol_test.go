@@ -8,7 +8,7 @@ import (
 
 func TestSplitAssetQuote(t *testing.T) {
 	tt := []struct {
-		Symbol string
+		Pair string
 		Asset  string
 		Quote  string
 	}{
@@ -18,8 +18,8 @@ func TestSplitAssetQuote(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		t.Run(tc.Symbol, func(t *testing.T) {
-			asset, quote := SplitAssetQuote(tc.Symbol)
+		t.Run(tc.Pair, func(t *testing.T) {
+			asset, quote := SplitAssetQuote(tc.Pair)
 			require.Equal(t, tc.Asset, asset)
 			require.Equal(t, tc.Quote, quote)
 		})

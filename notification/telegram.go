@@ -336,11 +336,11 @@ func (t telegram) OnOrder(order model.Order) {
 	title := ""
 	switch order.Status {
 	case model.OrderStatusTypeFilled:
-		title = fmt.Sprintf("✅ ORDER FILLED - %s", order.Symbol)
+		title = fmt.Sprintf("✅ ORDER FILLED - %s", order.Pair)
 	case model.OrderStatusTypeNew:
-		title = fmt.Sprintf("🆕 NEW ORDER - %s", order.Symbol)
+		title = fmt.Sprintf("🆕 NEW ORDER - %s", order.Pair)
 	case model.OrderStatusTypeCanceled, model.OrderStatusTypeRejected:
-		title = fmt.Sprintf("❌ ORDER CANCELED / REJECTED - %s", order.Symbol)
+		title = fmt.Sprintf("❌ ORDER CANCELED / REJECTED - %s", order.Pair)
 	}
 	message := fmt.Sprintf("%s\n-----\n%s", title, order)
 	t.Notify(message)

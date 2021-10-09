@@ -54,7 +54,7 @@ func candlesCount(start, end time.Time, timeframe string) (int, time.Duration, e
 	return int(totalDuration / interval), interval, nil
 }
 
-func (d Downloader) Download(ctx context.Context, symbol, timeframe string, output string, options ...Option) error {
+func (d Downloader) Download(ctx context.Context, pair, timeframe string, output string, options ...Option) error {
 	recordFile, err := os.Create(output)
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (d Downloader) Download(ctx context.Context, symbol, timeframe string, outp
 		return err
 	}
 
-	log.Infof("Downloading %d candles of %s for %s", candlesCount, timeframe, symbol)
+	log.Infof("Downloading %d candles of %s for %s", candlesCount, timeframe, pair)
 
 	writer := csv.NewWriter(recordFile)
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
@@ -89,7 +89,7 @@ func (d Downloader) Download(ctx context.Context, symbol, timeframe string, outp
 			end = parameters.End
 		}
 
-		candles, err := d.exchange.CandlesByPeriod(ctx, symbol, timeframe, begin, end)
+		candles, err := d.exchange.CandlesByPeriod(ctx, pair, timeframe, begin, end)
 		if err != nil {
 			return err
 		}

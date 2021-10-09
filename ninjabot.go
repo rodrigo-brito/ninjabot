@@ -146,9 +146,9 @@ func WithPaperWallet(wallet *exchange.PaperWallet) Option {
 }
 
 func (n *NinjaBot) SubscribeCandle(subscriptions ...CandleSubscriber) {
-	for _, symbol := range n.settings.Pairs {
+	for _, pair := range n.settings.Pairs {
 		for _, subscription := range subscriptions {
-			n.dataFeed.Subscribe(symbol, n.strategy.Timeframe(), subscription.OnCandle, false)
+			n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), subscription.OnCandle, false)
 		}
 	}
 }
@@ -160,9 +160,9 @@ func WithOrderSubscription(subscriber OrderSubscriber) Option {
 }
 
 func (n *NinjaBot) SubscribeOrder(subscriptions ...OrderSubscriber) {
-	for _, symbol := range n.settings.Pairs {
+	for _, pair := range n.settings.Pairs {
 		for _, subscription := range subscriptions {
-			n.orderFeed.Subscribe(symbol, subscription.OnOrder, false)
+			n.orderFeed.Subscribe(pair, subscription.OnOrder, false)
 		}
 	}
 }
@@ -188,7 +188,7 @@ func (n *NinjaBot) Summary() string {
 	for _, summary := range n.orderController.Results {
 		avgPayoff += summary.Payoff() * float64(len(summary.Win)+len(summary.Lose))
 		table.Append([]string{
-			summary.Symbol,
+			summary.Pair,
 			strconv.Itoa(len(summary.Win) + len(summary.Lose)),
 			strconv.Itoa(len(summary.Win)),
 			strconv.Itoa(len(summary.Lose)),
@@ -237,7 +237,7 @@ func (n *NinjaBot) processCandles() {
 		if n.paperWallet != nil {
 			n.paperWallet.OnCandle(candle)
 		}
-		n.strategiesControllers[candle.Symbol].OnCandle(candle)
+		n.strategiesControllers[candle.Pair].OnCandle(candle)
 	}
 }
 

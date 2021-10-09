@@ -13,14 +13,14 @@ func TestFeed_NewOrderFeed(t *testing.T) {
 }
 
 func TestFeed_Subscribe(t *testing.T) {
-	feed, symbol := NewOrderFeed(), "blaus"
+	feed, pair := NewOrderFeed(), "blaus"
 	called := make(chan bool, 1)
 
-	feed.Subscribe(symbol, func(order model.Order) {
+	feed.Subscribe(pair, func(order model.Order) {
 		called <- true
 	}, false)
 
 	feed.Start()
-	feed.Publish(model.Order{Symbol: symbol}, false)
+	feed.Publish(model.Order{Pair: pair}, false)
 	require.True(t, <-called)
 }

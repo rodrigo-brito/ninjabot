@@ -28,7 +28,7 @@ func TestNewBunt(t *testing.T) {
 
 	firstOrder := &model.Order{
 		ExchangeID: 1,
-		Symbol:     "BTCUSDT",
+		Pair:     "BTCUSDT",
 		Side:       model.SideTypeBuy,
 		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeNew,
@@ -42,7 +42,7 @@ func TestNewBunt(t *testing.T) {
 
 	secondOrder := &model.Order{
 		ExchangeID: 2,
-		Symbol:     "ETHUSDT",
+		Pair:     "ETHUSDT",
 		Side:       model.SideTypeBuy,
 		Type:       model.OrderTypeLimit,
 		Status:     model.OrderStatusTypeFilled,
@@ -73,7 +73,7 @@ func TestNewBunt(t *testing.T) {
 		orders, err := repo.Orders(WithPair("ETHUSDT"))
 		require.NoError(t, err)
 		require.Len(t, orders, 1)
-		require.Equal(t, orders[0].Symbol, "ETHUSDT")
+		require.Equal(t, orders[0].Pair, "ETHUSDT")
 	})
 
 	t.Run("status filter", func(t *testing.T) {

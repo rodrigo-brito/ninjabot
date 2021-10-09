@@ -23,7 +23,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
 
 		// a new candle should execute order and unlock values
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 100})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[0].Status)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
@@ -48,7 +48,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 1.0, wallet.assets["BTC"].Lock)
 
 		// a new candle should execute order and unlock values
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 200, High: 200})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 200, High: 200})
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[1].Status)
 		require.Equal(t, 200.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
@@ -82,7 +82,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 80.0, wallet.assets["USDT"].Lock)
 
 		// should execute two orders and keep one pending
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 40})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 40})
 		require.Equal(t, 20.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 50.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
@@ -102,14 +102,14 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 2.0, wallet.assets["BTC"].Lock)
 
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 40, High: 40})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 40, High: 40})
 		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 50.0, wallet.assets["USDT"].Lock)
 
 		// execute old buy position
-		wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 50, High: 50})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50, High: 50})
 		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
@@ -120,7 +120,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 
 func TestPaperWallet_OrderMarket(t *testing.T) {
 	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
-	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 50})
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50})
 	order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 	require.NoError(t, err)
 
@@ -141,7 +141,7 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 	require.Empty(t, order)
 
 	// sell
-	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 100})
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
 	order, err = wallet.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 	require.NoError(t, err)
 	assert.Equal(t, 1.0, order.Quantity)
@@ -155,7 +155,7 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 
 func TestPaperWallet_OrderOCO(t *testing.T) {
 	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 50))
-	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 50})
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50})
 	_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 	require.NoError(t, err)
 
@@ -180,7 +180,7 @@ func TestPaperWallet_OrderOCO(t *testing.T) {
 	require.Nil(t, orders)
 
 	// execute stop and cancel target
-	wallet.OnCandle(model.Candle{Symbol: "BTCUSDT", Close: 30})
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 30})
 	assert.Equal(t, 40.0, wallet.assets["USDT"].Free)
 	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 	assert.Equal(t, 0.0, wallet.assets["BTC"].Free)

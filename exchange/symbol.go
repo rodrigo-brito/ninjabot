@@ -1436,7 +1436,7 @@ var symbolAssetQuoteMap = map[string]AssetQuote{
 	"VETTRY":        {"TRY", "VET"},
 }
 
-func SplitAssetQuote(symbol string) (string, string) {
-	data := symbolAssetQuoteMap[symbol]
+func SplitAssetQuote(pair string) (string, string) {
+	data := symbolAssetQuoteMap[pair]
 	return data.Asset, data.Quote
 }

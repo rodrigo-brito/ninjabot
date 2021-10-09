@@ -33,7 +33,7 @@ var (
 type Order struct {
 	ID         int64           `db:"id" json:"id"`
 	ExchangeID int64           `db:"exchange_id" json:"exchange_id"`
-	Symbol     string          `db:"symbol" json:"symbol"`
+	Pair     string          `db:"pair" json:"pair"`
 	Side       SideType        `db:"side" json:"side"`
 	Type       OrderType       `db:"type" json:"type"`
 	Status     OrderStatusType `db:"status" json:"status"`
@@ -54,5 +54,5 @@ type Order struct {
 
 func (o Order) String() string {
 	return fmt.Sprintf("[%s] %s %s | ID: %d, Type: %s, %f x $%f (~$%.f)",
-		o.Status, o.Side, o.Symbol, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price)
+		o.Status, o.Side, o.Pair, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price)
 }
