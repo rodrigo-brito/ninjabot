@@ -238,7 +238,6 @@ func (c *Controller) updateOrders() {
 		}
 
 		excOrder.ID = order.ID
-		fmt.Printf("UPDATE = %#v", excOrder)
 		err = c.storage.UpdateOrder(&excOrder)
 		if err != nil {
 			c.notifyError(fmt.Errorf("orderControler/update: %s", err))
