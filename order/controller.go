@@ -117,8 +117,12 @@ func NewController(ctx context.Context, exchange service.Exchange, storage stora
 }
 
 func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
-	orders, err := c.storage.Filter(storage.WithUpdateAtBeforeOrEqual(o.UpdatedAt),
-		storage.WithStatus(model.OrderStatusTypeFilled), storage.WithPair(o.Symbol))
+	// get filled orders before the current order
+	orders, err := c.storage.Orders(
+		storage.WithUpdateAtBeforeOrEqual(o.UpdatedAt),
+		storage.WithStatus(model.OrderStatusTypeFilled),
+		storage.WithPair(o.Symbol),
+	)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -207,7 +211,12 @@ func (c *Controller) updateOrders() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	orders, err := c.storage.GetPendingOrders()
+	// pending orders
+	orders, err := c.storage.Orders(storage.WithStatusIn(
+		model.OrderStatusTypeNew,
+		model.OrderStatusTypePartiallyFilled,
+		model.OrderStatusTypePendingCancel,
+	))
 	if err != nil {
 		c.notifyError(fmt.Errorf("orderController/start: %s", err))
 		c.mtx.Unlock()
@@ -229,8 +238,7 @@ func (c *Controller) updateOrders() {
 		}
 
 		excOrder.ID = order.ID
-
-		err = c.storage.UpdateOrder(excOrder.ID, excOrder.UpdatedAt, excOrder.Status, excOrder.Quantity, excOrder.Price)
+		err = c.storage.UpdateOrder(&excOrder)
 		if err != nil {
 			c.notifyError(fmt.Errorf("orderControler/update: %s", err))
 			continue
@@ -393,7 +401,8 @@ func (c *Controller) Cancel(order model.Order) error {
 		return err
 	}
 
-	err = c.storage.UpdateOrderStatus(order.ID, model.OrderStatusTypePendingCancel)
+	order.Status = model.OrderStatusTypePendingCancel
+	err = c.storage.UpdateOrder(&order)
 	if err != nil {
 		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
 		return err

@@ -7,21 +7,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/tidwall/gjson"
-
 	"github.com/rodrigo-brito/ninjabot/model"
 
 	"github.com/tidwall/buntdb"
 )
 
-type Filter func(model.Order) bool
+type OrderFilter func(model.Order) bool
 
 type Storage interface {
 	CreateOrder(order *model.Order) error
-	UpdateOrderStatus(id int64, status model.OrderStatusType) error
-	UpdateOrder(id int64, updatedAt time.Time, status model.OrderStatusType, quantity, price float64) error
-	GetPendingOrders() ([]*model.Order, error)
-	Filter(filters ...Filter) ([]*model.Order, error)
+	UpdateOrder(order *model.Order) error
+	Orders(filters ...OrderFilter) ([]*model.Order, error)
 }
 
 func FromMemory() (Storage, error) {
@@ -40,25 +36,10 @@ type Bunt struct {
 func new(sourceFile string) (Storage, error) {
 	db, err := buntdb.Open(sourceFile)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = db.CreateIndex("id_index", "*", buntdb.IndexJSON("id"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.CreateIndex("symbol_index", "*", buntdb.IndexJSON("symbol"))
-	if err != nil {
 		return nil, err
 	}
 
 	err = db.CreateIndex("update_index", "*", buntdb.IndexJSON("updated_at"))
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.CreateIndex("status_index", "*", buntdb.IndexJSON("status"))
 	if err != nil {
 		return nil, err
 	}
@@ -85,87 +66,21 @@ func (b *Bunt) CreateOrder(order *model.Order) error {
 	})
 }
 
-func (b Bunt) UpdateOrderStatus(id int64, status model.OrderStatusType) error {
-	return b.db.View(func(tx *buntdb.Tx) error {
-		idStr := strconv.FormatInt(id, 10)
-		var order model.Order
-		content, err := tx.Get(idStr)
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal([]byte(content), &order)
-		if err != nil {
-			return err
-		}
-
-		order.Status = status
-
-		newContent, err := json.Marshal(order)
-		if err != nil {
-			return err
-		}
-
-		_, _, err = tx.Set(idStr, string(newContent), nil)
-		return err
-	})
-}
-
-func (b Bunt) UpdateOrder(id int64, updatedAt time.Time, status model.OrderStatusType, quantity, price float64) error {
+func (b Bunt) UpdateOrder(order *model.Order) error {
 	return b.db.Update(func(tx *buntdb.Tx) error {
-		idStr := strconv.FormatInt(id, 10)
-		var order model.Order
-		content, err := tx.Get(idStr)
+		id := strconv.FormatInt(order.ID, 10)
+
+		content, err := json.Marshal(order)
 		if err != nil {
 			return err
 		}
 
-		err = json.Unmarshal([]byte(content), &order)
-		if err != nil {
-			return err
-		}
-
-		order.Status = status
-		order.UpdatedAt = updatedAt
-		order.Quantity = quantity
-		order.Price = price
-
-		newContent, err := json.Marshal(order)
-		if err != nil {
-			return err
-		}
-
-		_, _, err = tx.Set(idStr, string(newContent), nil)
+		_, _, err = tx.Set(id, string(content), nil)
 		return err
 	})
 }
 
-func (b Bunt) GetPendingOrders() ([]*model.Order, error) {
-	pending := make([]*model.Order, 0)
-	err := b.db.View(func(tx *buntdb.Tx) error {
-		err := tx.Ascend("status_index", func(key, value string) bool {
-			status := gjson.Get(value, "status").String()
-			if status == string(model.OrderStatusTypeNew) ||
-				status == string(model.OrderStatusTypePartiallyFilled) ||
-				status == string(model.OrderStatusTypePendingCancel) {
-				var order model.Order
-				err := json.Unmarshal([]byte(value), &order)
-				if err != nil {
-					log.Println(err)
-				}
-				pending = append(pending, &order)
-			}
-			return true
-		})
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
-	return pending, nil
-}
-
-func (b Bunt) Filter(filters ...Filter) ([]*model.Order, error) {
+func (b Bunt) Orders(filters ...OrderFilter) ([]*model.Order, error) {
 	orders := make([]*model.Order, 0)
 	err := b.db.View(func(tx *buntdb.Tx) error {
 		err := tx.Ascend("update_index", func(key, value string) bool {
@@ -194,19 +109,30 @@ func (b Bunt) Filter(filters ...Filter) ([]*model.Order, error) {
 	return orders, nil
 }
 
-func WithStatus(status model.OrderStatusType) Filter {
+func WithStatusIn(status ...model.OrderStatusType) OrderFilter {
+	return func(order model.Order) bool {
+		for _, s := range status {
+			if s == order.Status {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func WithStatus(status model.OrderStatusType) OrderFilter {
 	return func(order model.Order) bool {
 		return order.Status == status
 	}
 }
 
-func WithPair(pair string) Filter {
+func WithPair(pair string) OrderFilter {
 	return func(order model.Order) bool {
 		return order.Symbol == pair
 	}
 }
 
-func WithUpdateAtBeforeOrEqual(time time.Time) Filter {
+func WithUpdateAtBeforeOrEqual(time time.Time) OrderFilter {
 	return func(order model.Order) bool {
 		return !order.UpdatedAt.After(time)
 	}
