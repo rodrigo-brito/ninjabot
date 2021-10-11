@@ -3,7 +3,7 @@ module github.com/rodrigo-brito/ninjabot
 go 1.16
 
 require (
-	github.com/adshao/go-binance/v2 v2.3.1
+	github.com/adshao/go-binance/v2 v2.3.2
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jpillora/backoff v1.0.0
@@ -16,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/btree v0.6.1 // indirect
 	github.com/tidwall/buntdb v1.2.6
-	github.com/tidwall/gjson v1.9.2
+	github.com/tidwall/gjson v1.9.2 // indirect
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4 // indirect
