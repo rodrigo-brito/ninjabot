@@ -24,7 +24,7 @@ func main() {
 		},
 	}
 
-	strategy := new(strategies.OCOSell)
+	strategy := new(strategies.CrossEMA)
 
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
@@ -60,7 +60,7 @@ func main() {
 		indicator.EMA(21, "#000"),
 		indicator.RSI(14, "purple"),
 		indicator.Stoch(8, 3, "red", "blue"),
-	), plot.WithDebug())
+	))
 	if err != nil {
 		log.Fatal(err)
 	}
