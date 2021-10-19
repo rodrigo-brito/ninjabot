@@ -243,6 +243,7 @@ func (n *NinjaBot) processCandles() {
 
 func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
+		pair := pair
 		// setup and subscribe strategy to data feed (candles)
 		strategyController := strategy.NewStrategyController(pair, n.strategy, n.orderController)
 		strategyController.Start()
@@ -252,13 +253,14 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		// TODO: include onCandleClose=false to improve precision in OCO orders (backtesting)
 		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
 
-		// preload candles to warmup strategy
-		candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
-		if err != nil {
-			return err
+		if !n.backtest {
+			// preload candles to warmup strategy
+			candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
+			if err != nil {
+				return err
+			}
+			n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
 		}
-
-		n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
 	}
 
 	n.orderFeed.Start()

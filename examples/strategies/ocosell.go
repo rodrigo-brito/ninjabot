@@ -55,7 +55,7 @@ func (e *OCOSell) OnCandle(df *model.Dataframe, broker service.Broker) {
 			}).Error(err)
 		}
 
-		_, err = broker.CreateOrderOCO(model.SideTypeSell, df.Pair, size, closePrice*1.05, closePrice*0.95, closePrice*0.95)
+		_, err = broker.CreateOrderOCO(model.SideTypeSell, df.Pair, size, closePrice*1.1, closePrice*0.95, closePrice*0.95)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
 				"pair":  df.Pair,

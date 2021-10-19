@@ -55,12 +55,15 @@ func main() {
 		exchange.WithDataFeed(csvFeed),
 	)
 
-	chart := plot.NewChart(plot.WithIndicators(
+	chart, err := plot.NewChart(plot.WithIndicators(
 		indicator.EMA(8, "red"),
 		indicator.EMA(21, "#000"),
 		indicator.RSI(14, "purple"),
 		indicator.Stoch(8, 3, "red", "blue"),
 	))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	bot, err := ninjabot.NewBot(
 		ctx,

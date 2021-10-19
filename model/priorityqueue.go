@@ -28,6 +28,7 @@ func NewPriorityQueue(data []Item) *PriorityQueue {
 func (q *PriorityQueue) Push(item Item) {
 	q.Lock()
 	defer q.Unlock()
+
 	q.data = append(q.data, item)
 	q.length++
 	q.up(q.length - 1)
@@ -35,6 +36,7 @@ func (q *PriorityQueue) Push(item Item) {
 func (q *PriorityQueue) Pop() Item {
 	q.Lock()
 	defer q.Unlock()
+
 	if q.length == 0 {
 		return nil
 	}
@@ -47,15 +49,21 @@ func (q *PriorityQueue) Pop() Item {
 	q.data = q.data[:len(q.data)-1]
 	return top
 }
+
 func (q *PriorityQueue) Peek() Item {
+	q.Lock()
+	defer q.Unlock()
+
 	if q.length == 0 {
 		return nil
 	}
 	return q.data[0]
 }
+
 func (q *PriorityQueue) Len() int {
 	q.Lock()
 	defer q.Unlock()
+
 	return q.length
 }
 func (q *PriorityQueue) down(pos int) {
