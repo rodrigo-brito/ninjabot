@@ -149,7 +149,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 	}
 
 	for i, order := range p.orders {
-		if order.Status != model.OrderStatusTypeNew {
+		if order.Pair != candle.Pair || order.Status != model.OrderStatusTypeNew {
 			continue
 		}
 
@@ -168,6 +168,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			walletValue := p.avgPrice[candle.Pair] * actualQty
 
 			p.volume[candle.Pair] += orderVolume
+			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
 			p.avgPrice[candle.Pair] = (walletValue + orderVolume) / (actualQty + order.Quantity)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
@@ -196,6 +197,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 					if groupOrder.GroupID != nil && *groupOrder.GroupID == *order.GroupID &&
 						groupOrder.ExchangeID != order.ExchangeID {
 						p.orders[j].Status = model.OrderStatusTypeCanceled
+						p.orders[j].UpdatedAt = candle.Time
 						break
 					}
 				}
@@ -270,6 +272,7 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 		Price:      price,
 		Quantity:   size,
 		GroupID:    &groupID,
+		RefPrice:   p.lastCandle[pair].Close,
 	}
 
 	stopOrder := model.Order{
@@ -284,6 +287,7 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 		Stop:       &stop,
 		Quantity:   size,
 		GroupID:    &groupID,
+		RefPrice:   p.lastCandle[pair].Close,
 	}
 	p.orders = append(p.orders, limitMaker, stopOrder)
 

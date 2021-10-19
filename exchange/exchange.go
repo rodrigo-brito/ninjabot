@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
 
-	"github.com/rodrigo-brito/ninjabot/model"
-
+	"github.com/StudioSol/set"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,7 +27,7 @@ type DataFeed struct {
 
 type DataFeedSubscription struct {
 	exchange                service.Exchange
-	Feeds                   []string
+	Feeds                   *set.LinkedHashSetString
 	DataFeeds               map[string]*DataFeed
 	SubscriptionsByDataFeed map[string][]Subscription
 	SubscriptionsFinish     []func()
@@ -43,6 +43,7 @@ type DataFeedConsumer func(model.Candle)
 func NewDataFeed(exchange service.Exchange) *DataFeedSubscription {
 	return &DataFeedSubscription{
 		exchange:                exchange,
+		Feeds:                   set.NewLinkedHashSetString(),
 		DataFeeds:               make(map[string]*DataFeed),
 		SubscriptionsByDataFeed: make(map[string][]Subscription),
 	}
@@ -59,7 +60,7 @@ func (d *DataFeedSubscription) pairTimeframeFromKey(key string) (pair, timeframe
 
 func (d *DataFeedSubscription) Subscribe(pair, timeframe string, consumer DataFeedConsumer, onCandleClose bool) {
 	key := d.feedKey(pair, timeframe)
-	d.Feeds = append(d.Feeds, key)
+	d.Feeds.Add(key)
 	d.SubscriptionsByDataFeed[key] = append(d.SubscriptionsByDataFeed[key], Subscription{
 		onCandleClose: onCandleClose,
 		consumer:      consumer,
@@ -74,6 +75,10 @@ func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.C
 	log.Infof("[SETUP] preloading %d candles for %s-%s", len(candles), pair, timeframe)
 	key := d.feedKey(pair, timeframe)
 	for _, candle := range candles {
+		if !candle.Complete {
+			continue
+		}
+
 		for _, subscription := range d.SubscriptionsByDataFeed[key] {
 			subscription.consumer(candle)
 		}
@@ -82,7 +87,7 @@ func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.C
 
 func (d *DataFeedSubscription) Connect() {
 	log.Infof("Connecting to the exchange.")
-	for _, feed := range d.Feeds {
+	for feed := range d.Feeds.Iter() {
 		pair, timeframe := d.pairTimeframeFromKey(feed)
 		ccandle, cerr := d.exchange.CandlesSubscription(context.Background(), pair, timeframe)
 		d.DataFeeds[feed] = &DataFeed{

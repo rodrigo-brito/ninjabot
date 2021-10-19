@@ -48,8 +48,9 @@ type Order struct {
 	GroupID *int64   `db:"group_id" json:"group_id"`
 
 	// Internal use (Plot)
-	Profit float64 `json:"-"`
-	Candle Candle  `json:"-"`
+	RefPrice float64 `json:"-"`
+	Profit   float64 `json:"-"`
+	Candle   Candle  `json:"-"`
 }
 
 func (o Order) String() string {
