@@ -16,9 +16,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/btree v0.6.1 // indirect
-	github.com/tidwall/buntdb v1.2.6
-	github.com/tidwall/gjson v1.9.2 // indirect
+	github.com/tidwall/buntdb v1.2.7
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	gopkg.in/tucnak/telebot.v2 v2.4.0
