@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"sync/atomic"
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -20,8 +21,7 @@ import (
 )
 
 const (
-	defaultDatabase  = "ninjabot.db"
-	candleBufferSize = 1e10
+	defaultDatabase = "ninjabot.db"
 )
 
 func init() {
@@ -55,7 +55,7 @@ type NinjaBot struct {
 	paperWallet           *exchange.PaperWallet
 
 	backtest       bool
-	pendingCandles chan bool
+	pendingCandles int64
 	startBacktest  sync.WaitGroup
 }
 
@@ -72,7 +72,6 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		dataFeed:              exchange.NewDataFeed(exch),
 		strategiesControllers: make(map[string]*strategy.Controller),
 		priorityQueueCandle:   model.NewPriorityQueue(nil),
-		pendingCandles:        make(chan bool, candleBufferSize),
 	}
 
 	for _, option := range options {
@@ -220,7 +219,7 @@ func (n *NinjaBot) Summary() string {
 
 func (n *NinjaBot) onCandle(candle model.Candle) {
 	n.priorityQueueCandle.Push(candle)
-	n.pendingCandles <- true
+	atomic.AddInt64(&n.pendingCandles, 1)
 }
 
 func (n *NinjaBot) processCandles() {
@@ -230,14 +229,17 @@ func (n *NinjaBot) processCandles() {
 		n.startBacktest.Wait()
 	}
 
-	for <-n.pendingCandles {
+	for atomic.AddInt64(&n.pendingCandles, -1) >= 0 {
 		item := n.priorityQueueCandle.Pop()
 
 		candle := item.(model.Candle)
 		if n.paperWallet != nil {
 			n.paperWallet.OnCandle(candle)
 		}
-		n.strategiesControllers[candle.Pair].OnCandle(candle)
+
+		if candle.Complete {
+			n.strategiesControllers[candle.Pair].OnCandle(candle)
+		}
 	}
 }
 
@@ -250,8 +252,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.strategiesControllers[pair] = strategyController
 
 		// link to ninja bot controller
-		// TODO: include onCandleClose=false to improve precision in OCO orders (backtesting)
-		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
+		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, false)
 
 		if !n.backtest {
 			// preload candles to warmup strategy
@@ -271,7 +272,6 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 	}
 
 	n.dataFeed.OnFinish(func() {
-		close(n.pendingCandles)
 		if n.backtest {
 			n.startBacktest.Done()
 		}

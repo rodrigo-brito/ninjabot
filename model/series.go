@@ -30,6 +30,10 @@ func (s Series) Crossunder(ref Series) bool {
 	return s.Last(0) <= ref.Last(0) && s.Last(1) > ref.Last(1)
 }
 
+func (s Series) Cross(ref Series) bool {
+	return s.Crossover(ref) || s.Crossunder(ref)
+}
+
 func NumDecPlaces(v float64) int64 {
 	s := strconv.FormatFloat(v, 'f', -1, 64)
 	i := strings.IndexByte(s, '.')
