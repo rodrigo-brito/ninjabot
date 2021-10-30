@@ -32,6 +32,26 @@ document.addEventListener("DOMContentLoaded", function () {
         yaxis: "y1",
       };
 
+      const equityData = {
+        name: `Equity (${data.quote})`,
+        x: unpack(data.equity_values, "time"),
+        y: unpack(data.equity_values, "value"),
+        mode: "lines",
+        fill: "tozeroy",
+        xaxis: "x1",
+        yaxis: "y9",
+      };
+
+      const assetData = {
+        name: `Position (${data.asset}/${data.quote})`,
+        x: unpack(data.asset_values, "time"),
+        y: unpack(data.asset_values, "value"),
+        mode: "lines",
+        fill: "tozeroy",
+        xaxis: "x1",
+        yaxis: "y9",
+      };
+
       const points = [];
       const annotations = [];
       data.candles.forEach((candle) => {
@@ -162,7 +182,14 @@ document.addEventListener("DOMContentLoaded", function () {
           anchor: standaloneIndicators > 0 ? "y2" : "y1",
         },
         yaxis: {
-          domain: standaloneIndicators > 0 ? [0.5, 1] : [0, 1],
+          domain: standaloneIndicators > 0 ? [0.4, 0.9] : [0, 0.9],
+          autorange: true,
+          mirror: true,
+          showline: true,
+          gridcolor: "#ddd",
+        },
+        yaxis9: {
+          domain: [0.9, 1],
           autorange: true,
           mirror: true,
           showline: true,
@@ -173,8 +200,15 @@ document.addEventListener("DOMContentLoaded", function () {
         shapes: shapes,
       };
 
-      let plotData = [candleStickData, buyData, sellData];
-      const indicatorsHeight = 0.49 / standaloneIndicators;
+      let plotData = [
+        candleStickData,
+        equityData,
+        assetData,
+        buyData,
+        sellData,
+      ];
+
+      const indicatorsHeight = 0.39 / standaloneIndicators;
       let standaloneIndicatorIndex = 0;
       data.indicators.forEach((indicator) => {
         const axisNumber = standaloneIndicatorIndex + 2;

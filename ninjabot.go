@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
-	"sync/atomic"
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -22,6 +21,7 @@ import (
 
 const (
 	defaultDatabase = "ninjabot.db"
+	bufferSize      = 1 << 20
 )
 
 func init() {
@@ -54,9 +54,9 @@ type NinjaBot struct {
 	dataFeed              *exchange.DataFeedSubscription
 	paperWallet           *exchange.PaperWallet
 
-	backtest       bool
-	pendingCandles int64
-	startBacktest  sync.WaitGroup
+	backtest      bool
+	candleBuffer  chan bool
+	startBacktest sync.WaitGroup
 }
 
 type Option func(*NinjaBot)
@@ -72,6 +72,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		dataFeed:              exchange.NewDataFeed(exch),
 		strategiesControllers: make(map[string]*strategy.Controller),
 		priorityQueueCandle:   model.NewPriorityQueue(nil),
+		candleBuffer:          make(chan bool, bufferSize),
 	}
 
 	for _, option := range options {
@@ -219,17 +220,36 @@ func (n *NinjaBot) Summary() string {
 
 func (n *NinjaBot) onCandle(candle model.Candle) {
 	n.priorityQueueCandle.Push(candle)
-	atomic.AddInt64(&n.pendingCandles, 1)
+
+	// create a buffer to control async flow
+	if !n.backtest {
+		n.candleBuffer <- true
+	}
 }
 
 func (n *NinjaBot) processCandles() {
+	for <-n.candleBuffer {
+		item := n.priorityQueueCandle.Pop()
+
+		candle := item.(model.Candle)
+		if n.paperWallet != nil {
+			n.paperWallet.OnCandle(candle)
+		}
+
+		if candle.Complete {
+			n.strategiesControllers[candle.Pair].OnCandle(candle)
+		}
+	}
+}
+
+func (n *NinjaBot) backtestCandles() {
+	log.Info("[SETUP] Starting backtesting")
+
 	// when backtesting, we need to wait all candles load
 	// to avoid sync issues between multiple coins
-	if n.backtest {
-		n.startBacktest.Wait()
-	}
+	n.startBacktest.Wait()
 
-	for atomic.AddInt64(&n.pendingCandles, -1) >= 0 {
+	for n.priorityQueueCandle.Len() > 0 {
 		item := n.priorityQueueCandle.Pop()
 
 		candle := item.(model.Candle)
@@ -275,8 +295,16 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		if n.backtest {
 			n.startBacktest.Done()
 		}
+		close(n.candleBuffer)
 	})
+
 	go n.dataFeed.Start()
-	n.processCandles()
+
+	if n.backtest {
+		n.backtestCandles()
+	} else {
+		n.processCandles()
+	}
+
 	return nil
 }

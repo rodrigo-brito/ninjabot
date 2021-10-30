@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +18,11 @@ import (
 type assetInfo struct {
 	Free float64
 	Lock float64
+}
+
+type AssetValue struct {
+	Time  time.Time
+	Value float64
 }
 
 type PaperWallet struct {
@@ -34,6 +40,8 @@ type PaperWallet struct {
 	volume       map[string]float64
 	lastCandle   map[string]model.Candle
 	fistCandle   map[string]model.Candle
+	assetValues  map[string][]AssetValue
+	equityValues []AssetValue
 }
 
 type PaperWalletOption func(*PaperWallet)
@@ -62,14 +70,16 @@ func WithDataFeed(feeder service.Feeder) PaperWalletOption {
 
 func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWalletOption) *PaperWallet {
 	wallet := PaperWallet{
-		ctx:        ctx,
-		baseCoin:   baseCoin,
-		orders:     make([]model.Order, 0),
-		assets:     make(map[string]*assetInfo),
-		fistCandle: make(map[string]model.Candle),
-		lastCandle: make(map[string]model.Candle),
-		avgPrice:   make(map[string]float64),
-		volume:     make(map[string]float64),
+		ctx:          ctx,
+		baseCoin:     baseCoin,
+		orders:       make([]model.Order, 0),
+		assets:       make(map[string]*assetInfo),
+		fistCandle:   make(map[string]model.Candle),
+		lastCandle:   make(map[string]model.Candle),
+		avgPrice:     make(map[string]float64),
+		volume:       make(map[string]float64),
+		assetValues:  make(map[string][]AssetValue),
+		equityValues: make([]AssetValue, 0),
 	}
 
 	for _, option := range options {
@@ -86,6 +96,22 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 func (p *PaperWallet) ID() int64 {
 	p.counter++
 	return p.counter
+}
+
+func (p *PaperWallet) Pairs() []string {
+	pairs := make([]string, 0)
+	for pair := range p.assets {
+		pairs = append(pairs, pair)
+	}
+	return pairs
+}
+
+func (p *PaperWallet) AssetValues(pair string) []AssetValue {
+	return p.assetValues[pair]
+}
+
+func (p *PaperWallet) EquityValues() []AssetValue {
+	return p.equityValues
 }
 
 func (p *PaperWallet) Summary() {
@@ -218,6 +244,25 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
 			p.assets[quote].Free = p.assets[quote].Free + order.Quantity*orderPrice
 		}
+	}
+
+	if candle.Complete {
+		var total float64
+		for asset, info := range p.assets {
+			amount := info.Free + info.Lock
+			pair := strings.ToUpper(asset + p.baseCoin)
+			total += amount * p.lastCandle[pair].Close
+			p.assetValues[asset] = append(p.assetValues[asset], AssetValue{
+				Time:  candle.Time,
+				Value: amount * p.lastCandle[pair].Close,
+			})
+		}
+
+		baseCoinInfo := p.assets[p.baseCoin]
+		p.equityValues = append(p.equityValues, AssetValue{
+			Time:  candle.Time,
+			Value: total + baseCoinInfo.Lock + baseCoinInfo.Free,
+		})
 	}
 }
 

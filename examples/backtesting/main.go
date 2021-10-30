@@ -60,7 +60,7 @@ func main() {
 		indicator.EMA(21, "#000"),
 		indicator.RSI(14, "purple"),
 		indicator.Stoch(8, 3, "red", "blue"),
-	))
+	), plot.WithPaperWallet(wallet))
 	if err != nil {
 		log.Fatal(err)
 	}

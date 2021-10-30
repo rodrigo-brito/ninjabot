@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 
 	"github.com/StudioSol/set"
@@ -30,6 +31,7 @@ type Chart struct {
 	ordersByPair  map[string]*set.LinkedHashSetINT64
 	orderByID     map[int64]*Order
 	indicators    []Indicator
+	paperWallet   *exchange.PaperWallet
 	scriptContent string
 }
 
@@ -66,6 +68,11 @@ type Order struct {
 	Stop     *float64 `json:"stop"`
 	OCOGroup *int64   `json:"oco_group"`
 	RefPrice float64  `json:"ref_price"`
+}
+
+type assetValue struct {
+	Time  time.Time `json:"time"`
+	Value float64   `json:"value"`
 }
 
 type indicatorMetric struct {
@@ -154,6 +161,30 @@ func (c *Chart) OnCandle(candle model.Candle) {
 		c.dataframe[candle.Pair].Time = append(c.dataframe[candle.Pair].Time, candle.Time)
 		c.dataframe[candle.Pair].LastUpdate = candle.Time
 	}
+}
+
+func (c *Chart) equityValuesByPair(pair string) (asset []assetValue, quote []assetValue) {
+	assetValues := make([]assetValue, 0)
+	equityValues := make([]assetValue, 0)
+
+	if c.paperWallet != nil {
+		asset, _ := exchange.SplitAssetQuote(pair)
+		for _, value := range c.paperWallet.AssetValues(asset) {
+			assetValues = append(assetValues, assetValue{
+				Time:  value.Time,
+				Value: value.Value,
+			})
+		}
+
+		for _, value := range c.paperWallet.EquityValues() {
+			equityValues = append(equityValues, assetValue{
+				Time:  value.Time,
+				Value: value.Value,
+			})
+		}
+	}
+
+	return assetValues, equityValues
 }
 
 func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
@@ -257,10 +288,17 @@ func (c *Chart) Start() error {
 		}
 
 		w.Header().Set("Content-type", "text/json")
+
+		asset, quote := exchange.SplitAssetQuote(pair)
+		assetValues, equityValues := c.equityValuesByPair(pair)
 		err := json.NewEncoder(w).Encode(map[string]interface{}{
-			"candles":    c.candlesByPair(pair),
-			"indicators": c.indicatorsByPair(pair),
-			"shapes":     c.shapesByPair(pair),
+			"candles":       c.candlesByPair(pair),
+			"indicators":    c.indicatorsByPair(pair),
+			"shapes":        c.shapesByPair(pair),
+			"asset_values":  assetValues,
+			"equity_values": equityValues,
+			"quote":         quote,
+			"asset":         asset,
 		})
 		if err != nil {
 			log.Error(err)
@@ -295,6 +333,12 @@ func WithPort(port int) Option {
 	}
 }
 
+func WithPaperWallet(paperWallet *exchange.PaperWallet) Option {
+	return func(chart *Chart) {
+		chart.paperWallet = paperWallet
+	}
+}
+
 // WithDebug starts chart without compress
 func WithDebug() Option {
 	return func(chart *Chart) {
@@ -316,6 +360,7 @@ func NewChart(options ...Option) (*Chart, error) {
 		ordersByPair: make(map[string]*set.LinkedHashSetINT64),
 		orderByID:    make(map[int64]*Order),
 	}
+
 	for _, option := range options {
 		option(chart)
 	}
