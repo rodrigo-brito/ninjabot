@@ -171,7 +171,7 @@ func (n *NinjaBot) Controller() *order.Controller {
 	return n.orderController
 }
 
-func (n *NinjaBot) Summary() string {
+func (n *NinjaBot) Summary() {
 	var (
 		total  float64
 		wins   int
@@ -215,7 +215,10 @@ func (n *NinjaBot) Summary() string {
 	})
 	table.Render()
 
-	return buffer.String()
+	fmt.Println(buffer.String())
+	if n.paperWallet != nil {
+		n.paperWallet.Summary()
+	}
 }
 
 func (n *NinjaBot) onCandle(candle model.Candle) {

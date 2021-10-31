@@ -131,6 +131,28 @@ document.addEventListener("DOMContentLoaded", function () {
         };
       });
 
+      // max draw down
+      if (data.max_drawdown) {
+        shapes.push({
+          type: "rect",
+          xref: "x1",
+          yref: "y1",
+          yaxis: "y1",
+          xaxis: "x1",
+          x0: data.max_drawdown.start,
+          y0: 0,
+          x1: data.max_drawdown.end,
+          y1: data.equity_values.reduce((p, v) => {
+            return p > v.value ? p : v.value;
+          }),
+          line: {
+            width: 0,
+          },
+          fillcolor: "rgba(255,0,0,0.2)",
+          layer: "below",
+        });
+      }
+
       const sellPoints = points.filter((p) => p.side === SELL_SIDE);
       const buyPoints = points.filter((p) => p.side === BUY_SIDE);
       const buyData = {

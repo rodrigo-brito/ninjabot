@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
@@ -86,8 +85,7 @@ func main() {
 	}
 
 	// Print bot results
-	fmt.Println(bot.Summary())
-	wallet.Summary()
+	bot.Summary()
 	err = chart.Start()
 	if err != nil {
 		log.Fatal(err)

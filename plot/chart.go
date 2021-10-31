@@ -89,6 +89,12 @@ type plotIndicator struct {
 	Metrics []indicatorMetric `json:"metrics"`
 }
 
+type drawdown struct {
+	Value float64   `json:"value"`
+	Start time.Time `json:"start"`
+	End   time.Time `json:"end"`
+}
+
 type Indicator interface {
 	Name() string
 	Overlay() bool
@@ -289,6 +295,16 @@ func (c *Chart) Start() error {
 
 		w.Header().Set("Content-type", "text/json")
 
+		var maxDrawdown *drawdown
+		if c.paperWallet != nil {
+			value, start, end := c.paperWallet.MaxDrawdown()
+			maxDrawdown = &drawdown{
+				Start: start,
+				End:   end,
+				Value: value,
+			}
+		}
+
 		asset, quote := exchange.SplitAssetQuote(pair)
 		assetValues, equityValues := c.equityValuesByPair(pair)
 		err := json.NewEncoder(w).Encode(map[string]interface{}{
@@ -299,6 +315,7 @@ func (c *Chart) Start() error {
 			"equity_values": equityValues,
 			"quote":         quote,
 			"asset":         asset,
+			"max_drawdown":  maxDrawdown,
 		})
 		if err != nil {
 			log.Error(err)
