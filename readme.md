@@ -3,7 +3,7 @@
 [![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/rodrigo-brito/ninjabot/branch/main/graph/badge.svg)](https://codecov.io/gh/rodrigo-brito/ninjabot)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
-[![Discord](https://img.shields.io/discord/903823070417010730?color=5865F2&label=discord)](https://img.shields.io/discord/903823070417010730?color=5865F2&label=discord)
+[![Discord](https://img.shields.io/discord/903823070417010730?color=5865F2&label=discord)](https://discord.gg/UrJdpc6Wuy)
 
 A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets. 
 
@@ -46,43 +46,44 @@ go run examples/backtesting/main.go
 Output:
 
 ```
-INFO[2021-09-29 00:00] [SETUP] Using paper wallet                   
-INFO[2021-09-29 00:00] [SETUP] Initial Portfolio = 10000.000000 USDT 
-finished
+INFO[2021-10-31 18:13] [SETUP] Using paper wallet                   
+INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT 
 +---------+--------+-----+------+--------+--------+----------+-----------+
 |  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT  |  VOLUME   |
 +---------+--------+-----+------+--------+--------+----------+-----------+
-| BTCUSDT |     17 |   6 |   11 | 35.3 % |  7.038 |  7424.37 | 250246.73 |
-| ETHUSDT |     17 |   9 |    8 | 52.9 % |  7.400 |  9270.30 | 168350.93 |
+| BTCUSDT |     22 |  10 |   12 | 45.5 % |  4.726 |  7086.25 | 279230.67 |
+| ETHUSDT |     22 |  14 |    8 | 63.6 % |  4.356 | 12723.04 | 272443.48 |
 +---------+--------+-----+------+--------+--------+----------+-----------+
-|   TOTAL |     34 |  15 |   19 | 44.1 % |  7.219 | 16694.67 | 418597.66 |
+|   TOTAL |     44 |  24 |   20 | 54.5 % |  4.541 | 19809.29 | 551674.15 |
 +---------+--------+-----+------+--------+--------+----------+-----------+
 
 --------------
 WALLET SUMMARY
 --------------
-0.000000 ETH
-0.000000 BTC
+0.000000 BTC = 0.000000 USDT
+0.000000 ETH = 0.000000 USDT
 
 TRADING VOLUME
-ETHUSDT        = 185030.63 USDT
-BTCUSDT        = 255182.59 USDT
+BTCUSDT        = 279230.67 USDT
+ETHUSDT        = 272443.48 USDT
 
-26694.674186 USDT
+29809.287688 USDT
 --------------
-START PORTFOLIO =  10000 USDT
-FINAL PORTFOLIO =  26694.674186473057 USDT
-GROSS PROFIT    =  16694.674186 USDT (166.95%)
-MARKET CHANGE   =  420.18%
-VOLUME          =  440213.22 USDT
-COSTS (0.001*V) =  440.21 USDT (ESTIMATION) 
+START PORTFOLIO = 10000.00 USDT
+FINAL PORTFOLIO = 29809.29 USDT
+GROSS PROFIT    =  19809.287688 USDT (198.09%)
+MARKET (B&H)    =  407.84%
+MAX DRAWDOWN    =  -7.55 %
+VOLUME          =  551674.15 USDT
+COSTS (0.001*V) =  551.67 USDT (ESTIMATION) 
 --------------
+
 Chart available at http://localhost:8080
 ```
 
 ### Plot result:
 
-<img width="100%"  src="https://user-images.githubusercontent.com/7620947/135760988-9b0654d8-139c-4f8a-a204-756458386066.png" />
+<img width="100%"  src="https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png" />
 
 ### Features:
 
