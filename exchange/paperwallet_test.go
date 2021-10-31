@@ -3,6 +3,7 @@ package exchange
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/stretchr/testify/assert"
@@ -198,4 +199,66 @@ func TestPaperWallet_Order(t *testing.T) {
 	order, err := wallet.Order("BTCUSDT", expectOrder.ExchangeID)
 	require.NoError(t, err)
 	require.Equal(t, expectOrder, order)
+}
+
+func TestPaperWallet_MaxDrownDown(t *testing.T) {
+	tt := []struct {
+		name   string
+		values []AssetValue
+		result float64
+		start  time.Time
+		end    time.Time
+	}{
+		{
+			name: "down only",
+			values: []AssetValue{
+				{Time: time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC), Value: 10},
+				{Time: time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC), Value: 5},
+			},
+			result: -0.5,
+			start:  time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC),
+			end:    time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "up and down",
+			values: []AssetValue{
+				{Time: time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC), Value: 1},
+				{Time: time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC), Value: 10},
+				{Time: time.Date(2019, time.January, 3, 0, 0, 0, 0, time.UTC), Value: 5},
+			},
+			result: -0.5,
+			start:  time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC),
+			end:    time.Date(2019, time.January, 3, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "two drown downs",
+			values: []AssetValue{
+				{Time: time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC), Value: 1},
+				{Time: time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC), Value: 5},
+				{Time: time.Date(2019, time.January, 3, 0, 0, 0, 0, time.UTC), Value: 4},
+				{Time: time.Date(2019, time.January, 4, 0, 0, 0, 0, time.UTC), Value: 7},
+				{Time: time.Date(2019, time.January, 5, 0, 0, 0, 0, time.UTC), Value: 8},
+				{Time: time.Date(2019, time.January, 6, 0, 0, 0, 0, time.UTC), Value: 4},
+				{Time: time.Date(2019, time.January, 7, 0, 0, 0, 0, time.UTC), Value: 5},
+				{Time: time.Date(2019, time.January, 8, 0, 0, 0, 0, time.UTC), Value: 2},
+				{Time: time.Date(2019, time.January, 9, 0, 0, 0, 0, time.UTC), Value: 3},
+			},
+			result: -0.75,
+			start:  time.Date(2019, time.January, 5, 0, 0, 0, 0, time.UTC),
+			end:    time.Date(2019, time.January, 8, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			wallet := PaperWallet{
+				equityValues: tc.values,
+			}
+
+			max, start, end := wallet.MaxDrownDown()
+			require.Equal(t, tc.result, max)
+			require.Equal(t, tc.start, start)
+			require.Equal(t, tc.end, end)
+		})
+	}
 }

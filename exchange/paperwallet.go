@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -114,6 +115,38 @@ func (p *PaperWallet) EquityValues() []AssetValue {
 	return p.equityValues
 }
 
+func (p *PaperWallet) MaxDrownDown() (float64, time.Time, time.Time) {
+	if len(p.equityValues) <= 1 {
+		return 0, time.Time{}, time.Time{}
+	}
+
+	globalMinBase := p.equityValues[0].Value
+	globalMin := math.MaxFloat64
+	localMin := math.MaxFloat64
+
+	globalMinStart := p.equityValues[0].Time
+	globalMinEnd := p.equityValues[0].Time
+
+	for i := 1; i < len(p.equityValues); i++ {
+		diff := p.equityValues[i].Value - p.equityValues[i-1].Value
+
+		if localMin > 0 {
+			localMin = diff
+			globalMinBase = p.equityValues[i-1].Value
+			globalMinStart = p.equityValues[i-1].Time
+		} else {
+			localMin += diff
+		}
+
+		if localMin < globalMin {
+			globalMin = localMin
+			globalMinEnd = p.equityValues[i].Time
+		}
+	}
+
+	return globalMin / globalMinBase, globalMinStart, globalMinEnd
+}
+
 func (p *PaperWallet) Summary() {
 	var (
 		total        float64
@@ -144,12 +177,14 @@ func (p *PaperWallet) Summary() {
 	avgMarketChange := marketChange / float64(len(p.avgPrice))
 	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
 	profit := total + baseCoinValue - p.initialValue
+	maxDrowDown, _, _ := p.MaxDrownDown()
 	fmt.Printf("%f %s\n", baseCoinValue, p.baseCoin)
 	fmt.Println("--------------")
-	fmt.Println("START PORTFOLIO = ", p.initialValue, p.baseCoin)
-	fmt.Println("FINAL PORTFOLIO = ", total+baseCoinValue, p.baseCoin)
+	fmt.Printf("START PORTFOLIO = %.2f %s\n", p.initialValue, p.baseCoin)
+	fmt.Printf("FINAL PORTFOLIO = %.2f %s\n", total+baseCoinValue, p.baseCoin)
 	fmt.Printf("GROSS PROFIT    =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
-	fmt.Printf("MARKET CHANGE   =  %.2f%%\n", avgMarketChange*100)
+	fmt.Printf("MARKET (B&H)    =  %.2f%%\n", avgMarketChange*100)
+	fmt.Printf("MAX DROWDONW    =  %.2f %%\n", maxDrowDown*100)
 	fmt.Printf("VOLUME          =  %.2f %s\n", volume, p.baseCoin)
 	fmt.Printf("COSTS (0.001*V) =  %.2f %s (ESTIMATION) \n", volume*0.001, p.baseCoin)
 	fmt.Println("--------------")
