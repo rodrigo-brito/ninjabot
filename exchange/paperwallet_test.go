@@ -201,7 +201,7 @@ func TestPaperWallet_Order(t *testing.T) {
 	require.Equal(t, expectOrder, order)
 }
 
-func TestPaperWallet_MaxDrownDown(t *testing.T) {
+func TestPaperWallet_MaxDrawndown(t *testing.T) {
 	tt := []struct {
 		name   string
 		values []AssetValue
@@ -231,7 +231,7 @@ func TestPaperWallet_MaxDrownDown(t *testing.T) {
 			end:    time.Date(2019, time.January, 3, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			name: "two drown downs",
+			name: "two drawn downs",
 			values: []AssetValue{
 				{Time: time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC), Value: 1},
 				{Time: time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC), Value: 5},
@@ -255,7 +255,7 @@ func TestPaperWallet_MaxDrownDown(t *testing.T) {
 				equityValues: tc.values,
 			}
 
-			max, start, end := wallet.MaxDrownDown()
+			max, start, end := wallet.MaxDrawdown()
 			require.Equal(t, tc.result, max)
 			require.Equal(t, tc.start, start)
 			require.Equal(t, tc.end, end)

@@ -115,7 +115,7 @@ func (p *PaperWallet) EquityValues() []AssetValue {
 	return p.equityValues
 }
 
-func (p *PaperWallet) MaxDrownDown() (float64, time.Time, time.Time) {
+func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
 	if len(p.equityValues) <= 1 {
 		return 0, time.Time{}, time.Time{}
 	}
@@ -177,14 +177,14 @@ func (p *PaperWallet) Summary() {
 	avgMarketChange := marketChange / float64(len(p.avgPrice))
 	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
 	profit := total + baseCoinValue - p.initialValue
-	maxDrowDown, _, _ := p.MaxDrownDown()
+	maxDrawDown, _, _ := p.MaxDrawdown()
 	fmt.Printf("%f %s\n", baseCoinValue, p.baseCoin)
 	fmt.Println("--------------")
 	fmt.Printf("START PORTFOLIO = %.2f %s\n", p.initialValue, p.baseCoin)
 	fmt.Printf("FINAL PORTFOLIO = %.2f %s\n", total+baseCoinValue, p.baseCoin)
 	fmt.Printf("GROSS PROFIT    =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
 	fmt.Printf("MARKET (B&H)    =  %.2f%%\n", avgMarketChange*100)
-	fmt.Printf("MAX DROWDONW    =  %.2f %%\n", maxDrowDown*100)
+	fmt.Printf("MAX DRAWDOWN    =  %.2f %%\n", maxDrawDown*100)
 	fmt.Printf("VOLUME          =  %.2f %s\n", volume, p.baseCoin)
 	fmt.Printf("COSTS (0.001*V) =  %.2f %s (ESTIMATION) \n", volume*0.001, p.baseCoin)
 	fmt.Println("--------------")

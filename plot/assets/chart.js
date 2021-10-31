@@ -131,17 +131,17 @@ document.addEventListener("DOMContentLoaded", function () {
         };
       });
 
-      // max drow down
-      if (data.max_drowdown) {
+      // max draw down
+      if (data.max_drawdown) {
         shapes.push({
           type: "rect",
           xref: "x1",
           yref: "y1",
           yaxis: "y1",
           xaxis: "x1",
-          x0: data.max_drowdown.start,
+          x0: data.max_drawdown.start,
           y0: 0,
-          x1: data.max_drowdown.end,
+          x1: data.max_drawdown.end,
           y1: data.equity_values.reduce((p, v) => {
             return p > v.value ? p : v.value;
           }),

@@ -89,7 +89,7 @@ type plotIndicator struct {
 	Metrics []indicatorMetric `json:"metrics"`
 }
 
-type drowDown struct {
+type drawdown struct {
 	Value float64   `json:"value"`
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
@@ -295,10 +295,10 @@ func (c *Chart) Start() error {
 
 		w.Header().Set("Content-type", "text/json")
 
-		var maxDrowDown *drowDown
+		var maxDrawdown *drawdown
 		if c.paperWallet != nil {
-			value, start, end := c.paperWallet.MaxDrownDown()
-			maxDrowDown = &drowDown{
+			value, start, end := c.paperWallet.MaxDrawdown()
+			maxDrawdown = &drawdown{
 				Start: start,
 				End:   end,
 				Value: value,
@@ -315,7 +315,7 @@ func (c *Chart) Start() error {
 			"equity_values": equityValues,
 			"quote":         quote,
 			"asset":         asset,
-			"max_drowdown":  maxDrowDown,
+			"max_drawdown":  maxDrawdown,
 		})
 		if err != nil {
 			log.Error(err)
