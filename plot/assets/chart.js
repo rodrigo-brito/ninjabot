@@ -29,6 +29,26 @@ document.addEventListener("DOMContentLoaded", function () {
         high: unpack(data.candles, "high"),
         type: "candlestick",
         xaxis: "x1",
+        yaxis: "y2",
+      };
+
+      const equityData = {
+        name: `Equity (${data.quote})`,
+        x: unpack(data.equity_values, "time"),
+        y: unpack(data.equity_values, "value"),
+        mode: "lines",
+        fill: "tozeroy",
+        xaxis: "x1",
+        yaxis: "y1",
+      };
+
+      const assetData = {
+        name: `Position (${data.asset}/${data.quote})`,
+        x: unpack(data.asset_values, "time"),
+        y: unpack(data.asset_values, "value"),
+        mode: "lines",
+        fill: "tozeroy",
+        xaxis: "x1",
         yaxis: "y1",
       };
 
@@ -52,10 +72,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const annotation = {
               x: candle.time,
               y: candle.low,
-              xref: "x",
-              yref: "y",
-              xaxis: "x1",
-              yaxis: "y1",
+              xref: "x1",
+              yref: "y2",
               text: "B",
               hovertext: `${order.updated_at}
                         <br>ID: ${order.id}
@@ -98,8 +116,10 @@ document.addEventListener("DOMContentLoaded", function () {
       const shapes = data.shapes.map((s) => {
         return {
           type: "rect",
-          xref: "x",
-          yref: "y",
+          xref: "x1",
+          yref: "y2",
+          yaxis: "y2",
+          xaxis: "x1",
           x0: s.x0,
           y0: s.y0,
           x1: s.x1,
@@ -118,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
         x: unpack(buyPoints, "time"),
         y: unpack(buyPoints, "position"),
         xaxis: "x1",
-        yaxis: "y1",
+        yaxis: "y2",
         mode: "markers",
         type: "scatter",
         marker: {
@@ -130,7 +150,7 @@ document.addEventListener("DOMContentLoaded", function () {
         x: unpack(sellPoints, "time"),
         y: unpack(sellPoints, "position"),
         xaxis: "x1",
-        yaxis: "y1",
+        yaxis: "y2",
         mode: "markers",
         type: "scatter",
         marker: {
@@ -159,10 +179,17 @@ document.addEventListener("DOMContentLoaded", function () {
           autorange: true,
           rangeslider: { visible: false },
           showline: true,
-          anchor: standaloneIndicators > 0 ? "y2" : "y1",
+          anchor: standaloneIndicators > 0 ? "y3" : "y2",
         },
-        yaxis: {
-          domain: standaloneIndicators > 0 ? [0.5, 1] : [0, 1],
+        yaxis2: {
+          domain: standaloneIndicators > 0 ? [0.4, 0.9] : [0, 0.9],
+          autorange: true,
+          mirror: true,
+          showline: true,
+          gridcolor: "#ddd",
+        },
+        yaxis1: {
+          domain: [0.9, 1],
           autorange: true,
           mirror: true,
           showline: true,
@@ -173,11 +200,18 @@ document.addEventListener("DOMContentLoaded", function () {
         shapes: shapes,
       };
 
-      let plotData = [candleStickData, buyData, sellData];
-      const indicatorsHeight = 0.49 / standaloneIndicators;
+      let plotData = [
+        candleStickData,
+        equityData,
+        assetData,
+        buyData,
+        sellData,
+      ];
+
+      const indicatorsHeight = 0.39 / standaloneIndicators;
       let standaloneIndicatorIndex = 0;
       data.indicators.forEach((indicator) => {
-        const axisNumber = standaloneIndicatorIndex + 2;
+        const axisNumber = standaloneIndicatorIndex + 3;
         if (!indicator.overlay) {
           const heightStart = standaloneIndicatorIndex * indicatorsHeight;
           layout["yaxis" + axisNumber] = {
@@ -203,7 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
               color: metric.color,
             },
             xaxis: "x1",
-            yaxis: "y1",
+            yaxis: "y2",
           };
           if (!indicator.overlay) {
             data.yaxis = "y" + axisNumber;
