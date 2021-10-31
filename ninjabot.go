@@ -265,14 +265,12 @@ func (n *NinjaBot) backtestCandles() {
 
 func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
-		pair := pair
 		// setup and subscribe strategy to data feed (candles)
-		strategyController := strategy.NewStrategyController(pair, n.strategy, n.orderController)
-		strategyController.Start()
-		n.strategiesControllers[pair] = strategyController
+		n.strategiesControllers[pair] = strategy.NewStrategyController(pair, n.strategy, n.orderController)
+		n.strategiesControllers[pair].Start()
 
 		// link to ninja bot controller
-		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, false)
+		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
 
 		if !n.backtest {
 			// preload candles to warmup strategy
