@@ -10,18 +10,20 @@ import (
 	"github.com/markcheno/go-talib"
 )
 
-func Stoch(periodK, peridodD int, colorK, colorD string) plot.Indicator {
+func Stoch(fastK, slowK, slowD int, colorK, colorD string) plot.Indicator {
 	return &stoch{
-		PeriodK: periodK,
-		PeriodD: peridodD,
-		ColorK:  colorK,
-		ColorD:  colorD,
+		FastK:  fastK,
+		SlowK:  slowK,
+		SlowD:  slowD,
+		ColorK: colorK,
+		ColorD: colorD,
 	}
 }
 
 type stoch struct {
-	PeriodK int
-	PeriodD int
+	FastK   int
+	SlowK   int
+	SlowD   int
 	ColorK  string
 	ColorD  string
 	ValuesK model.Series
@@ -30,7 +32,7 @@ type stoch struct {
 }
 
 func (e stoch) Name() string {
-	return fmt.Sprintf("STOCH(%d, %d)", e.PeriodK, e.PeriodD)
+	return fmt.Sprintf("STOCH(%d, %d, %d)", e.FastK, e.SlowK, e.SlowD)
 }
 
 func (e stoch) Overlay() bool {
@@ -38,16 +40,10 @@ func (e stoch) Overlay() bool {
 }
 
 func (e *stoch) Load(dataframe *model.Dataframe) {
-	if len(dataframe.Time) < e.PeriodK+e.PeriodD {
-		return
-	}
-
 	e.ValuesK, e.ValuesD = talib.Stoch(
-		dataframe.High, dataframe.Low, dataframe.Close, e.PeriodK, e.PeriodD, talib.SMA, e.PeriodD, talib.SMA,
+		dataframe.High, dataframe.Low, dataframe.Close, e.FastK, e.SlowK, talib.SMA, e.SlowD, talib.SMA,
 	)
-	e.ValuesK = e.ValuesK[e.PeriodK+e.PeriodD:]
-	e.ValuesD = e.ValuesD[e.PeriodK+e.PeriodD:]
-	e.Time = dataframe.Time[e.PeriodK+e.PeriodD:]
+	e.Time = dataframe.Time
 }
 
 func (e stoch) Metrics() []plot.IndicatorMetric {

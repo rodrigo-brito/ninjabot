@@ -81,3 +81,14 @@ func (a Account) Balance(tick string) Balance {
 	}
 	return Balance{}
 }
+
+func (a Account) Equity() float64 {
+	var total float64
+
+	for _, balance := range a.Balances {
+		total += balance.Free
+		total += balance.Lock
+	}
+
+	return total
+}
