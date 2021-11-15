@@ -19,6 +19,6 @@ require (
 	github.com/tidwall/buntdb v1.2.7
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
-	gopkg.in/tucnak/telebot.v2 v2.4.0
+	gopkg.in/tucnak/telebot.v2 v2.4.1
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )
