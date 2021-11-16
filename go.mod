@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf
-	github.com/adshao/go-binance/v2 v2.3.2
+	github.com/adshao/go-binance/v2 v2.3.3
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/evanw/esbuild v0.13.12
 	github.com/gorilla/websocket v1.4.2 // indirect
