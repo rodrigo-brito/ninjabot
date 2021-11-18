@@ -505,7 +505,7 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 
 	data, err := klineService.Symbol(pair).
 		Interval(period).
-		Limit(limit).
+		Limit(limit + 1).
 		Do(ctx)
 
 	if err != nil {
@@ -516,7 +516,8 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 		candles = append(candles, CandleFromKline(pair, *d))
 	}
 
-	return candles, nil
+	// discard last candle, because it is incomplete
+	return candles[:len(candles)-1], nil
 }
 
 func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,

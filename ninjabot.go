@@ -75,6 +75,13 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		candleBuffer:          make(chan bool, bufferSize),
 	}
 
+	for _, pair := range settings.Pairs {
+		asset, quote := exchange.SplitAssetQuote(pair)
+		if asset == "" || quote == "" {
+			return nil, fmt.Errorf("invalid pair: %s", pair)
+		}
+	}
+
 	for _, option := range options {
 		option(bot)
 	}
@@ -230,18 +237,20 @@ func (n *NinjaBot) onCandle(candle model.Candle) {
 	}
 }
 
+func (n *NinjaBot) processCandle(candle model.Candle) {
+	if n.paperWallet != nil {
+		n.paperWallet.OnCandle(candle)
+	}
+
+	if candle.Complete {
+		n.strategiesControllers[candle.Pair].OnCandle(candle)
+	}
+}
+
 func (n *NinjaBot) processCandles() {
 	for <-n.candleBuffer {
 		item := n.priorityQueueCandle.Pop()
-
-		candle := item.(model.Candle)
-		if n.paperWallet != nil {
-			n.paperWallet.OnCandle(candle)
-		}
-
-		if candle.Complete {
-			n.strategiesControllers[candle.Pair].OnCandle(candle)
-		}
+		n.processCandle(item.(model.Candle))
 	}
 }
 
@@ -270,19 +279,24 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
 		n.strategiesControllers[pair] = strategy.NewStrategyController(pair, n.strategy, n.orderController)
-		n.strategiesControllers[pair].Start()
+
+		if !n.backtest {
+			// preload candles to warmup strategy
+			log.Infof("[SETUP] preloading %d candles for %s", n.strategy.WarmupPeriod(), pair)
+			candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod())
+			if err != nil {
+				return err
+			}
+			for _, candle := range candles {
+				n.processCandle(candle)
+			}
+		}
 
 		// link to ninja bot controller
 		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
 
-		if !n.backtest {
-			// preload candles to warmup strategy
-			candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod()+1)
-			if err != nil {
-				return err
-			}
-			n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
-		}
+		// start strategy controller
+		n.strategiesControllers[pair].Start()
 	}
 
 	n.orderFeed.Start()
