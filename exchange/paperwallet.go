@@ -120,10 +120,13 @@ func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
 		return 0, time.Time{}, time.Time{}
 	}
 
-	globalMinBase := p.equityValues[0].Value
-	globalMin := math.MaxFloat64
 	localMin := math.MaxFloat64
+	localMinBase := p.equityValues[0].Value
+	localMinStart := p.equityValues[0].Time
+	localMinEnd := p.equityValues[0].Time
 
+	globalMin := math.MaxFloat64
+	globalMinBase := p.equityValues[0].Value
 	globalMinStart := p.equityValues[0].Time
 	globalMinEnd := p.equityValues[0].Time
 
@@ -132,15 +135,19 @@ func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
 
 		if localMin > 0 {
 			localMin = diff
-			globalMinBase = p.equityValues[i-1].Value
-			globalMinStart = p.equityValues[i-1].Time
+			localMinBase = p.equityValues[i-1].Value
+			localMinStart = p.equityValues[i-1].Time
+			localMinEnd = p.equityValues[i].Time
 		} else {
 			localMin += diff
+			localMinEnd = p.equityValues[i].Time
 		}
 
 		if localMin < globalMin {
 			globalMin = localMin
-			globalMinEnd = p.equityValues[i].Time
+			globalMinBase = localMinBase
+			globalMinStart = localMinStart
+			globalMinEnd = localMinEnd
 		}
 	}
 

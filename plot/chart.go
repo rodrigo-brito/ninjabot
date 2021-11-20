@@ -90,7 +90,7 @@ type plotIndicator struct {
 }
 
 type drawdown struct {
-	Value float64   `json:"value"`
+	Value string    `json:"value"`
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
 }
@@ -301,7 +301,7 @@ func (c *Chart) Start() error {
 			maxDrawdown = &drawdown{
 				Start: start,
 				End:   end,
-				Value: value,
+				Value: fmt.Sprintf("%.1f", value*100),
 			}
 		}
 

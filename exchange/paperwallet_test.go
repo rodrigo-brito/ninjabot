@@ -231,6 +231,23 @@ func TestPaperWallet_MaxDrawndown(t *testing.T) {
 			end:    time.Date(2019, time.January, 3, 0, 0, 0, 0, time.UTC),
 		},
 		{
+			name: "down and up",
+			values: []AssetValue{
+				{Time: time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC), Value: 4},
+				{Time: time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC), Value: 5},
+				{Time: time.Date(2019, time.January, 3, 0, 0, 0, 0, time.UTC), Value: 4},
+				{Time: time.Date(2019, time.January, 4, 0, 0, 0, 0, time.UTC), Value: 3},
+				{Time: time.Date(2019, time.January, 5, 0, 0, 0, 0, time.UTC), Value: 4},
+				{Time: time.Date(2019, time.January, 6, 0, 0, 0, 0, time.UTC), Value: 5},
+				{Time: time.Date(2019, time.January, 7, 0, 0, 0, 0, time.UTC), Value: 6},
+				{Time: time.Date(2019, time.January, 8, 0, 0, 0, 0, time.UTC), Value: 7},
+				{Time: time.Date(2019, time.January, 9, 0, 0, 0, 0, time.UTC), Value: 6},
+			},
+			result: -0.4,
+			start:  time.Date(2019, time.January, 2, 0, 0, 0, 0, time.UTC),
+			end:    time.Date(2019, time.January, 4, 0, 0, 0, 0, time.UTC),
+		},
+		{
 			name: "two drawn downs",
 			values: []AssetValue{
 				{Time: time.Date(2019, time.January, 1, 0, 0, 0, 0, time.UTC), Value: 1},
@@ -256,9 +273,9 @@ func TestPaperWallet_MaxDrawndown(t *testing.T) {
 			}
 
 			max, start, end := wallet.MaxDrawdown()
-			require.Equal(t, tc.result, max)
-			require.Equal(t, tc.start, start)
-			require.Equal(t, tc.end, end)
+			assert.Equal(t, tc.result, max)
+			assert.Equal(t, tc.start, start)
+			assert.Equal(t, tc.end, end)
 		})
 	}
 }
