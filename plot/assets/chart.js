@@ -133,6 +133,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // max draw down
       if (data.max_drawdown) {
+        const topPosition = data.equity_values.reduce((p, v) => {
+          return p > v.value ? p : v.value;
+        });
         shapes.push({
           type: "rect",
           xref: "x1",
@@ -142,14 +145,31 @@ document.addEventListener("DOMContentLoaded", function () {
           x0: data.max_drawdown.start,
           y0: 0,
           x1: data.max_drawdown.end,
-          y1: data.equity_values.reduce((p, v) => {
-            return p > v.value ? p : v.value;
-          }),
+          y1: topPosition,
           line: {
             width: 0,
           },
           fillcolor: "rgba(255,0,0,0.2)",
           layer: "below",
+        });
+
+        const annotationPosition = new Date(
+          (new Date(data.max_drawdown.start).getTime() +
+            new Date(data.max_drawdown.end).getTime()) /
+            2
+        );
+
+        annotations.push({
+          x: annotationPosition,
+          y: topPosition / 2.0,
+          xref: "x1",
+          yref: "y1",
+          text: `Drawdown<br>${data.max_drawdown.value}%`,
+          showarrow: false,
+          font: {
+            size: 12,
+            color: "red",
+          },
         });
       }
 
