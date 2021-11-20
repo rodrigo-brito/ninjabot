@@ -103,6 +103,17 @@ func (c CSVFeed) feedTimeframeKey(pair, timeframe string) string {
 	return fmt.Sprintf("%s--%s", pair, timeframe)
 }
 
+func isFistCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (bool, error) {
+	fromDuration, err := str2duration.ParseDuration(fromTimeframe)
+	if err != nil {
+		return false, err
+	}
+
+	prev := t.Add(-fromDuration).UTC()
+
+	return isLastCandlePeriod(prev, fromTimeframe, targetTimeframe)
+}
+
 func isLastCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (bool, error) {
 	if fromTimeframe == targetTimeframe {
 		return true, nil
@@ -147,8 +158,19 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 	sourceKey := c.feedTimeframeKey(pair, sourceTimeframe)
 	targetKey := c.feedTimeframeKey(pair, targetTimeframe)
 
+	var i int
+	for ; i < len(c.CandlePairTimeFrame[sourceKey]); i++ {
+		if ok, err := isFistCandlePeriod(c.CandlePairTimeFrame[sourceKey][i].Time, sourceTimeframe,
+			targetTimeframe); err != nil {
+			return err
+		} else if ok {
+			break
+		}
+	}
+
 	candles := make([]model.Candle, 0)
-	for i, candle := range c.CandlePairTimeFrame[sourceKey] {
+	for ; i < len(c.CandlePairTimeFrame[sourceKey]); i++ {
+		candle := c.CandlePairTimeFrame[sourceKey][i]
 		if last, err := isLastCandlePeriod(candle.Time, sourceTimeframe, targetTimeframe); err != nil {
 			return err
 		} else if last {
@@ -157,13 +179,14 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 			candle.Complete = false
 		}
 
-		if i > 0 && !candles[i-1].Complete {
-			candle.Time = candles[i-1].Time
-			candle.Open = candles[i-1].Open
-			candle.High = math.Max(candles[i-1].High, candle.High)
-			candle.Low = math.Min(candles[i-1].Low, candle.Low)
-			candle.Volume += candles[i-1].Volume
-			candle.Trades += candles[i-1].Trades
+		lastIndex := len(candles) - 1
+		if lastIndex >= 0 && !candles[lastIndex].Complete {
+			candle.Time = candles[lastIndex].Time
+			candle.Open = candles[lastIndex].Open
+			candle.High = math.Max(candles[lastIndex].High, candle.High)
+			candle.Low = math.Min(candles[lastIndex].Low, candle.Low)
+			candle.Volume += candles[lastIndex].Volume
+			candle.Trades += candles[lastIndex].Trades
 		}
 		candles = append(candles, candle)
 	}
