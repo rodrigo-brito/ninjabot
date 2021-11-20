@@ -116,7 +116,7 @@ func (p *PaperWallet) EquityValues() []AssetValue {
 }
 
 func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
-	if len(p.equityValues) <= 1 {
+	if len(p.equityValues) < 1 {
 		return 0, time.Time{}, time.Time{}
 	}
 
@@ -125,10 +125,10 @@ func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
 	localMinStart := p.equityValues[0].Time
 	localMinEnd := p.equityValues[0].Time
 
-	globalMin := math.MaxFloat64
-	globalMinBase := p.equityValues[0].Value
-	globalMinStart := p.equityValues[0].Time
-	globalMinEnd := p.equityValues[0].Time
+	globalMin := localMin
+	globalMinBase := localMinBase
+	globalMinStart := localMinStart
+	globalMinEnd := localMinEnd
 
 	for i := 1; i < len(p.equityValues); i++ {
 		diff := p.equityValues[i].Value - p.equityValues[i-1].Value
