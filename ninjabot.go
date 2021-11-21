@@ -244,6 +244,7 @@ func (n *NinjaBot) processCandle(candle model.Candle) {
 
 	if candle.Complete {
 		n.strategiesControllers[candle.Pair].OnCandle(candle)
+		n.orderController.OnCandle(candle)
 	}
 }
 

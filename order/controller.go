@@ -96,6 +96,7 @@ type Controller struct {
 	orderFeed      *Feed
 	notifier       service.Notifier
 	Results        map[string]*summary
+	lastPrice      map[string]float64
 	tickerInterval time.Duration
 	finish         chan bool
 	status         Status
@@ -110,10 +111,15 @@ func NewController(ctx context.Context, exchange service.Exchange, storage stora
 		exchange:       exchange,
 		orderFeed:      orderFeed,
 		notifier:       notifier,
+		lastPrice:      make(map[string]float64),
 		Results:        make(map[string]*summary),
 		tickerInterval: time.Second,
 		finish:         make(chan bool),
 	}
+}
+
+func (c *Controller) OnCandle(candle model.Candle) {
+	c.lastPrice[candle.Pair] = candle.Close
 }
 
 func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
@@ -292,6 +298,14 @@ func (c *Controller) Account() (model.Account, error) {
 
 func (c *Controller) Position(pair string) (asset, quote float64, err error) {
 	return c.exchange.Position(pair)
+}
+
+func (c *Controller) PositionValue(pair string) (float64, error) {
+	asset, _, err := c.exchange.Position(pair)
+	if err != nil {
+		return 0, err
+	}
+	return asset * c.lastPrice[pair], nil
 }
 
 func (c *Controller) Order(pair string, id int64) (model.Order, error) {

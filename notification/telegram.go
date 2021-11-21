@@ -133,21 +133,31 @@ func (t telegram) Notify(text string) {
 func (t telegram) BalanceHandle(m *tb.Message) {
 	message := "*BALANCE*\n"
 	quotesValue := make(map[string]float64)
+	total := 0.0
 
 	for _, pair := range t.settings.Pairs {
 		assetPair, quotePair := exchange.SplitAssetQuote(pair)
-		assetValue, quoteValue, err := t.orderController.Position(pair)
+		assetSize, quoteSize, err := t.orderController.Position(pair)
 		if err != nil {
 			t.OrError(err)
 		}
 
-		quotesValue[quotePair] = quoteValue
-		message += fmt.Sprintf("%s: `%.4f`\n", assetPair, assetValue)
+		assetValue, err := t.orderController.PositionValue(pair)
+		if err != nil {
+			t.OrError(err)
+		}
+
+		quotesValue[quotePair] = quoteSize
+		total += assetValue
+		message += fmt.Sprintf("%s: `%.4f` ≅ `%.2f` %s \n", assetPair, assetSize, assetValue, quotePair)
 	}
 
 	for quote, value := range quotesValue {
+		total += value
 		message += fmt.Sprintf("%s: `%.4f`\n", quote, value)
 	}
+
+	message += fmt.Sprintf("-----\nTotal: `%.4f`\n", total)
 
 	_, err := t.client.Send(m.Sender, message)
 	if err != nil {
