@@ -28,6 +28,20 @@ type CSVFeed struct {
 	CandlePairTimeFrame map[string][]model.Candle
 }
 
+func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
+	asset, quote := SplitAssetQuote(pair)
+	return model.AssetInfo{
+		BaseAsset:             asset,
+		QuoteAsset:            quote,
+		MaxPrice:              math.MaxFloat64,
+		MaxQuantity:           math.MaxFloat64,
+		StepSize:              0.00000001,
+		TickSize:              0.00000001,
+		QtyDecimalPrecision:   8,
+		PriceDecimalPrecision: 8,
+	}
+}
+
 func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	csvFeed := &CSVFeed{
 		Feeds:               make(map[string]PairFeed),

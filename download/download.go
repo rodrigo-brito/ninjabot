@@ -81,7 +81,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 	}
 
 	log.Infof("Downloading %d candles of %s for %s", candlesCount, timeframe, pair)
-
+	info := d.exchange.AssetsInfo(pair)
 	writer := csv.NewWriter(recordFile)
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
 		end := begin.Add(interval * batchSize)
@@ -95,7 +95,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 		}
 
 		for _, candle := range candles {
-			err := writer.Write(candle.ToSlice())
+			err := writer.Write(candle.ToSlice(int(info.PriceDecimalPrecision)))
 			if err != nil {
 				return err
 			}

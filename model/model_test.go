@@ -19,8 +19,8 @@ func TestCandle_ToSlice(t *testing.T) {
 		Trades:   10000,
 		Complete: true,
 	}
-	require.Equal(t, []string{"1609459200", "10000.100000", "10000.100000", "10000.100000", "10000.100000",
-		"10000.1", "10000"}, candle.ToSlice())
+	require.Equal(t, []string{"1609459200", "10000.1", "10000.1", "10000.1", "10000.1",
+		"10000.1", "10000"}, candle.ToSlice(1))
 }
 
 func TestCandle_Less(t *testing.T) {

@@ -94,9 +94,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		}
 	}
 
-	if bot.orderController == nil {
-		bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed, bot.notifier)
-	}
+	bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed)
 
 	if settings.Telegram.Enabled {
 		bot.telegram, err = notification.NewTelegram(bot.orderController, settings)
@@ -136,6 +134,7 @@ func WithLogLevel(level log.Level) Option {
 func WithNotifier(notifier service.Notifier) Option {
 	return func(bot *NinjaBot) {
 		bot.notifier = notifier
+		bot.orderController.SetNotifier(notifier)
 		bot.SubscribeOrder(notifier)
 	}
 }

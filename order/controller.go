@@ -102,20 +102,21 @@ type Controller struct {
 	status         Status
 }
 
-func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage,
-	orderFeed *Feed, notifier service.Notifier) *Controller {
-
+func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage, orderFeed *Feed) *Controller {
 	return &Controller{
 		ctx:            ctx,
 		storage:        storage,
 		exchange:       exchange,
 		orderFeed:      orderFeed,
-		notifier:       notifier,
 		lastPrice:      make(map[string]float64),
 		Results:        make(map[string]*summary),
 		tickerInterval: time.Second,
 		finish:         make(chan bool),
 	}
+}
+
+func (c *Controller) SetNotifier(notifier service.Notifier) {
+	c.notifier = notifier
 }
 
 func (c *Controller) OnCandle(candle model.Candle) {
@@ -174,7 +175,7 @@ func (c *Controller) notify(message string) {
 func (c *Controller) notifyError(err error) {
 	log.Error(err)
 	if c.notifier != nil {
-		c.notifier.OrError(err)
+		c.notifier.OnError(err)
 	}
 }
 
@@ -210,7 +211,7 @@ func (c *Controller) processTrade(order *model.Order) {
 	}
 
 	_, quote := exchange.SplitAssetQuote(order.Pair)
-	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n%s", profitValue, quote, profit*100, c.Results[order.Pair].String()))
+	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n`%s`", profitValue, quote, profit*100, c.Results[order.Pair].String()))
 }
 
 func (c *Controller) updateOrders() {

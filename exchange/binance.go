@@ -13,22 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type AssetInfo struct {
-	BaseAsset  string
-	QuoteAsset string
-
-	MinPrice    float64
-	MaxPrice    float64
-	MinQuantity float64
-	MaxQuantity float64
-	StepSize    float64
-	TickSize    float64
-
-	// Number of decimal places
-	QtyDecimalPrecision   int64
-	PriceDecimalPrecision int64
-}
-
 type UserInfo struct {
 	MakerCommission float64
 	TakerCommission float64
@@ -37,7 +21,7 @@ type UserInfo struct {
 type Binance struct {
 	ctx        context.Context
 	client     *binance.Client
-	assetsInfo map[string]AssetInfo
+	assetsInfo map[string]model.AssetInfo
 	userInfo   UserInfo
 
 	APIKey    string
@@ -86,9 +70,9 @@ func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error)
 	}
 
 	// Initialize with orders precision and assets limits
-	exchange.assetsInfo = make(map[string]AssetInfo)
+	exchange.assetsInfo = make(map[string]model.AssetInfo)
 	for _, info := range results.Symbols {
-		tradeLimits := AssetInfo{
+		tradeLimits := model.AssetInfo{
 			BaseAsset:  info.BaseAsset,
 			QuoteAsset: info.QuoteAsset,
 		}
@@ -117,8 +101,11 @@ func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error)
 	return exchange, nil
 }
 
-func (b *Binance) validate(side model.SideType, typ model.OrderType, pair string, quantity float64,
-	value *float64) error {
+func (b *Binance) AssetsInfo(pair string) model.AssetInfo {
+	return b.assetsInfo[pair]
+}
+
+func (b *Binance) validate(pair string, quantity float64) error {
 
 	info, ok := b.assetsInfo[pair]
 	if !ok {
@@ -129,35 +116,6 @@ func (b *Binance) validate(side model.SideType, typ model.OrderType, pair string
 		return fmt.Errorf("%w: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity)
 	}
 
-	account, err := b.Account()
-	if err != nil {
-		return err
-	}
-
-	commissionFactor := 1 + b.userInfo.MakerCommission
-	if typ == model.OrderTypeMarket || typ == model.OrderTypeLimitMaker ||
-		typ == model.OrderTypeStopLoss || typ == model.OrderTypeTakeProfit {
-		commissionFactor = 1 + b.userInfo.TakerCommission
-	}
-
-	if side == model.SideTypeBuy {
-		if value == nil {
-			candles, err := b.CandlesByLimit(b.ctx, pair, "1m", 1)
-			if err != nil {
-				return err
-			}
-			value = &candles[0].Close
-		}
-
-		if value != nil && account.Balance(info.QuoteAsset).Free < quantity*(*value)*commissionFactor {
-			return ErrInsufficientFunds
-		}
-	}
-
-	if side == model.SideTypeSell && account.Balance(info.BaseAsset).Free < quantity*commissionFactor {
-		return ErrInsufficientFunds
-	}
-
 	return nil
 }
 
@@ -165,13 +123,7 @@ func (b *Binance) CreateOrderOCO(side model.SideType, pair string,
 	quantity, price, stop, stopLimit float64) ([]model.Order, error) {
 
 	// validate stop
-	err := b.validate(side, model.OrderTypeStopLossLimit, pair, quantity, &stopLimit)
-	if err != nil {
-		return nil, err
-	}
-
-	// validate take profit
-	err = b.validate(side, model.OrderTypeLimitMaker, pair, quantity, &price)
+	err := b.validate(pair, quantity)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +169,7 @@ func (b *Binance) CreateOrderOCO(side model.SideType, pair string,
 }
 
 func (b *Binance) OrderStop(pair string, quantity float64, limit float64) (model.Order, error) {
-	err := b.validate(model.SideTypeSell, model.OrderTypeStopLoss, pair, quantity, &limit)
+	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -268,7 +220,7 @@ func (b *Binance) formatQuantity(pair string, value float64) string {
 func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
 	quantity float64, limit float64) (model.Order, error) {
 
-	err := b.validate(side, model.OrderTypeLimit, pair, quantity, &limit)
+	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -285,8 +237,15 @@ func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
 		return model.Order{}, err
 	}
 
-	price, _ := strconv.ParseFloat(order.Price, 64)
-	quantity, _ = strconv.ParseFloat(order.OrigQuantity, 64)
+	price, err := strconv.ParseFloat(order.Price, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	quantity, err = strconv.ParseFloat(order.OrigQuantity, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
 
 	return model.Order{
 		ExchangeID: order.OrderID,
@@ -302,7 +261,7 @@ func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
 }
 
 func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity float64) (model.Order, error) {
-	err := b.validate(side, model.OrderTypeMarket, pair, quantity, nil)
+	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -318,8 +277,16 @@ func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity f
 		return model.Order{}, err
 	}
 
-	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
-	quantity, _ = strconv.ParseFloat(order.ExecutedQuantity, 64)
+	cost, err := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	quantity, err = strconv.ParseFloat(order.ExecutedQuantity, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
+
 	return model.Order{
 		ExchangeID: order.OrderID,
 		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
@@ -334,7 +301,7 @@ func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity f
 }
 
 func (b *Binance) CreateOrderMarketQuote(side model.SideType, pair string, quantity float64) (model.Order, error) {
-	err := b.validate(side, model.OrderTypeMarket, pair, quantity, nil)
+	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -350,8 +317,16 @@ func (b *Binance) CreateOrderMarketQuote(side model.SideType, pair string, quant
 		return model.Order{}, err
 	}
 
-	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
-	quantity, _ = strconv.ParseFloat(order.ExecutedQuantity, 64)
+	cost, err := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	quantity, err = strconv.ParseFloat(order.ExecutedQuantity, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
+
 	return model.Order{
 		ExchangeID: order.OrderID,
 		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
@@ -435,8 +410,14 @@ func (b *Binance) Account() (model.Account, error) {
 
 	balances := make([]model.Balance, 0)
 	for _, balance := range acc.Balances {
-		free, _ := strconv.ParseFloat(balance.Free, 64)
-		locked, _ := strconv.ParseFloat(balance.Locked, 64)
+		free, err := strconv.ParseFloat(balance.Free, 64)
+		if err != nil {
+			return model.Account{}, err
+		}
+		locked, err := strconv.ParseFloat(balance.Locked, 64)
+		if err != nil {
+			return model.Account{}, err
+		}
 		balances = append(balances, model.Balance{
 			Tick: balance.Asset,
 			Free: free,

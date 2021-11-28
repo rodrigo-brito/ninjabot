@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -20,6 +21,22 @@ type Balance struct {
 	Tick string
 	Free float64
 	Lock float64
+}
+
+type AssetInfo struct {
+	BaseAsset  string
+	QuoteAsset string
+
+	MinPrice    float64
+	MaxPrice    float64
+	MinQuantity float64
+	MaxQuantity float64
+	StepSize    float64
+	TickSize    float64
+
+	// Number of decimal places
+	QtyDecimalPrecision   int64
+	PriceDecimalPrecision int64
 }
 
 type Dataframe struct {
@@ -50,13 +67,13 @@ type Candle struct {
 	Complete bool
 }
 
-func (c Candle) ToSlice() []string {
+func (c Candle) ToSlice(precision int) []string {
 	return []string{
 		fmt.Sprintf("%d", c.Time.Unix()),
-		fmt.Sprintf("%f", c.Open),
-		fmt.Sprintf("%f", c.Close),
-		fmt.Sprintf("%f", c.Low),
-		fmt.Sprintf("%f", c.High),
+		strconv.FormatFloat(c.Open, 'f', precision, 64),
+		strconv.FormatFloat(c.Close, 'f', precision, 64),
+		strconv.FormatFloat(c.Low, 'f', precision, 64),
+		strconv.FormatFloat(c.High, 'f', precision, 64),
 		fmt.Sprintf("%.1f", c.Volume),
 		fmt.Sprintf("%d", c.Trades),
 	}

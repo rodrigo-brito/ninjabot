@@ -41,6 +41,7 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 				"quote": quotePosition,
 			}).Error(err)
 		}
+		return
 	}
 
 	if assetPosition > 0 &&

@@ -18,7 +18,7 @@ var (
 	pairAssetQuoteMap = make(map[string]AssetQuote)
 )
 
-func SplitAssetQuote(pair string) (string, string) {
+func SplitAssetQuote(pair string) (asset string, quote string) {
 	once.Do(func() {
 		client := binance.NewClient("", "")
 		info, err := client.NewExchangeInfoService().Do(context.Background())

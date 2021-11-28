@@ -13,6 +13,7 @@ type Exchange interface {
 }
 
 type Feeder interface {
+	AssetsInfo(pair string) model.AssetInfo
 	CandlesByPeriod(ctx context.Context, pair, period string, start, end time.Time) ([]model.Candle, error)
 	CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error)
 	CandlesSubscription(ctx context.Context, pair, timeframe string) (chan model.Candle, chan error)
@@ -32,7 +33,7 @@ type Broker interface {
 type Notifier interface {
 	Notify(string)
 	OnOrder(order model.Order)
-	OrError(err error)
+	OnError(err error)
 }
 
 type Telegram interface {

@@ -139,12 +139,16 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 		assetPair, quotePair := exchange.SplitAssetQuote(pair)
 		assetSize, quoteSize, err := t.orderController.Position(pair)
 		if err != nil {
-			t.OrError(err)
+			log.Error(err)
+			t.OnError(err)
+			return
 		}
 
 		assetValue, err := t.orderController.PositionValue(pair)
 		if err != nil {
-			t.OrError(err)
+			log.Error(err)
+			t.OnError(err)
+			return
 		}
 
 		quotesValue[quotePair] = quoteSize
@@ -168,7 +172,9 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 func (t telegram) HelpHandle(m *tb.Message) {
 	commands, err := t.client.GetCommands()
 	if err != nil {
-		t.OrError(err)
+		log.Error(err)
+		t.OnError(err)
+		return
 	}
 
 	lines := make([]string, 0, len(commands))
@@ -219,7 +225,8 @@ func (t telegram) BuyHandle(m *tb.Message) {
 	pair := strings.ToUpper(command["pair"])
 	amount, err := strconv.ParseFloat(command["amount"], 64)
 	if err != nil {
-		t.OrError(err)
+		log.Error(err)
+		t.OnError(err)
 		return
 	} else if amount <= 0 {
 		_, err := t.client.Send(m.Sender, "Invalid amount")
@@ -232,7 +239,8 @@ func (t telegram) BuyHandle(m *tb.Message) {
 	if command["percent"] != "" {
 		_, quote, err := t.orderController.Position(pair)
 		if err != nil {
-			t.OrError(err)
+			log.Error(err)
+			t.OnError(err)
 			return
 		}
 
@@ -241,10 +249,10 @@ func (t telegram) BuyHandle(m *tb.Message) {
 
 	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeBuy, pair, amount)
 	if err != nil {
-		t.OrError(err)
+		log.Error(err)
 		return
 	}
-	t.OnOrder(order)
+	log.Info("[TELEGRAM]: BUY ORDER CREATED: ", order)
 }
 
 func (t telegram) SellHandle(m *tb.Message) {
@@ -267,7 +275,8 @@ func (t telegram) SellHandle(m *tb.Message) {
 	pair := strings.ToUpper(command["pair"])
 	amount, err := strconv.ParseFloat(command["amount"], 64)
 	if err != nil {
-		t.OrError(err)
+		log.Error(err)
+		t.OnError(err)
 		return
 	} else if amount <= 0 {
 		_, err := t.client.Send(m.Sender, "Invalid amount")
@@ -280,26 +289,27 @@ func (t telegram) SellHandle(m *tb.Message) {
 	if command["percent"] != "" {
 		asset, _, err := t.orderController.Position(pair)
 		if err != nil {
-			t.OrError(err)
+			log.Error(err)
+			t.OnError(err)
 			return
 		}
 
 		amount = amount * asset / 100.0
 		order, err := t.orderController.CreateOrderMarket(model.SideTypeSell, pair, amount)
 		if err != nil {
-			t.OrError(err)
+			log.Error(err)
 			return
 		}
-		t.OnOrder(order)
+		log.Info("[TELEGRAM]: SELL ORDER CREATED: ", order)
 		return
 	}
 
 	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeSell, pair, amount)
 	if err != nil {
-		t.OrError(err)
+		log.Error(err)
 		return
 	}
-	t.OnOrder(order)
+	log.Info("[TELEGRAM]: SELL ORDER CREATED: ", order)
 }
 
 func (t telegram) StatusHandle(m *tb.Message) {
@@ -356,8 +366,7 @@ func (t telegram) OnOrder(order model.Order) {
 	t.Notify(message)
 }
 
-func (t telegram) OrError(err error) {
-	log.Error(err)
+func (t telegram) OnError(err error) {
 	title := "🛑 ERROR"
 	message := fmt.Sprintf("%s\n-----\n%s", title, err)
 	t.Notify(message)

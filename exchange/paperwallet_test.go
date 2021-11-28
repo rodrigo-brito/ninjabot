@@ -279,3 +279,11 @@ func TestPaperWallet_MaxDrawndown(t *testing.T) {
 		})
 	}
 }
+
+func TestPaperWallet_AssetsInfo(t *testing.T) {
+	wallet := PaperWallet{}
+	info := wallet.AssetsInfo("BTCUSDT")
+	require.Equal(t, info.PriceDecimalPrecision, int64(8))
+	require.Equal(t, info.BaseAsset, "BTC")
+	require.Equal(t, info.QuoteAsset, "USDT")
+}

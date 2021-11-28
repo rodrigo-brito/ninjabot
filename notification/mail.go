@@ -61,7 +61,7 @@ func (t Mail) OnOrder(order model.Order) {
 	t.Notify(message)
 }
 
-func (t Mail) OrError(err error) {
+func (t Mail) OnError(err error) {
 	message := fmt.Sprintf("Subject: 🛑 ERROR\nError %s", err)
 	t.Notify(message)
 }
