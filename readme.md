@@ -16,6 +16,7 @@ Docs: https://rodrigo-brito.github.io/ninjabot/
 | --- | --- |
 |**BTC** | `bc1qpk6yqju6rkz33ntzj8kuepmynmztzydmec2zm4`|
 |**ETH** | `0x2226FFe4aBD2Afa84bf7222C2b17BBC65F64555A` |
+|**LTC** | `ltc1qj2n9r4yfsm5dnsmmtzhgj8qcj8fjpcvgkd9v3j` |
 
 ## Installation
 
