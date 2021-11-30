@@ -16,6 +16,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/strategy"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -261,6 +262,10 @@ func (n *NinjaBot) backtestCandles() {
 	// to avoid sync issues between multiple coins
 	n.startBacktest.Wait()
 
+	//load maximum of progresbar by using candle queue
+	maxProgressbar := n.priorityQueueCandle.Len()
+	bar := progressbar.Default(int64(maxProgressbar))
+
 	for n.priorityQueueCandle.Len() > 0 {
 		item := n.priorityQueueCandle.Pop()
 
@@ -271,6 +276,10 @@ func (n *NinjaBot) backtestCandles() {
 
 		if candle.Complete {
 			n.strategiesControllers[candle.Pair].OnCandle(candle)
+		}
+
+		if err := bar.Add(1); err != nil {
+			log.Warningf("update progresbar fail: %s", err.Error())
 		}
 	}
 }
