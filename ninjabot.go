@@ -255,7 +255,7 @@ func (n *NinjaBot) processCandles() {
 
 func (n *NinjaBot) backtestCandles() {
 	log.Info("[SETUP] Starting backtesting")
-	bar := progressbar.Default(int64(1))
+	bar := progressbar.Default(1)
 
 	// when backtesting, we need to wait all candles load
 	// to avoid sync issues between multiple coins
