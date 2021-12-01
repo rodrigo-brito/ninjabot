@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strconv"
-	"sync"
-
+	"github.com/olekukonko/tablewriter"
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/notification"
@@ -14,10 +12,10 @@ import (
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/storage"
 	"github.com/rodrigo-brito/ninjabot/strategy"
-
-	"github.com/olekukonko/tablewriter"
 	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
+	"strconv"
+	"sync"
 )
 
 const (
@@ -257,6 +255,7 @@ func (n *NinjaBot) processCandles() {
 
 func (n *NinjaBot) backtestCandles() {
 	log.Info("[SETUP] Starting backtesting")
+	bar := progressbar.Default(int64(1))
 
 	// when backtesting, we need to wait all candles load
 	// to avoid sync issues between multiple coins
@@ -264,7 +263,7 @@ func (n *NinjaBot) backtestCandles() {
 
 	//load maximum of progresbar by using candle queue
 	maxProgressbar := n.priorityQueueCandle.Len()
-	bar := progressbar.Default(int64(maxProgressbar))
+	bar.ChangeMax(maxProgressbar)
 
 	for n.priorityQueueCandle.Len() > 0 {
 		item := n.priorityQueueCandle.Pop()
