@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
+	"strconv"
+	"sync"
+
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/notification"
@@ -12,10 +14,10 @@ import (
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/storage"
 	"github.com/rodrigo-brito/ninjabot/strategy"
+
+	"github.com/olekukonko/tablewriter"
 	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
-	"strconv"
-	"sync"
 )
 
 const (
