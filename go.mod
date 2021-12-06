@@ -16,6 +16,7 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	gopkg.in/tucnak/telebot.v2 v2.4.1
+	github.com/gin-gonic/gin v1.7.0
 )
 
 require (
