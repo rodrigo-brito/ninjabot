@@ -16,13 +16,13 @@ require (
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	gopkg.in/tucnak/telebot.v2 v2.4.1
-	github.com/gin-gonic/gin v1.7.0
 )
 
 require (
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gin-gonic/gin v1.7.7 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/klauspost/compress v1.13.1 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
