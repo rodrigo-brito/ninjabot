@@ -33,6 +33,7 @@ type Chart struct {
 	indicators    []Indicator
 	paperWallet   *exchange.PaperWallet
 	scriptContent string
+	indexHTML     *template.Template
 }
 
 type Candle struct {
@@ -265,79 +266,78 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 	return shapes
 }
 
-func (c *Chart) Start() error {
-	t, err := template.ParseFS(staticFiles, "assets/chart.html")
-	if err != nil {
-		return err
+func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
+	var pairs = make([]string, 0, len(c.candles))
+	for pair := range c.candles {
+		pairs = append(pairs, pair)
 	}
 
+	pair := r.URL.Query().Get("pair")
+	if pair == "" && len(pairs) > 0 {
+		http.Redirect(w, r, fmt.Sprintf("/?pair=%s", pairs[0]), http.StatusFound)
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	err := c.indexHTML.Execute(w, map[string]interface{}{
+		"pair":  pair,
+		"pairs": pairs,
+	})
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (c *Chart) handleData(w http.ResponseWriter, r *http.Request) {
+	pair := r.URL.Query().Get("pair")
+	if pair == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-type", "text/json")
+
+	var maxDrawdown *drawdown
+	if c.paperWallet != nil {
+		value, start, end := c.paperWallet.MaxDrawdown()
+		maxDrawdown = &drawdown{
+			Start: start,
+			End:   end,
+			Value: fmt.Sprintf("%.1f", value*100),
+		}
+	}
+
+	asset, quote := exchange.SplitAssetQuote(pair)
+	assetValues, equityValues := c.equityValuesByPair(pair)
+	err := json.NewEncoder(w).Encode(map[string]interface{}{
+		"candles":       c.candlesByPair(pair),
+		"indicators":    c.indicatorsByPair(pair),
+		"shapes":        c.shapesByPair(pair),
+		"asset_values":  assetValues,
+		"equity_values": equityValues,
+		"quote":         quote,
+		"asset":         asset,
+		"max_drawdown":  maxDrawdown,
+	})
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+func (c *Chart) Start() error {
 	http.Handle(
 		"/assets/",
 		http.FileServer(http.FS(staticFiles)),
 	)
-
-	var pairs = make([]string, 0)
-	for pair := range c.candles {
-		pairs = append(pairs, pair)
-	}
 
 	http.HandleFunc("/assets/chart.js", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-type", "application/javascript")
 		fmt.Fprint(w, c.scriptContent)
 	})
 
-	http.HandleFunc("/data", func(w http.ResponseWriter, req *http.Request) {
-		pair := req.URL.Query().Get("pair")
-		if pair == "" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+	http.HandleFunc("/data", c.handleData)
+	http.HandleFunc("/", c.handleIndex)
 
-		w.Header().Set("Content-type", "text/json")
-
-		var maxDrawdown *drawdown
-		if c.paperWallet != nil {
-			value, start, end := c.paperWallet.MaxDrawdown()
-			maxDrawdown = &drawdown{
-				Start: start,
-				End:   end,
-				Value: fmt.Sprintf("%.1f", value*100),
-			}
-		}
-
-		asset, quote := exchange.SplitAssetQuote(pair)
-		assetValues, equityValues := c.equityValuesByPair(pair)
-		err := json.NewEncoder(w).Encode(map[string]interface{}{
-			"candles":       c.candlesByPair(pair),
-			"indicators":    c.indicatorsByPair(pair),
-			"shapes":        c.shapesByPair(pair),
-			"asset_values":  assetValues,
-			"equity_values": equityValues,
-			"quote":         quote,
-			"asset":         asset,
-			"max_drawdown":  maxDrawdown,
-		})
-		if err != nil {
-			log.Error(err)
-		}
-	})
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		pair := r.URL.Query().Get("pair")
-		if pair == "" {
-			http.Redirect(w, r, fmt.Sprintf("/?pair=%s", pairs[0]), http.StatusFound)
-			return
-		}
-
-		w.Header().Add("Content-Type", "text/html")
-		err := t.Execute(w, map[string]interface{}{
-			"pair":  pair,
-			"pairs": pairs,
-		})
-		if err != nil {
-			log.Error(err)
-		}
-	})
 	fmt.Printf("Chart available at http://localhost:%d\n", c.port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", c.port), nil)
 }
@@ -382,12 +382,17 @@ func NewChart(options ...Option) (*Chart, error) {
 		option(chart)
 	}
 
-	content, err := staticFiles.ReadFile("assets/chart.js")
+	chartJS, err := staticFiles.ReadFile("assets/chart.js")
 	if err != nil {
 		return nil, err
 	}
 
-	result := api.Transform(string(content), api.TransformOptions{
+	chart.indexHTML, err = template.ParseFS(staticFiles, "assets/chart.html")
+	if err != nil {
+		return nil, err
+	}
+
+	transpileChartJS := api.Transform(string(chartJS), api.TransformOptions{
 		Loader:            api.LoaderJS,
 		Target:            api.ES2015,
 		MinifySyntax:      !chart.debug,
@@ -395,11 +400,11 @@ func NewChart(options ...Option) (*Chart, error) {
 		MinifyWhitespace:  !chart.debug,
 	})
 
-	if len(result.Errors) > 0 {
-		return nil, fmt.Errorf("chart script faild with: %v", result.Errors)
+	if len(transpileChartJS.Errors) > 0 {
+		return nil, fmt.Errorf("chart script faild with: %v", transpileChartJS.Errors)
 	}
 
-	chart.scriptContent = string(result.Code)
+	chart.scriptContent = string(transpileChartJS.Code)
 
 	return chart, nil
 }

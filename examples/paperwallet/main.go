@@ -5,6 +5,9 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/rodrigo-brito/ninjabot/plot"
+	"github.com/rodrigo-brito/ninjabot/plot/indicator"
+
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/exchange"
@@ -58,6 +61,11 @@ func main() {
 	// initializing my strategy
 	strategy := new(strategies.CrossEMA)
 
+	chart, err := plot.NewChart(plot.WithIndicators(indicator.EMA(9, "blue")))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// initializer ninjabot
 	bot, err := ninjabot.NewBot(
 		ctx,
@@ -66,10 +74,19 @@ func main() {
 		strategy,
 		ninjabot.WithStorage(storage),
 		ninjabot.WithPaperWallet(paperWallet),
+		ninjabot.WithCandleSubscription(chart),
+		ninjabot.WithOrderSubscription(chart),
 	)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	go func() {
+		err := chart.Start()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	err = bot.Run(ctx)
 	if err != nil {

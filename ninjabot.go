@@ -257,16 +257,12 @@ func (n *NinjaBot) processCandles() {
 
 func (n *NinjaBot) backtestCandles() {
 	log.Info("[SETUP] Starting backtesting")
-	bar := progressbar.Default(1)
 
 	// when backtesting, we need to wait all candles load
 	// to avoid sync issues between multiple coins
 	n.startBacktest.Wait()
 
-	//load maximum of progresbar by using candle queue
-	maxProgressbar := n.priorityQueueCandle.Len()
-	bar.ChangeMax(maxProgressbar)
-
+	progressBar := progressbar.Default(int64(n.priorityQueueCandle.Len()))
 	for n.priorityQueueCandle.Len() > 0 {
 		item := n.priorityQueueCandle.Pop()
 
@@ -279,10 +275,29 @@ func (n *NinjaBot) backtestCandles() {
 			n.strategiesControllers[candle.Pair].OnCandle(candle)
 		}
 
-		if err := bar.Add(1); err != nil {
+		if err := progressBar.Add(1); err != nil {
 			log.Warningf("update progresbar fail: %s", err.Error())
 		}
 	}
+}
+
+func (n *NinjaBot) preload(ctx context.Context, pair string) error {
+	if n.backtest {
+		return nil
+	}
+
+	candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod())
+	if err != nil {
+		return err
+	}
+
+	for _, candle := range candles {
+		n.processCandle(candle)
+	}
+
+	n.dataFeed.Preload(pair, n.strategy.Timeframe(), candles)
+
+	return nil
 }
 
 func (n *NinjaBot) Run(ctx context.Context) error {
@@ -290,16 +305,10 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		// setup and subscribe strategy to data feed (candles)
 		n.strategiesControllers[pair] = strategy.NewStrategyController(pair, n.strategy, n.orderController)
 
-		if !n.backtest {
-			// preload candles to warmup strategy
-			log.Infof("[SETUP] preloading %d candles for %s", n.strategy.WarmupPeriod(), pair)
-			candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod())
-			if err != nil {
-				return err
-			}
-			for _, candle := range candles {
-				n.processCandle(candle)
-			}
+		// preload candles for warmup period
+		err := n.preload(ctx, pair)
+		if err != nil {
+			return err
 		}
 
 		// link to ninja bot controller
