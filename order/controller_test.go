@@ -134,6 +134,24 @@ func TestController_calculateProfit(t *testing.T) {
 		assert.Equal(t, -500.0, value)
 		assert.Equal(t, -0.5, profit)
 	})
+
+	t.Run("no buy information", func(t *testing.T) {
+		storage, err := storage.FromMemory()
+		require.NoError(t, err)
+		ctx := context.Background()
+		wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 0),
+			exchange.WithPaperAsset("BTC", 2))
+		controller := NewController(ctx, wallet, storage, NewOrderFeed())
+		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", Close: 1500, Low: 1500})
+
+		sellOrder, err := controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+		require.NoError(t, err)
+
+		value, profit, err := controller.calculateProfit(&sellOrder)
+		require.NoError(t, err)
+		assert.Equal(t, 0.0, value)
+		assert.Equal(t, 0.0, profit)
+	})
 }
 
 func TestController_PositionValue(t *testing.T) {

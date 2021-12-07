@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"sort"
 	"sync"
 	"time"
 
@@ -272,6 +273,7 @@ func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
 		pairs = append(pairs, pair)
 	}
 
+	sort.Strings(pairs)
 	pair := r.URL.Query().Get("pair")
 	if pair == "" && len(pairs) > 0 {
 		http.Redirect(w, r, fmt.Sprintf("/?pair=%s", pairs[0]), http.StatusFound)

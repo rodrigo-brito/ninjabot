@@ -158,6 +158,10 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 		}
 	}
 
+	if quantity == 0 {
+		return 0, 0, nil
+	}
+
 	cost := o.Quantity * avgPrice
 	price := o.Price
 	if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {

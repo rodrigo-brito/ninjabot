@@ -17,18 +17,30 @@
       font-size: 16px;
     }
 
-    *, *:before, *:after {
+    *,
+    *:before,
+    *:after {
       box-sizing: inherit;
     }
 
-    body, h1, h2, h3, h4, h5, h6, p, ol, ul {
+    body,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    ol,
+    ul {
       margin: 0;
       padding: 0;
       font-weight: normal;
       font-family: sans-serif;
     }
 
-    ol, ul {
+    ol,
+    ul {
       display: inline-block;
       list-style: none;
     }
@@ -37,22 +49,36 @@
       margin: 10px;
     }
 
-    .coin {
+    .btn {
       display: inline-block;
-      background: #ccc;
-      padding: 10px;
-      border-radius: 5px;
-      color: #000;
-      text-decoration: none;
       font-family: sans-serif;
+      border-radius: 5px;
+      padding: 10px 15px;
+      text-decoration: none;
+      margin: 0;
+      color: #252525;
+      background-color: #ddd;
+      box-shadow: 0 5px 0 0 #ccc;
     }
 
-    .coin.active {
-      background: rgb(106, 141, 204);
+    .btn:hover {
+      background-color: #eee;
     }
 
-    .coin:hover {
-      background: rgb(106, 141, 204);
+    .btn:active {
+      transform: translate(0px, 5px);
+      -webkit-transform: translate(0px, 5px);
+      box-shadow: 0px 1px 0px 0px;
+    }
+
+    .blue {
+      color: #fff;
+      background-color: #55acee;
+      box-shadow: 0px 5px 0px 0px #3c93d5;
+    }
+
+    .blue:hover {
+      background-color: #6fc6ff;
     }
 
     #graph {
@@ -60,7 +86,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      top: 50px;
+      top: 60px;
     }
 
     ul li {
@@ -74,7 +100,13 @@
     <nav class="menu">
       <ul>
         {{range $val := .pairs}}
-        <li><a class="coin {{if eq $.pair $val}}active{{end}}" href="/?pair={{ $val }}">{{ $val }}</a></li>
+        <li>
+          <a
+            class="btn {{if eq $.pair $val}}blue{{end}}"
+            href="/?pair={{ $val }}"
+            >{{ $val }}</a
+          >
+        </li>
         {{end}}
       </ul>
     </nav>
