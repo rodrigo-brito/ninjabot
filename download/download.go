@@ -78,13 +78,16 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 	if err != nil {
 		return err
 	}
+	candlesCount++
 
-	log.Infof("Downloading %d candles of %s for %s", candlesCount+1, timeframe, pair)
+	log.Infof("Downloading %d candles of %s for %s", candlesCount, timeframe, pair)
 	info := d.exchange.AssetsInfo(pair)
 	writer := csv.NewWriter(recordFile)
-	progressBar := progressbar.Default(int64(candlesCount + 1))
+
+	progressBar := progressbar.Default(int64(candlesCount))
 	lostData := 0
 	isLastLoop := false
+
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
 		end := begin.Add(interval * batchSize)
 		if end.After(parameters.End) {
@@ -117,8 +120,12 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 		}
 	}
 
+	if err = progressBar.Close(); err != nil {
+		log.Warningf("close progresbar fail: %s", err.Error())
+	}
+
 	if lostData > 0 {
-		log.Warnf("found lost data %d rows", lostData)
+		log.Warningf("found lost data %d rows", lostData)
 	}
 
 	writer.Flush()
