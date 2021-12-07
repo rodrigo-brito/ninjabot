@@ -87,6 +87,8 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 		end := begin.Add(interval * batchSize)
 		if end.After(parameters.End) {
 			end = parameters.End
+		} else {
+			end = end.Add(-1 * time.Second)
 		}
 
 		candles, err := d.exchange.CandlesByPeriod(ctx, pair, timeframe, begin, end)
