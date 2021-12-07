@@ -74,7 +74,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 	parameters.Start = time.Date(parameters.Start.Year(), parameters.Start.Month(), parameters.Start.Day(),
 		0, 0, 0, 0, time.UTC)
 
-	if time.Now().Sub(parameters.End) > 0 {
+	if now.Sub(parameters.End) > 0 {
 		parameters.End = time.Date(parameters.End.Year(), parameters.End.Month(), parameters.End.Day(),
 			0, 0, 0, 0, time.UTC)
 	} else {
