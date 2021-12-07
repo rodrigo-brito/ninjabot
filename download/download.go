@@ -3,6 +3,7 @@ package download
 import (
 	"context"
 	"encoding/csv"
+	"github.com/schollz/progressbar/v3"
 	"os"
 	"time"
 
@@ -72,21 +73,23 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 
 	parameters.Start = time.Date(parameters.Start.Year(), parameters.Start.Month(), parameters.Start.Day(),
 		0, 0, 0, 0, time.UTC)
-	parameters.End = time.Date(parameters.End.Year(), parameters.End.Month(), parameters.End.Day(),
-		0, 0, 0, 0, time.UTC)
 
 	candlesCount, interval, err := candlesCount(parameters.Start, parameters.End, timeframe)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Downloading %d candles of %s for %s", candlesCount, timeframe, pair)
+	log.Infof("Downloading %d candles of %s for %s", candlesCount+1, timeframe, pair)
 	info := d.exchange.AssetsInfo(pair)
 	writer := csv.NewWriter(recordFile)
+	progressBar := progressbar.Default(int64(candlesCount + 1))
+	lostData := 0
+	isLastLoop := false
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
 		end := begin.Add(interval * batchSize)
 		if end.After(parameters.End) {
 			end = parameters.End
+			isLastLoop = true
 		} else {
 			end = end.Add(-1 * time.Second)
 		}
@@ -96,13 +99,28 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 			return err
 		}
 
+		count := 0
 		for _, candle := range candles {
 			err := writer.Write(candle.ToSlice(int(info.PriceDecimalPrecision)))
 			if err != nil {
 				return err
 			}
+			count++
+		}
+
+		if !isLastLoop {
+			lostData += batchSize - count
+		}
+
+		if err = progressBar.Add(count); err != nil {
+			log.Warningf("update progresbar fail: %s", err.Error())
 		}
 	}
+
+	if lostData > 0 {
+		log.Warnf("found lost data %d rows", lostData)
+	}
+
 	writer.Flush()
 	log.Info("Done!")
 	return writer.Error()
