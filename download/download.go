@@ -109,20 +109,19 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 			return err
 		}
 
-		count := 0
 		for _, candle := range candles {
 			err := writer.Write(candle.ToSlice(int(info.PriceDecimalPrecision)))
 			if err != nil {
 				return err
 			}
-			count++
 		}
 
+		countCandles := len(candles)
 		if !isLastLoop {
-			lostData += batchSize - count
+			lostData += batchSize - countCandles
 		}
 
-		if err = progressBar.Add(count); err != nil {
+		if err = progressBar.Add(countCandles); err != nil {
 			log.Warningf("update progresbar fail: %s", err.Error())
 		}
 	}
