@@ -97,11 +97,11 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
 		end := begin.Add(interval * batchSize)
-		if end.After(parameters.End) {
+		if end.Before(parameters.End) {
+			end = end.Add(-1 * time.Second)
+		} else {
 			end = parameters.End
 			isLastLoop = true
-		} else {
-			end = end.Add(-1 * time.Second)
 		}
 
 		candles, err := d.exchange.CandlesByPeriod(ctx, pair, timeframe, begin, end)
