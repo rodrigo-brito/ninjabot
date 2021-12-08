@@ -8,6 +8,7 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/service"
 
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/xhit/go-str2duration/v2"
 )
@@ -72,21 +73,35 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 
 	parameters.Start = time.Date(parameters.Start.Year(), parameters.Start.Month(), parameters.Start.Day(),
 		0, 0, 0, 0, time.UTC)
-	parameters.End = time.Date(parameters.End.Year(), parameters.End.Month(), parameters.End.Day(),
-		0, 0, 0, 0, time.UTC)
+
+	if now.Sub(parameters.End) > 0 {
+		parameters.End = time.Date(parameters.End.Year(), parameters.End.Month(), parameters.End.Day(),
+			0, 0, 0, 0, time.UTC)
+	} else {
+		parameters.End = now
+	}
 
 	candlesCount, interval, err := candlesCount(parameters.Start, parameters.End, timeframe)
 	if err != nil {
 		return err
 	}
+	candlesCount++
 
 	log.Infof("Downloading %d candles of %s for %s", candlesCount, timeframe, pair)
 	info := d.exchange.AssetsInfo(pair)
 	writer := csv.NewWriter(recordFile)
+
+	progressBar := progressbar.Default(int64(candlesCount))
+	lostData := 0
+	isLastLoop := false
+
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
 		end := begin.Add(interval * batchSize)
-		if end.After(parameters.End) {
+		if end.Before(parameters.End) {
+			end = end.Add(-1 * time.Second)
+		} else {
 			end = parameters.End
+			isLastLoop = true
 		}
 
 		candles, err := d.exchange.CandlesByPeriod(ctx, pair, timeframe, begin, end)
@@ -100,7 +115,25 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 				return err
 			}
 		}
+
+		countCandles := len(candles)
+		if !isLastLoop {
+			lostData += batchSize - countCandles
+		}
+
+		if err = progressBar.Add(countCandles); err != nil {
+			log.Warningf("update progresbar fail: %s", err.Error())
+		}
 	}
+
+	if err = progressBar.Close(); err != nil {
+		log.Warningf("close progresbar fail: %s", err.Error())
+	}
+
+	if lostData > 0 {
+		log.Warningf("%d missing candles", lostData)
+	}
+
 	writer.Flush()
 	log.Info("Done!")
 	return writer.Error()
