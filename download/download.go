@@ -132,7 +132,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 	}
 
 	if lostData > 0 {
-		log.Warningf("found lost data %d rows", lostData)
+		log.Warningf("%d missing candles", lostData)
 	}
 
 	writer.Flush()
