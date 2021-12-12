@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -56,4 +57,10 @@ type Order struct {
 func (o Order) String() string {
 	return fmt.Sprintf("[%s] %s %s | ID: %d, Type: %s, %f x $%f (~$%.f)",
 		o.Status, o.Side, o.Pair, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price)
+}
+
+func (o Order) CSVRow() []string {
+	orderString := fmt.Sprintf("%s,%s,%s,%d,%s,%f,%f,%.2f,%s",
+		o.Status, o.Side, o.Pair, o.ExchangeID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
+	return strings.Split(orderString, ",")
 }
