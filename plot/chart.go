@@ -344,7 +344,7 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 	if c.paperWallet != nil {
 		orders, err = c.paperWallet.OrdersByPair(pair)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("failed to create order by pair: %s", err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -352,7 +352,7 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 
 	csvFile, err := os.Create("history.csv")
 	if err != nil {
-		log.Error("failed creating file: %s", err)
+		log.Errorf("failed creating file: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -361,24 +361,19 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 	csvWriter := csv.NewWriter(csvFile)
 	err = csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
 	if err != nil {
-		log.Error("failed creating file: %s", err)
+		log.Errorf("failed writing file: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	for _, order := range orders {
 		if err := csvWriter.Write(order.CSVRow()); err != nil {
-			log.Error(err)
+			log.Errorf("failed writing row data to csv: %s", err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	}
 	csvWriter.Flush()
-	if err != nil {
-		log.Error(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
 	http.ServeFile(w, r, "history.csv")
 }
