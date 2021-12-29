@@ -5,14 +5,14 @@ go 1.17
 require (
 	github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf
 	github.com/adshao/go-binance/v2 v2.3.3
-	github.com/evanw/esbuild v0.14.2
+	github.com/evanw/esbuild v0.14.6
 	github.com/jpillora/backoff v1.0.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/schollz/progressbar/v3 v3.8.3
+	github.com/schollz/progressbar/v3 v3.8.5
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/buntdb v1.2.7
+	github.com/tidwall/buntdb v1.2.8
 	github.com/urfave/cli/v2 v2.3.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	gopkg.in/tucnak/telebot.v2 v2.4.1
@@ -34,16 +34,16 @@ require (
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/tidwall/btree v0.6.1 // indirect
-	github.com/tidwall/gjson v1.10.2 // indirect
-	github.com/tidwall/grect v0.1.3 // indirect
+	github.com/tidwall/btree v0.7.1 // indirect
+	github.com/tidwall/gjson v1.12.1 // indirect
+	github.com/tidwall/grect v0.1.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/rtred v0.1.2 // indirect
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0 // indirect
-	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
