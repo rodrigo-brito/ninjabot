@@ -2,10 +2,12 @@ package plot
 
 import (
 	"embed"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -326,6 +328,61 @@ func (c *Chart) handleData(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request) {
+	pair := r.URL.Query().Get("pair")
+	if pair == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment;filename=history_"+pair+".csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	var orders []model.Order
+	var err error
+	if c.paperWallet != nil {
+		orders, err = c.paperWallet.OrdersByPair(pair)
+		if err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+
+	csvFile, err := os.Create("history.csv")
+	if err != nil {
+		log.Error("failed creating file: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	defer csvFile.Close()
+	csvWriter := csv.NewWriter(csvFile)
+	err = csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
+	if err != nil {
+		log.Error("failed creating file: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	for _, order := range orders {
+		if err := csvWriter.Write(order.CSVRow()); err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	csvWriter.Flush()
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	http.ServeFile(w, r, "history.csv")
+}
+
 func (c *Chart) Start() error {
 	http.Handle(
 		"/assets/",
@@ -337,6 +394,7 @@ func (c *Chart) Start() error {
 		fmt.Fprint(w, c.scriptContent)
 	})
 
+	http.HandleFunc("/history", c.handleTradingHistoryData)
 	http.HandleFunc("/data", c.handleData)
 	http.HandleFunc("/", c.handleIndex)
 
