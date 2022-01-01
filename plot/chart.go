@@ -1,13 +1,13 @@
 package plot
 
 import (
+	"bytes"
 	"embed"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
-	"os"
 	"sort"
 	"sync"
 	"time"
