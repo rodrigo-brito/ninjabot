@@ -340,19 +340,13 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	var orders []model.Order
-	var err error
 	if c.paperWallet != nil {
-		orders, err = c.paperWallet.OrdersByPair(pair)
-		if err != nil {
-			log.Errorf("failed to create order by pair: %s", err.Error())
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		orders = c.paperWallet.OrdersByPair(pair)
 	}
 
 	buffer := bytes.NewBuffer(nil)
 	csvWriter := csv.NewWriter(buffer)
-	err = csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
+	err := csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
 	if err != nil {
 		log.Errorf("failed writing file: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)

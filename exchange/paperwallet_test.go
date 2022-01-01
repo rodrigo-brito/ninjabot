@@ -2,7 +2,6 @@ package exchange
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -225,17 +224,18 @@ func TestPaperWallet_OrdersByPair(t *testing.T) {
 		OrderETH1,
 	}
 
-	order, err := wallet.OrdersByPair("BTCUSDT")
+	var expectOrderBNB []model.Order
+
+	order := wallet.OrdersByPair("BTCUSDT")
 	require.NoError(t, err)
 	require.Equal(t, expectOrderBTC, order)
 
-	order, err = wallet.OrdersByPair("ETHUSDT")
+	order = wallet.OrdersByPair("ETHUSDT")
 	require.NoError(t, err)
 	require.Equal(t, expectOrderETH, order)
 
-	expectError := errors.New("order not found")
-	_, err = wallet.OrdersByPair("BNBUSDT")
-	require.Equal(t, expectError, err)
+	order = wallet.OrdersByPair("BNBUSDT")
+	require.Equal(t, expectOrderBNB, order)
 }
 
 func TestPaperWallet_MaxDrawndown(t *testing.T) {

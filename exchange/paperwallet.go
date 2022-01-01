@@ -513,19 +513,14 @@ func (p *PaperWallet) Order(pair string, id int64) (model.Order, error) {
 	return model.Order{}, errors.New("order not found")
 }
 
-func (p *PaperWallet) OrdersByPair(pair string) ([]model.Order, error) {
+func (p *PaperWallet) OrdersByPair(pair string) []model.Order {
 	var orders []model.Order
 	for _, order := range p.orders {
 		if order.Pair == pair {
 			orders = append(orders, order)
 		}
 	}
-
-	if len(orders) > 0 {
-		return orders, nil
-	}
-	return orders, errors.New("order not found")
-
+	return orders
 }
 
 func (p *PaperWallet) CandlesByPeriod(ctx context.Context, pair, period string,
