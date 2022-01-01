@@ -350,15 +350,8 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	csvFile, err := os.Create("history.csv")
-	if err != nil {
-		log.Errorf("failed creating file: %s", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	defer csvFile.Close()
-	csvWriter := csv.NewWriter(csvFile)
+	buffer := bytes.NewBuffer(nil)
+	csvWriter := csv.NewWriter(buffer)
 	err = csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
 	if err != nil {
 		log.Errorf("failed writing file: %s", err.Error())
