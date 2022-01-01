@@ -201,43 +201,6 @@ func TestPaperWallet_Order(t *testing.T) {
 	require.Equal(t, expectOrder, order)
 }
 
-func TestPaperWallet_OrdersByPair(t *testing.T) {
-	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
-	OrderBTC1, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
-	require.NoError(t, err)
-	require.Equal(t, int64(1), OrderBTC1.ExchangeID)
-
-	OrderETH1, err := wallet.CreateOrderMarket(model.SideTypeBuy, "ETHUSDT", 1)
-	require.NoError(t, err)
-	require.Equal(t, int64(2), OrderETH1.ExchangeID)
-
-	OrderBTC2, err := wallet.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
-	require.NoError(t, err)
-	require.Equal(t, int64(3), OrderBTC2.ExchangeID)
-
-	expectOrderBTC := []model.Order{
-		OrderBTC1,
-		OrderBTC2,
-	}
-
-	expectOrderETH := []model.Order{
-		OrderETH1,
-	}
-
-	var expectOrderBNB []model.Order
-
-	order := wallet.OrdersByPair("BTCUSDT")
-	require.NoError(t, err)
-	require.Equal(t, expectOrderBTC, order)
-
-	order = wallet.OrdersByPair("ETHUSDT")
-	require.NoError(t, err)
-	require.Equal(t, expectOrderETH, order)
-
-	order = wallet.OrdersByPair("BNBUSDT")
-	require.Equal(t, expectOrderBNB, order)
-}
-
 func TestPaperWallet_MaxDrawndown(t *testing.T) {
 	tt := []struct {
 		name   string

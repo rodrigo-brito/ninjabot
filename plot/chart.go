@@ -269,6 +269,17 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 	return shapes
 }
 
+func (c *Chart) orderStringByPair(pair string) []string {
+	ordersString := make([]string, 0)
+	for id := range c.ordersByPair[pair].Iter() {
+		o := c.orderByID[id]
+		orderString := fmt.Sprintf("%s,%s,%d,%s,%f,%f,%.2f,%s",
+			o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
+		ordersString = append(ordersString, orderString)
+	}
+	return ordersString
+}
+
 func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
 	var pairs = make([]string, 0, len(c.candles))
 	for pair := range c.candles {
@@ -339,30 +350,33 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Disposition", "attachment;filename=history_"+pair+".csv")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
-	var orders []model.Order
-	if c.paperWallet != nil {
-		orders = c.paperWallet.OrdersByPair(pair)
-	}
+	orders := c.orderStringByPair(pair)
+	log.Println(orders)
 
 	buffer := bytes.NewBuffer(nil)
 	csvWriter := csv.NewWriter(buffer)
 	err := csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
 	if err != nil {
-		log.Errorf("failed writing file: %s", err.Error())
+		log.Errorf("failed writing header file: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	for _, order := range orders {
-		if err := csvWriter.Write(order.CSVRow()); err != nil {
-			log.Errorf("failed writing row data to csv: %s", err.Error())
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+	err = csvWriter.Write(orders)
+	if err != nil {
+		log.Errorf("failed writing data: %s", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	csvWriter.Flush()
 
-	http.ServeFile(w, r, "history.csv")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(buffer.Bytes())
+	if err != nil {
+		log.Errorf("failed writing response: %s", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 }
 
 func (c *Chart) Start() error {
