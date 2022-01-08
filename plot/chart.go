@@ -273,11 +273,10 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 func (c *Chart) orderStringByPair(pair string) [][]string {
 	orders := make([][]string, 0)
 	for id := range c.ordersByPair[pair].Iter() {
-		order := make([]string, 0)
 		o := c.orderByID[id]
 		orderString := fmt.Sprintf("%s,%s,%d,%s,%f,%f,%.2f,%s",
 			o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
-		order = strings.Split(orderString, ",")
+		order := strings.Split(orderString, ",")
 		orders = append(orders, order)
 	}
 	return orders
