@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -269,15 +270,17 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 	return shapes
 }
 
-func (c *Chart) orderStringByPair(pair string) []string {
-	ordersString := make([]string, 0)
+func (c *Chart) orderStringByPair(pair string) [][]string {
+	orders := make([][]string, 0)
 	for id := range c.ordersByPair[pair].Iter() {
+		order := make([]string, 0)
 		o := c.orderByID[id]
 		orderString := fmt.Sprintf("%s,%s,%d,%s,%f,%f,%.2f,%s",
 			o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
-		ordersString = append(ordersString, orderString)
+		order = strings.Split(orderString, ",")
+		orders = append(orders, order)
 	}
-	return ordersString
+	return orders
 }
 
 func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -351,18 +354,17 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	orders := c.orderStringByPair(pair)
-	log.Println(orders)
 
 	buffer := bytes.NewBuffer(nil)
 	csvWriter := csv.NewWriter(buffer)
-	err := csvWriter.Write([]string{"status", "side", "pair", "id", "type", "quantity", "price", "total", "created_at"})
+	err := csvWriter.Write([]string{"status", "side", "id", "type", "quantity", "price", "total", "created_at"})
 	if err != nil {
 		log.Errorf("failed writing header file: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = csvWriter.Write(orders)
+	err = csvWriter.WriteAll(orders)
 	if err != nil {
 		log.Errorf("failed writing data: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
