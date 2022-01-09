@@ -2,14 +2,115 @@ package plot
 
 import (
 	"github.com/StudioSol/set"
+	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
-func TestChart_orderStringByPair(t *testing.T) {
+func TestChart_CandleAndOrder(t *testing.T) {
 	c, err := NewChart()
-	require.NoErrorf(t, err, "check error when initial chart")
+	require.NoErrorf(t, err, "error when initial chart")
+
+	candle := model.Candle{
+		Pair:     "BTCUSDT",
+		Time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Open:     10000.1,
+		Close:    10000.1,
+		Low:      10000.1,
+		High:     10000.1,
+		Volume:   10000.1,
+		Trades:   10000,
+		Complete: true,
+	}
+	c.OnCandle(candle)
+
+	order := model.Order{
+		ID:         1,
+		ExchangeID: 1,
+		Pair:       "BTCUSDT",
+		Side:       "SELL",
+		Type:       "MARKET",
+		Status:     "FILLED",
+		Price:      10000.1,
+		Quantity:   1,
+		CreatedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		UpdatedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Stop:       nil,
+		GroupID:    nil,
+		RefPrice:   0,
+		Profit:     0,
+		Candle:     model.Candle{},
+	}
+	c.OnOrder(order)
+
+	expectOrder := Order{
+		ID:        1,
+		Side:      "SELL",
+		Type:      "MARKET",
+		Status:    "FILLED",
+		Price:     10000.1,
+		Quantity:  1,
+		CreatedAt: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		UpdatedAt: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+	require.Equal(t, &expectOrder, c.orderByID[order.ID])
+
+	expectCandleByPair := []Candle{
+		{
+			Time:   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			Open:   10000.1,
+			Close:  10000.1,
+			High:   10000.1,
+			Low:    10000.1,
+			Volume: 10000.1,
+			Orders: []Order{
+				expectOrder,
+			},
+		},
+	}
+	actual := c.candlesByPair(candle.Pair)
+	require.Equal(t, expectCandleByPair, actual)
+}
+
+func TestChart_WithPort(t *testing.T) {
+	port := 8081
+	c, err := NewChart(WithPort(port))
+	require.NoErrorf(t, err, "error when initial chart")
+
+	require.Equal(t, port, c.port)
+
+}
+
+func TestChart_WithPaperWallet(t *testing.T) {
+	wallet := &exchange.PaperWallet{}
+	c, err := NewChart(WithPaperWallet(wallet))
+	require.NoErrorf(t, err, "error when initial chart")
+
+	require.Equal(t, wallet, c.paperWallet)
+
+}
+
+func TestChart_WithDebug(t *testing.T) {
+	c, err := NewChart(WithDebug())
+	require.NoErrorf(t, err, "error when initial chart")
+
+	require.Equal(t, true, c.debug)
+
+}
+
+func TestChart_WithIndicator(t *testing.T) {
+	var indicator []Indicator
+	c, err := NewChart(WithIndicators(indicator...))
+	require.NoErrorf(t, err, "error when initial chart")
+
+	require.Equal(t, indicator, c.indicators)
+}
+
+func TestChart_OrderStringByPair(t *testing.T) {
+	c, err := NewChart()
+	require.NoErrorf(t, err, "error when initial chart")
 
 	pair1 := "ETHUSDT"
 	pair2 := "BNBUSDT"
