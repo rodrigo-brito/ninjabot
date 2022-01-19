@@ -1,12 +1,14 @@
 package plot
 
 import (
-	"github.com/StudioSol/set"
-	"github.com/rodrigo-brito/ninjabot/exchange"
-	"github.com/rodrigo-brito/ninjabot/model"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/model"
+
+	"github.com/StudioSol/set"
+	"github.com/stretchr/testify/require"
 )
 
 func TestChart_CandleAndOrder(t *testing.T) {
@@ -201,33 +203,26 @@ func TestChart_WithPort(t *testing.T) {
 	port := 8081
 	c, err := NewChart(WithPort(port))
 	require.NoErrorf(t, err, "error when initial chart")
-
 	require.Equal(t, port, c.port)
-
 }
 
 func TestChart_WithPaperWallet(t *testing.T) {
 	wallet := &exchange.PaperWallet{}
 	c, err := NewChart(WithPaperWallet(wallet))
 	require.NoErrorf(t, err, "error when initial chart")
-
 	require.Equal(t, wallet, c.paperWallet)
-
 }
 
 func TestChart_WithDebug(t *testing.T) {
 	c, err := NewChart(WithDebug())
 	require.NoErrorf(t, err, "error when initial chart")
-
 	require.Equal(t, true, c.debug)
-
 }
 
 func TestChart_WithIndicator(t *testing.T) {
 	var indicator []Indicator
 	c, err := NewChart(WithIndicators(indicator...))
 	require.NoErrorf(t, err, "error when initial chart")
-
 	require.Equal(t, indicator, c.indicators)
 }
 
