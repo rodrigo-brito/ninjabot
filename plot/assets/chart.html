@@ -89,11 +89,19 @@
       top: 60px;
     }
 
-    ul li {
+    ul {
+      width: 100%;
+    }
+
+    li {
       display: inline-block;
       list-style-type: none;
       padding-right: 20px;
       float: left;
+    }
+
+    li:last-child {
+      float: right;
     }
   </style>
   <body>
@@ -108,6 +116,12 @@
           >
         </li>
         {{end}}
+        <li>
+          <a
+                  class="btn"
+                  href="/history?pair={{ $.pair }}"
+          >History</a>
+        </li>
       </ul>
     </nav>
     <div id="graph"></div>

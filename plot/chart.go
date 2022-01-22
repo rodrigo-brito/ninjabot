@@ -1,12 +1,15 @@
 package plot
 
 import (
+	"bytes"
 	"embed"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -267,6 +270,18 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 	return shapes
 }
 
+func (c *Chart) orderStringByPair(pair string) [][]string {
+	orders := make([][]string, 0)
+	for id := range c.ordersByPair[pair].Iter() {
+		o := c.orderByID[id]
+		orderString := fmt.Sprintf("%s,%s,%d,%s,%f,%f,%.2f,%s",
+			o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
+		order := strings.Split(orderString, ",")
+		orders = append(orders, order)
+	}
+	return orders
+}
+
 func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
 	var pairs = make([]string, 0, len(c.candles))
 	for pair := range c.candles {
@@ -326,6 +341,45 @@ func (c *Chart) handleData(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request) {
+	pair := r.URL.Query().Get("pair")
+	if pair == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment;filename=history_"+pair+".csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	orders := c.orderStringByPair(pair)
+
+	buffer := bytes.NewBuffer(nil)
+	csvWriter := csv.NewWriter(buffer)
+	err := csvWriter.Write([]string{"status", "side", "id", "type", "quantity", "price", "total", "created_at"})
+	if err != nil {
+		log.Errorf("failed writing header file: %s", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err = csvWriter.WriteAll(orders)
+	if err != nil {
+		log.Errorf("failed writing data: %s", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	csvWriter.Flush()
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(buffer.Bytes())
+	if err != nil {
+		log.Errorf("failed writing response: %s", err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+}
+
 func (c *Chart) Start() error {
 	http.Handle(
 		"/assets/",
@@ -337,6 +391,7 @@ func (c *Chart) Start() error {
 		fmt.Fprint(w, c.scriptContent)
 	})
 
+	http.HandleFunc("/history", c.handleTradingHistoryData)
 	http.HandleFunc("/data", c.handleData)
 	http.HandleFunc("/", c.handleIndex)
 
