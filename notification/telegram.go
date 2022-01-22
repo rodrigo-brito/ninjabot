@@ -41,7 +41,7 @@ func NewTelegram(controller *order.Controller, settings model.Settings, options 
 		}
 
 		for _, user := range settings.Telegram.Users {
-			if u.Message.Sender.ID == user {
+			if int(u.Message.Sender.ID) == user {
 				return true
 			}
 		}
@@ -114,7 +114,7 @@ func NewTelegram(controller *order.Controller, settings model.Settings, options 
 func (t telegram) Start() {
 	go t.client.Start()
 	for _, id := range t.settings.Telegram.Users {
-		_, err := t.client.Send(&tb.User{ID: id}, "Bot initialized.", t.defaultMenu)
+		_, err := t.client.Send(&tb.User{ID: int64(id)}, "Bot initialized.", t.defaultMenu)
 		if err != nil {
 			log.Error(err)
 		}
@@ -123,7 +123,7 @@ func (t telegram) Start() {
 
 func (t telegram) Notify(text string) {
 	for _, user := range t.settings.Telegram.Users {
-		_, err := t.client.Send(&tb.User{ID: user}, text)
+		_, err := t.client.Send(&tb.User{ID: int64(user)}, text)
 		if err != nil {
 			log.Error(err)
 		}
