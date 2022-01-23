@@ -184,6 +184,4 @@ COSTS (0.001*V) =  551.67 USDT (ESTIMATION)
 Chart available at http://localhost:8080
 ```
 
-No exemplo apresentado, nós 
-
 ![SignatureJohnLennon](https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png)
