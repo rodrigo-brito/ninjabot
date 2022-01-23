@@ -2,7 +2,7 @@
 <head>
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<meta name=generator content="Hugo 0.88.1"><link rel=alternate type=application/rss+xml href=https://rodrigo-brito.github.io/ninjabot/docs/index.xml>
+<meta name=generator content="Hugo 0.88.1"><link rel=alternate type=application/rss+xml href=https://rodrigo-brito.github.io/ninjabot/docs/cli/index.xml>
 <meta name=ROBOTS content="INDEX, FOLLOW">
 <link rel="shortcut icon" href=/ninjabot/favicons/favicon.ico>
 <link rel=apple-touch-icon href=/ninjabot/favicons/apple-touch-icon-180x180.png sizes=180x180>
@@ -14,20 +14,20 @@
 <link rel=icon type=image/png href=/ninjabot/favicons/android-96x96.png sizes=96x96>
 <link rel=icon type=image/png href=/ninjabot/favicons/android-144x144.png sizes=144x144>
 <link rel=icon type=image/png href=/ninjabot/favicons/android-192x192.png sizes=192x192>
-<title>Documentation | Ninjabot</title>
-<meta name=description content="
-
-
-DISCLAIMER
-This software is for educational purposes only. Do not risk money which you are afraid to lose. USE THE SOFTWARE AT YOUR OWN RISK. THE …">
-<meta property="og:title" content="Documentation">
-<meta property="og:description" content>
+<title>Ninjabot CLI | Ninjabot</title>
+<meta name=description content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+">
+<meta property="og:title" content="Ninjabot CLI">
+<meta property="og:description" content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://rodrigo-brito.github.io/ninjabot/docs/">
-<meta itemprop=name content="Documentation">
-<meta itemprop=description content><meta name=twitter:card content="summary">
-<meta name=twitter:title content="Documentation">
-<meta name=twitter:description content>
+<meta property="og:url" content="https://rodrigo-brito.github.io/ninjabot/docs/cli/">
+<meta itemprop=name content="Ninjabot CLI">
+<meta itemprop=description content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+"><meta name=twitter:card content="summary">
+<meta name=twitter:title content="Ninjabot CLI">
+<meta name=twitter:description content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+">
 <link rel=preload href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css as=style>
 <link href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css rel=stylesheet integrity>
 <script src=https://code.jquery.com/jquery-3.5.1.min.js integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin=anonymous></script>
@@ -64,12 +64,12 @@ This software is for educational purposes only. Do not risk money which you are 
 <nav class="collapse td-sidebar-nav" id=td-section-nav>
 <ul class="td-sidebar-nav__section pr-md-3 ul-0">
 <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
-<a href=/ninjabot/docs/ class="align-left pl-0 active td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span class=td-sidebar-nav-active-item>Documentation</span></a>
+<a href=/ninjabot/docs/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span>Documentation</span></a>
 <ul class=ul-1>
 <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
 <a href=/ninjabot/docs/getting-started/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span>Getting Started</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
-<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocscli-li>
+<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span class=td-sidebar-nav-active-item>Nijabot CLI</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
 <a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Strategy</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstelegram-li>
@@ -84,6 +84,16 @@ This software is for educational purposes only. Do not risk money which you are 
 <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
 <div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
 </div>
+<div class=td-toc><nav id=TableOfContents>
+<ul>
+<li><a href=#installation>Installation</a></li>
+<li><a href=#helper-ninjabot--h>Helper (<code>ninjabot -h</code>)</a>
+<ul>
+<li><a href=#download-command>Download Command</a></li>
+</ul>
+</li>
+</ul>
+</nav></div>
 <div class="taxonomy taxonomy-terms-cloud taxo-categories">
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
@@ -95,52 +105,73 @@ This software is for educational purposes only. Do not risk money which you are 
 <main class="col-12 col-md-9 col-xl-8 pl-md-5" role=main>
 <nav aria-label=breadcrumb class="d-none d-md-block d-print-none">
 <ol class="breadcrumb spb-1">
-<li class="breadcrumb-item active" aria-current=page>
+<li class=breadcrumb-item>
 <a href=https://rodrigo-brito.github.io/ninjabot/docs/>Documentation</a>
+</li>
+<li class="breadcrumb-item active" aria-current=page>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/cli/>Nijabot CLI</a>
 </li>
 </ol>
 </nav>
 <div class=td-content>
-<h1>Documentation</h1>
+<h1>Ninjabot CLI</h1>
+<div class=lead>This page describes how to install and use Ninjabot CLI to download historical data for backtesting.</div>
 <header class=article-meta>
-</header>
-<div class="pageinfo pageinfo-warning">
-<p><strong>DISCLAIMER</strong></p>
-<p>This software is for educational purposes only. Do not risk money which you are afraid to lose. USE THE SOFTWARE AT YOUR OWN RISK. THE AUTHORS AND ALL AFFILIATES ASSUME NO RESPONSIBILITY FOR YOUR TRADING RESULTS.</p>
-</div>
-<h2 id=features>Features</h2>
-<ul>
-<li>Create custom strategies</li>
-<li>Backtesting with historical data</li>
-<li>Plot trading results</li>
-<li>Telegram integration</li>
+<div class="taxonomy taxonomy-terms-article taxo-categories">
+<h5 class=taxonomy-title>Categories:</h5>
+<ul class=taxonomy-terms>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span></a></li>
 </ul>
+</div>
+</header>
+<p>Ninjabot CLI provides utilities commands to support backtesting and bot development.</p>
+<h2 id=installation>Installation</h2>
+<p>You can install CLI with the following command</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest
+</code></pre></div><p>Or downloading pre-build binaries in <a href=https://github.com/rodrigo-brito/ninjabot/releases>release page</a>.</p>
+<h2 id=helper-ninjabot--h>Helper (<code>ninjabot -h</code>)</h2>
+<pre tabindex=0><code>NAME:
+   ninjabot - Utilities for bot creation
+
+USAGE:
+   ninjabot [global options] command [command options] [arguments...]
+
+COMMANDS:
+   download  Download historical data
+   help, h   Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help (default: false)
+</code></pre><p>We have the following commands:</p>
+<ul>
+<li><strong>download</strong>: Download historical data from the binace exchange.</li>
+</ul>
+<h3 id=download-command>Download Command</h3>
+<pre tabindex=0><code>NAME:
+   download - Download historical data
+
+USAGE:
+   download [command options] [arguments...]
+
+OPTIONS:
+   --pair value, -p value       eg. BTCUSDT
+   --days value, -d value       eg. 100 (default 30 days) (default: 0)
+   --start value, -s value      eg. 2021-12-01 (default: &lt;nil&gt;)
+   --end value, -e value        eg. 2020-12-31 (default: &lt;nil&gt;)
+   --timeframe value, -t value  eg. 1h
+   --output value, -o value     eg. ./btc.csv
+   --help, -h                   show help (default: false)
+</code></pre><p><strong>Examples of Usage</strong></p>
+<ul>
+<li>Downloading 30 days of historical data for the <strong>BTC/USDT</strong> pair with 1d timeframe:</li>
+</ul>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download --pair BTCUSDT --timeframe 1d --days <span style=color:#ae81ff>30</span> --output ./btc-1d.csv
+</code></pre></div><ul>
+<li>Downloading historical data for the <strong>BTC/USDT</strong> pair with 1h timeframe and from 2020-12-01 to 2020-12-31:</li>
+</ul>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download -p BTCUSDT -t 1h -s <span style=color:#e6db74>&#34;2020-12-01&#34;</span> -e <span style=color:#e6db74>&#34;2020-12-31&#34;</span> -o ./btc-1h.csv
+</code></pre></div>
 <div class=section-index>
-<hr class=panel-line>
-<div class=entry>
-<h5>
-<a href=/ninjabot/docs/getting-started/>Getting Started</a>
-</h5>
-<p>This page describes the first steps do install and setup a basic bot with Ninjabot</p>
-</div>
-<div class=entry>
-<h5>
-<a href=/ninjabot/docs/cli/>Ninjabot CLI</a>
-</h5>
-<p>This page describes how to install and use Ninjabot CLI to download historical data for backtesting.</p>
-</div>
-<div class=entry>
-<h5>
-<a href=/ninjabot/docs/strategy/>Streategy</a>
-</h5>
-<p>This page describes how to create a custom strategy in Ninjabot</p>
-</div>
-<div class=entry>
-<h5>
-<a href=/ninjabot/docs/telegram/>Telegram</a>
-</h5>
-<p>This page describes how to set up Telegram with Ninjabot.</p>
-</div>
 </div>
 </div>
 </main>

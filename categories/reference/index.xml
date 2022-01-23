@@ -1,0 +1,103 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ninjabot – Reference</title><link>https://rodrigo-brito.github.io/ninjabot/categories/reference/</link><description>Recent content in Reference on Ninjabot</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://rodrigo-brito.github.io/ninjabot/categories/reference/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Ninjabot CLI</title><link>https://rodrigo-brito.github.io/ninjabot/docs/cli/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/cli/</guid><description>
+&lt;p>Ninjabot CLI provides utilities commands to support backtesting and bot development.&lt;/p>
+&lt;h2 id="installation">Installation&lt;/h2>
+&lt;p>You can install CLI with the following command&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or downloading pre-build binaries in &lt;a href="https://github.com/rodrigo-brito/ninjabot/releases">release page&lt;/a>.&lt;/p>
+&lt;h2 id="helper-ninjabot--h">Helper (&lt;code>ninjabot -h&lt;/code>)&lt;/h2>
+&lt;pre tabindex="0">&lt;code>NAME:
+ninjabot - Utilities for bot creation
+USAGE:
+ninjabot [global options] command [command options] [arguments...]
+COMMANDS:
+download Download historical data
+help, h Shows a list of commands or help for one command
+GLOBAL OPTIONS:
+--help, -h show help (default: false)
+&lt;/code>&lt;/pre>&lt;p>We have the following commands:&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>download&lt;/strong>: Download historical data from the binace exchange.&lt;/li>
+&lt;/ul>
+&lt;h3 id="download-command">Download Command&lt;/h3>
+&lt;pre tabindex="0">&lt;code>NAME:
+download - Download historical data
+USAGE:
+download [command options] [arguments...]
+OPTIONS:
+--pair value, -p value eg. BTCUSDT
+--days value, -d value eg. 100 (default 30 days) (default: 0)
+--start value, -s value eg. 2021-12-01 (default: &amp;lt;nil&amp;gt;)
+--end value, -e value eg. 2020-12-31 (default: &amp;lt;nil&amp;gt;)
+--timeframe value, -t value eg. 1h
+--output value, -o value eg. ./btc.csv
+--help, -h show help (default: false)
+&lt;/code>&lt;/pre>&lt;p>&lt;strong>Examples of Usage&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>Downloading 30 days of historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1d timeframe:&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download --pair BTCUSDT --timeframe 1d --days &lt;span style="color:#ae81ff">30&lt;/span> --output ./btc-1d.csv
+&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
+&lt;li>Downloading historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1h timeframe and from 2020-12-01 to 2020-12-31:&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download -p BTCUSDT -t 1h -s &lt;span style="color:#e6db74">&amp;#34;2020-12-01&amp;#34;&lt;/span> -e &lt;span style="color:#e6db74">&amp;#34;2020-12-31&amp;#34;&lt;/span> -o ./btc-1h.csv
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
+&lt;h2 id="installation">Installation&lt;/h2>
+&lt;p>To set up a Telegram bot, you should follow these steps:&lt;/p>
+&lt;h3 id="create-a-new-bot-in-your-telegram-account">Create a new bot in your Telegram account&lt;/h3>
+&lt;p>You can create bots in telegram accessing &lt;a href="https://telegram.me/BotFather">BotFather&lt;/a>.&lt;/p>
+&lt;p>Send the message &lt;code>/newbot&lt;/code>.&lt;/p>
+&lt;p>BotFather response:&lt;/p>
+&lt;blockquote>
+&lt;p>Alright, a new bot. How are we going to call it? Please choose a name for your bot.&lt;/p>
+&lt;/blockquote>
+&lt;p>Choose the public name of your bot (e.x. &lt;code>NinjaBot&lt;/code>)&lt;/p>
+&lt;p>BotFather response:&lt;/p>
+&lt;blockquote>
+&lt;p>Good. Now let&amp;rsquo;s choose a username for your bot. It must end in bot. Like this, for example: TetrisBot or tetris_bot.&lt;/p>
+&lt;/blockquote>
+&lt;p>Choose the name id of your bot and send it to the BotFather (e.g. &lt;code>my_ninjabot_bot&lt;/code>)&lt;/p>
+&lt;p>BotFather response:&lt;/p>
+&lt;blockquote>
+&lt;p>Done! Congratulations on your new bot. You will find it at t.me/my_ninjabot_bot. You can now add a description, about section and profile picture for your bot, see /help for a list of commands. By the way, when you&amp;rsquo;ve finished creating your cool bot, ping our Bot Support if you want a better username for it. Just make sure the bot is fully operational before you do this.&lt;br>
+Use this token to access the HTTP API: &lt;code>111111:ABCDEFGH&lt;/code>&lt;/p>
+&lt;/blockquote>
+&lt;p>Copy the API Token (&lt;code>111111:ABCDEFGH&lt;/code> in the above example) and store it in a safe place.&lt;/p>
+&lt;h3 id="discovering-your-id">Discovering your ID&lt;/h3>
+&lt;p>Ninjabot requires your account ID to limit the access of the bot to your account.&lt;/p>
+&lt;p>Talk to the &lt;a href="https://telegram.me/userinfobot">userinfobot&lt;/a> and send the command &lt;code>/start&lt;/code> to get your ID.&lt;/p>
+&lt;p>Example of bot respose:&lt;/p>
+&lt;blockquote>
+&lt;p>@example&lt;br>
+Id: 12345&lt;br>
+First: Foo&lt;br>
+Last: Bar&lt;br>
+Lang: en&lt;/p>
+&lt;/blockquote>
+&lt;p>Get your &amp;ldquo;Id&amp;rdquo; and store in a safe place.&lt;/p>
+&lt;h3 id="setup-ninjabot">Setup NinjaBot&lt;/h3>
+&lt;p>With your ID and API Token, you can now setup NinjaBot, the bot settings are place in &lt;code>ninjabot.Settings&lt;/code> as follow:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">settings&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Settings&lt;/span>{
+&lt;span style="color:#a6e22e">Pairs&lt;/span>: []&lt;span style="color:#66d9ef">string&lt;/span>{
+&lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>,
+&lt;span style="color:#e6db74">&amp;#34;ETHUSDT&amp;#34;&lt;/span>,
+},
+&lt;span style="color:#a6e22e">Telegram&lt;/span>: &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">TelegramSettings&lt;/span>{
+&lt;span style="color:#a6e22e">Enabled&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
+&lt;span style="color:#a6e22e">Token&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;111111:ABCDEFGH&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Users&lt;/span>: []&lt;span style="color:#66d9ef">int&lt;/span>{&lt;span style="color:#ae81ff">12345&lt;/span>},
+},
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="usage">Usage&lt;/h2>
+&lt;p>Telegram bot requires that your bot is &lt;code>running&lt;/code> to control and get information about your account.&lt;/p>
+&lt;p>We have the following commands:&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>/help&lt;/code> - Display help instructions&lt;/li>
+&lt;li>&lt;code>/stop&lt;/code> - Stop buy and sell coins&lt;/li>
+&lt;li>&lt;code>/start&lt;/code> - Start buy and sell coins&lt;/li>
+&lt;li>&lt;code>/status&lt;/code> - Check bot status&lt;/li>
+&lt;li>&lt;code>/balance&lt;/code> - Wallet balance&lt;/li>
+&lt;li>&lt;code>/profit&lt;/code> - Summary of last trade results&lt;/li>
+&lt;li>&lt;code>/buy&lt;/code> - open a buy order&lt;/li>
+&lt;li>&lt;code>/sell&lt;/code> - open a sell order&lt;/li>
+&lt;/ul>
+&lt;p>&lt;img src="https://user-images.githubusercontent.com/7620947/150681951-f81c83ae-203e-4b48-8fba-14c59c08abb4.gif" alt="telegram">&lt;/p></description></item></channel></rss>

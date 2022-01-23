@@ -8,7 +8,7 @@
 &lt;p>Create a new Go project and initialize &lt;code>go module&lt;/code> with&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go mod init example
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>Download the latest version of Ninjabot library&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go get -u github.com/rodrigo-brito/ninjabot@latest
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go get -u github.com/rodrigo-brito/ninjabot/...
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>Downloading 720 days from BTCUSDT historical data for backtesting.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download --pair BTCUSDT --timeframe 1d --days &lt;span style="color:#ae81ff">720&lt;/span> --output ./btc.csv
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="creating-a-backtesting-script">Creating a backtesting script&lt;/h2>
@@ -60,14 +60,22 @@
 &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithDataFeed&lt;/span>(&lt;span style="color:#a6e22e">csvFeed&lt;/span>),
 )
 &lt;span style="color:#75715e">// Initialize a chart to plot trading results
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">chart&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">NewChart&lt;/span>()
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">chart&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">NewChart&lt;/span>(&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithIndicators&lt;/span>(
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">21&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;#000&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">RSI&lt;/span>(&lt;span style="color:#ae81ff">14&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;purple&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">Stoch&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;blue&amp;#34;&lt;/span>),
+), &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>))
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
 &lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(
 &lt;span style="color:#a6e22e">ctx&lt;/span>,
 &lt;span style="color:#a6e22e">settings&lt;/span>,
 &lt;span style="color:#a6e22e">wallet&lt;/span>,
 &lt;span style="color:#a6e22e">strategy&lt;/span>,
-&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithBacktest&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>),
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithCandleSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithOrderSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithLogLevel&lt;/span>(&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">WarnLevel&lt;/span>),
@@ -80,17 +88,48 @@
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
 &lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
 }
-&lt;span style="color:#75715e">// Print trading results
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Println&lt;/span>(&lt;span style="color:#a6e22e">bot&lt;/span>.&lt;span style="color:#a6e22e">Summary&lt;/span>())
-&lt;span style="color:#a6e22e">wallet&lt;/span>.&lt;span style="color:#a6e22e">Summary&lt;/span>()
-&lt;span style="color:#a6e22e">err&lt;/span> = &lt;span style="color:#a6e22e">chart&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>()
+&lt;span style="color:#75715e">// Print bot results
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">bot&lt;/span>.&lt;span style="color:#a6e22e">Summary&lt;/span>()
+&lt;span style="color:#75715e">// Display candlesticks chart in browser
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> = &lt;span style="color:#a6e22e">chart&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>()
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
 &lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
 }
 }
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>To execute your strategy, just run:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go run main.go
-&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Streategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Output:&lt;/p>
+&lt;pre tabindex="0">&lt;code>INFO[2021-10-31 18:13] [SETUP] Using paper wallet
+INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT
++---------+--------+-----+------+--------+--------+----------+-----------+
+| PAIR | TRADES | WIN | LOSS | % WIN | PAYOFF | PROFIT | VOLUME |
++---------+--------+-----+------+--------+--------+----------+-----------+
+| BTCUSDT | 22 | 10 | 12 | 45.5 % | 4.726 | 7086.25 | 279230.67 |
+| ETHUSDT | 22 | 14 | 8 | 63.6 % | 4.356 | 12723.04 | 272443.48 |
++---------+--------+-----+------+--------+--------+----------+-----------+
+| TOTAL | 44 | 24 | 20 | 54.5 % | 4.541 | 19809.29 | 551674.15 |
++---------+--------+-----+------+--------+--------+----------+-----------+
+--------------
+WALLET SUMMARY
+--------------
+0.000000 BTC = 0.000000 USDT
+0.000000 ETH = 0.000000 USDT
+TRADING VOLUME
+BTCUSDT = 279230.67 USDT
+ETHUSDT = 272443.48 USDT
+29809.287688 USDT
+--------------
+START PORTFOLIO = 10000.00 USDT
+FINAL PORTFOLIO = 29809.29 USDT
+GROSS PROFIT = 19809.287688 USDT (198.09%)
+MARKET (B&amp;amp;H) = 407.84%
+MAX DRAWDOWN = -7.55 %
+VOLUME = 551674.15 USDT
+COSTS (0.001*V) = 551.67 USDT (ESTIMATION)
+--------------
+Chart available at http://localhost:8080
+&lt;/code>&lt;/pre>&lt;p>No exemplo apresentado, nós&lt;/p>
+&lt;p>&lt;img src="https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png" alt="SignatureJohnLennon">&lt;/p></description></item><item><title>Docs: Streategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
 &lt;h2 id="strategy-functions">Strategy Functions&lt;/h2>
 &lt;p>To create a custom strategy, you need to create a &lt;code>Struct&lt;/code> that implements the following methods:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Strategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
