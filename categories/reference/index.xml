@@ -40,6 +40,165 @@ OPTIONS:
 &lt;li>Downloading historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1h timeframe and from 2020-12-01 to 2020-12-31:&lt;/li>
 &lt;/ul>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download -p BTCUSDT -t 1h -s &lt;span style="color:#e6db74">&amp;#34;2020-12-01&amp;#34;&lt;/span> -e &lt;span style="color:#e6db74">&amp;#34;2020-12-31&amp;#34;&lt;/span> -o ./btc-1h.csv
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Plotting</title><link>https://rodrigo-brito.github.io/ninjabot/docs/ploting/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/ploting/</guid><description>
+&lt;h2 id="basic-usage">Basic Usage&lt;/h2>
+&lt;p>To create a chart, you need to import &lt;code>plot&lt;/code> packages.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot/indicator&amp;#34;&lt;/span>
+)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, you can create a chart using &lt;code>plot.NewChart&lt;/code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the options &lt;code>WithIndicators&lt;/code>, in which receives one or more idicators.&lt;/p>
+&lt;p>Currently, Ninjabot supports the following indicators in charts:&lt;/p>
+&lt;ul>
+&lt;li>Exponential Moving Average (EMA)&lt;/li>
+&lt;li>Relative Strength Index (RSI)&lt;/li>
+&lt;li>Stochastic Oscillator (STOCH)&lt;/li>
+&lt;li>Bollinger Bands&lt;/li>
+&lt;li>Supertrend&lt;/li>
+&lt;/ul>
+&lt;p>For each indicator, you need to inform the parameters that are necessary and colors. We accept the color name and HEX code as bellow.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">chart&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">NewChart&lt;/span>(
+&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithIndicators&lt;/span>( &lt;span style="color:#75715e">// Optional parameter to include indicators
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">21&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;#000&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">RSI&lt;/span>(&lt;span style="color:#ae81ff">14&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;purple&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">Stoch&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;blue&amp;#34;&lt;/span>),
+),
+&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPort&lt;/span>(&lt;span style="color:#ae81ff">8080&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to customize the port number
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, we need to connect our chart to Ninjabot data feed. The chart needs to receive candles and orders processed by ninjabot. We use a pattern called &lt;code>pub/sub&lt;/code>. Then, to receive this data, we need to include the chart object in the &lt;strong>Order Subscription&lt;/strong> and &lt;strong>Candle Subscription&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(
+&lt;span style="color:#a6e22e">ctx&lt;/span>,
+&lt;span style="color:#a6e22e">settings&lt;/span>,
+&lt;span style="color:#a6e22e">wallet&lt;/span>,
+&lt;span style="color:#a6e22e">strategy&lt;/span>,
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithBacktest&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>),
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithLogLevel&lt;/span>(&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">WarnLevel&lt;/span>),
+&lt;span style="color:#75715e">// chart settings
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithCandleSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithOrderSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
+)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>In this way, when Ninjabot receives a candle or process an order, it will be sent to the chart. Finally, we need to start the bot. This command will start a HTTP server and display the result in the browser.
+The default address are &lt;code>http://localhost:8080&lt;/code>. But you can change it by passing the &lt;code>plot.WithPort(portNumber)&lt;/code> option.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">chart&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>()
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="final-result">Final Result&lt;/h3>
+&lt;p>&lt;img src="https://user-images.githubusercontent.com/7620947/150690553-1d1db358-2b05-42eb-8909-2bf254a2460b.png" alt="Chart Result">&lt;/p>
+&lt;h2 id="custom-indicators">Custom Indicators&lt;/h2>
+&lt;p>You can create custom indicators. An indicator is a &lt;code>struct&lt;/code> that implements the &lt;code>plot.Indicator&lt;/code> interface.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Indicator&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;span style="color:#a6e22e">Name&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> &lt;span style="color:#75715e">// indicator name
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Overlay&lt;/span>() &lt;span style="color:#66d9ef">bool&lt;/span> &lt;span style="color:#75715e">// set if the indicator overlay the candlestick chart
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Metrics&lt;/span>() []&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span> &lt;span style="color:#75715e">// returns the indicator metrics (lines, bars, etc) and styles
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Load&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) &lt;span style="color:#75715e">// constructor that initialize the indicator with a dataframe
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>The following example creates a custom indicator called &lt;code>EMA&lt;/code>.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">indicator&lt;/span>
+&lt;span style="color:#f92672">import&lt;/span> (
+&lt;span style="color:#e6db74">&amp;#34;fmt&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;time&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/model&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/markcheno/go-talib&amp;#34;&lt;/span>
+)
+&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#a6e22e">period&lt;/span> &lt;span style="color:#66d9ef">int&lt;/span>, &lt;span style="color:#a6e22e">color&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>) &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">Indicator&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">ema&lt;/span>{
+&lt;span style="color:#a6e22e">Period&lt;/span>: &lt;span style="color:#a6e22e">period&lt;/span>,
+&lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#a6e22e">color&lt;/span>,
+}
+}
+&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span> {
+&lt;span style="color:#a6e22e">Period&lt;/span> &lt;span style="color:#66d9ef">int&lt;/span>
+&lt;span style="color:#a6e22e">Color&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>
+&lt;span style="color:#a6e22e">Values&lt;/span> &lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Series&lt;/span>
+&lt;span style="color:#a6e22e">Time&lt;/span> []&lt;span style="color:#a6e22e">time&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Name&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Sprintf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;EMA(%d)&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>)
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Overlay&lt;/span>() &lt;span style="color:#66d9ef">bool&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#66d9ef">true&lt;/span>
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Load&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) {
+&lt;span style="color:#66d9ef">if&lt;/span> len(&lt;span style="color:#a6e22e">dataframe&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>) &amp;lt; &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span>
+}
+&lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Values&lt;/span> = &lt;span style="color:#a6e22e">talib&lt;/span>.&lt;span style="color:#a6e22e">Ema&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>, &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>)[&lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>:]
+&lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span> = &lt;span style="color:#a6e22e">dataframe&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>[&lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>:]
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Metrics&lt;/span>() []&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> []&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span>{
+{
+&lt;span style="color:#a6e22e">Style&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;line&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Color&lt;/span>,
+&lt;span style="color:#a6e22e">Values&lt;/span>: &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Values&lt;/span>,
+&lt;span style="color:#a6e22e">Time&lt;/span>: &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>,
+},
+}
+}
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Streategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
+&lt;h2 id="strategy-functions">Strategy Functions&lt;/h2>
+&lt;p>To create a custom strategy, you need to create a &lt;code>Struct&lt;/code> that implements the following methods:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Strategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span>
+&lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span>
+&lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>)
+&lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
+&lt;li>&lt;code>Timeframe&lt;/code>: specifies the strategy timeframe, eg: &amp;ldquo;15m&amp;rdquo;, &amp;ldquo;1h&amp;rdquo;, &amp;ldquo;1d&amp;rdquo;, &amp;ldquo;1w&amp;rdquo;.&lt;/li>
+&lt;li>&lt;code>WarmupPeriod&lt;/code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the &lt;code>WarmupPeriod&lt;/code> should be 9.&lt;/li>
+&lt;li>&lt;code>Indicators&lt;/code>: this function creates custom indicators, it is called for each new candle received.&lt;/li>
+&lt;li>&lt;code>OnCandle&lt;/code>: this function is also called for each new candle, after &lt;code>Indicators&lt;/code> execution. This function should contain your buy and sell rules. &lt;code>Dataframe&lt;/code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the &lt;code>Broker&lt;/code> operator.&lt;/li>
+&lt;/ul>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/service&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/markcheno/go-talib&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">log&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/sirupsen/logrus&amp;#34;&lt;/span>
+)
+&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span>{}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#ae81ff">9&lt;/span>
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) {
+&lt;span style="color:#75715e">// define a custom indicator, Exponential Moving Average of 9 periods
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">talib&lt;/span>.&lt;span style="color:#a6e22e">Ema&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>, &lt;span style="color:#ae81ff">9&lt;/span>)
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
+&lt;span style="color:#75715e">// Get the quote and assets information
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">assetPosition&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">Position&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;span style="color:#75715e">// Check if we have more than 10 USDT available in the wallet and the buy signal is triggered
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">quotePosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">10&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossover&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
+&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarketQuote&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeBuy&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>&lt;span style="color:#f92672">/&lt;/span>&lt;span style="color:#ae81ff">2&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+}
+&lt;span style="color:#75715e">// Check if we have position in the pair and the sell signal is triggered
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">assetPosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span>
+&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossunder&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
+&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarket&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeSell&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">assetPosition&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+}
+}
 &lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
 &lt;h2 id="installation">Installation&lt;/h2>
 &lt;p>To set up a Telegram bot, you should follow these steps:&lt;/p>
