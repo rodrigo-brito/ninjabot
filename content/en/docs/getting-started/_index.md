@@ -27,7 +27,7 @@ go mod init example
 
 Download the latest version of Ninjabot library
 ```bash
-go get -u github.com/rodrigo-brito/ninjabot@latest
+go get -u github.com/rodrigo-brito/ninjabot/...
 ```
 
 Downloading 720 days from BTCUSDT historical data for backtesting.
@@ -97,15 +97,23 @@ func main() {
 	)
 
 	// Initialize a chart to plot trading results
-	chart := plot.NewChart()
+	chart, err := plot.NewChart(plot.WithIndicators(
+		indicator.EMA(8, "red"),
+		indicator.EMA(21, "#000"),
+		indicator.RSI(14, "purple"),
+		indicator.Stoch(8, 3, 3, "red", "blue"),
+	), plot.WithPaperWallet(wallet))
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	bot, err := ninjabot.NewBot(
 		ctx,
 		settings,
 		wallet,
 		strategy,
-		ninjabot.WithStorage(storage),
 		ninjabot.WithBacktest(wallet),
+		ninjabot.WithStorage(storage),
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
 		ninjabot.WithLogLevel(log.WarnLevel),
@@ -120,9 +128,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Print trading results
-	fmt.Println(bot.Summary())
-	wallet.Summary()
+	// Print bot results
+	bot.Summary()
+
+	// Display candlesticks chart in browser
 	err = chart.Start()
 	if err != nil {
 		log.Fatal(err)
@@ -136,3 +145,45 @@ To execute your strategy, just run:
 go run main.go
 ```
 
+
+Output:
+
+```
+INFO[2021-10-31 18:13] [SETUP] Using paper wallet                   
+INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT 
++---------+--------+-----+------+--------+--------+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+----------+-----------+
+| BTCUSDT |     22 |  10 |   12 | 45.5 % |  4.726 |  7086.25 | 279230.67 |
+| ETHUSDT |     22 |  14 |    8 | 63.6 % |  4.356 | 12723.04 | 272443.48 |
++---------+--------+-----+------+--------+--------+----------+-----------+
+|   TOTAL |     44 |  24 |   20 | 54.5 % |  4.541 | 19809.29 | 551674.15 |
++---------+--------+-----+------+--------+--------+----------+-----------+
+
+--------------
+WALLET SUMMARY
+--------------
+0.000000 BTC = 0.000000 USDT
+0.000000 ETH = 0.000000 USDT
+
+TRADING VOLUME
+BTCUSDT        = 279230.67 USDT
+ETHUSDT        = 272443.48 USDT
+
+29809.287688 USDT
+--------------
+START PORTFOLIO = 10000.00 USDT
+FINAL PORTFOLIO = 29809.29 USDT
+GROSS PROFIT    =  19809.287688 USDT (198.09%)
+MARKET (B&H)    =  407.84%
+MAX DRAWDOWN    =  -7.55 %
+VOLUME          =  551674.15 USDT
+COSTS (0.001*V) =  551.67 USDT (ESTIMATION) 
+--------------
+
+Chart available at http://localhost:8080
+```
+
+No exemplo apresentado, nós 
+
+![SignatureJohnLennon](https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png)
