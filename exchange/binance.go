@@ -101,6 +101,14 @@ func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error)
 	return exchange, nil
 }
 
+func (b *Binance) LastQuote(ctx context.Context, pair string) (float64, error) {
+	candles, err := b.CandlesByLimit(ctx, pair, "1m", 1)
+	if err != nil || len(candles) < 1 {
+		return 0, err
+	}
+	return candles[0].Close, nil
+}
+
 func (b *Binance) AssetsInfo(pair string) model.AssetInfo {
 	return b.assetsInfo[pair]
 }

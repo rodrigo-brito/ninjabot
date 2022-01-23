@@ -144,13 +144,14 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 			return
 		}
 
-		assetValue, err := t.orderController.PositionValue(pair)
+		quote, err := t.orderController.LastQuote(pair)
 		if err != nil {
 			log.Error(err)
 			t.OnError(err)
 			return
 		}
 
+		assetValue := assetSize * quote
 		quotesValue[quotePair] = quoteSize
 		total += assetValue
 		message += fmt.Sprintf("%s: `%.4f` ≅ `%.2f` %s \n", assetPair, assetSize, assetValue, quotePair)

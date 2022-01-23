@@ -307,6 +307,10 @@ func (c *Controller) Position(pair string) (asset, quote float64, err error) {
 	return c.exchange.Position(pair)
 }
 
+func (c *Controller) LastQuote(pair string) (float64, error) {
+	return c.exchange.LastQuote(c.ctx, pair)
+}
+
 func (c *Controller) PositionValue(pair string) (float64, error) {
 	asset, _, err := c.exchange.Position(pair)
 	if err != nil {

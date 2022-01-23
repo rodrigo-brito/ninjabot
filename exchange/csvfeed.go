@@ -117,6 +117,10 @@ func (c CSVFeed) feedTimeframeKey(pair, timeframe string) string {
 	return fmt.Sprintf("%s--%s", pair, timeframe)
 }
 
+func (c CSVFeed) LastQuote(_ context.Context, _ string) (float64, error) {
+	return 0, errors.New("invalid operation")
+}
+
 func isFistCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (bool, error) {
 	fromDuration, err := str2duration.ParseDuration(fromTimeframe)
 	if err != nil {

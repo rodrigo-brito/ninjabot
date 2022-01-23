@@ -121,6 +121,10 @@ func (p *PaperWallet) Pairs() []string {
 	return pairs
 }
 
+func (p *PaperWallet) LastQuote(ctx context.Context, pair string) (float64, error) {
+	return p.feeder.LastQuote(ctx, pair)
+}
+
 func (p *PaperWallet) AssetValues(pair string) []AssetValue {
 	return p.assetValues[pair]
 }
