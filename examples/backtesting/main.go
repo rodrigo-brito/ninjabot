@@ -23,7 +23,8 @@ func main() {
 		},
 	}
 
-	strategy := new(strategies.CrossEMA)
+	//strategy := new(strategies.CrossEMA)
+	strategy := new(strategies.Turtle)
 
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
