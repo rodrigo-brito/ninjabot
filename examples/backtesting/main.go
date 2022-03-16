@@ -59,7 +59,7 @@ func main() {
 		indicator.EMA(21, "#000"),
 		indicator.RSI(14, "purple"),
 		indicator.Stoch(8, 3, 3, "red", "blue"),
-		indicator.MACD(12, 26, 9, "yellow", "blue", "red"),
+		indicator.MACD(12, 26, 9, "blue", "red", "green"),
 	), plot.WithPaperWallet(wallet))
 	if err != nil {
 		log.Fatal(err)

@@ -274,7 +274,7 @@ document.addEventListener("DOMContentLoaded", function () {
             name: indicator.name + (metric.name && " - " + metric.name),
             x: metric.time,
             y: metric.value,
-            mode: metric.style,
+            type: metric.style,
             line: {
               color: metric.color,
             },

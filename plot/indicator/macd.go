@@ -42,9 +42,13 @@ func (e macd) Overlay() bool {
 	return false
 }
 
-func (e *macd) Load(dataframe *model.Dataframe) {
-	e.ValuesMACD, e.ValuesMACDSignal, e.ValuesMACDHist = talib.Macd(dataframe.Close, e.Fast, e.Slow, e.Signal)
-	e.Time = dataframe.Time
+func (e *macd) Load(df *model.Dataframe) {
+	warmup := e.Slow + e.Signal
+	e.ValuesMACD, e.ValuesMACDSignal, e.ValuesMACDHist = talib.Macd(df.Close, e.Fast, e.Slow, e.Signal)
+	e.Time = df.Time[warmup:]
+	e.ValuesMACD = e.ValuesMACD[warmup:]
+	e.ValuesMACDSignal = e.ValuesMACDSignal[warmup:]
+	e.ValuesMACDHist = e.ValuesMACDHist[warmup:]
 }
 
 func (e macd) Metrics() []plot.IndicatorMetric {
@@ -66,7 +70,7 @@ func (e macd) Metrics() []plot.IndicatorMetric {
 		{
 			Color:  e.ColorMACDHist,
 			Name:   "MACDHist",
-			Style:  "line",
+			Style:  "bar",
 			Values: e.ValuesMACDHist,
 			Time:   e.Time,
 		},
