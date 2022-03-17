@@ -26,13 +26,13 @@ func (e Turtle) Indicators(df *ninjabot.Dataframe) {
 
 func (e *Turtle) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 	closePrice := df.Close.Last(0)
-	maxS := df.Metadata["turtleHighest"]
-	highest := maxS[len(maxS)-1]
-	minS := df.Metadata["turtleLowest"]
-	lowest := minS[len(minS)-1]
+	highest := df.Metadata["turtleHighest"].Last(0)
+	lowest := df.Metadata["turtleLowest"].Last(0)
+
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	// If position already open wait till it will be closed
