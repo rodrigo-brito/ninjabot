@@ -28,6 +28,7 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	if quotePosition > 10 && df.Metadata["ema8"].Crossover(df.Metadata["ema21"]) {

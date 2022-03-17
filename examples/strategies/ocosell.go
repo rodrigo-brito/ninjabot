@@ -38,6 +38,7 @@ func (e *OCOSell) OnCandle(df *model.Dataframe, broker service.Broker) {
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	buyAmount := 4000.0
