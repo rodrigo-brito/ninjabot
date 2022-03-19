@@ -8,30 +8,35 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type CrossEMA struct{}
+// https://www.investopedia.com/articles/trading/08/turtle-trading.asp
+type Turtle struct{}
 
-func (e CrossEMA) Timeframe() string {
+func (e Turtle) Timeframe() string {
 	return "4h"
 }
 
-func (e CrossEMA) WarmupPeriod() int {
-	return 21
+func (e Turtle) WarmupPeriod() int {
+	return 40
 }
 
-func (e CrossEMA) Indicators(df *ninjabot.Dataframe) {
-	df.Metadata["ema8"] = talib.Ema(df.Close, 8)
-	df.Metadata["ema21"] = talib.Sma(df.Close, 21)
+func (e Turtle) Indicators(df *ninjabot.Dataframe) {
+	df.Metadata["turtleHighest"] = talib.Max(df.Close, 40)
+	df.Metadata["turtleLowest"] = talib.Min(df.Close, 20)
 }
 
-func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
+func (e *Turtle) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 	closePrice := df.Close.Last(0)
+	highest := df.Metadata["turtleHighest"].Last(0)
+	lowest := df.Metadata["turtleLowest"].Last(0)
+
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	if quotePosition > 10 && df.Metadata["ema8"].Crossover(df.Metadata["ema21"]) {
+	// If position already open wait till it will be closed
+	if assetPosition == 0 && closePrice >= highest {
 		_, err := broker.CreateOrderMarketQuote(ninjabot.SideTypeBuy, df.Pair, quotePosition/2)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
@@ -45,8 +50,7 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 		return
 	}
 
-	if assetPosition > 0 &&
-		df.Metadata["ema8"].Crossunder(df.Metadata["ema21"]) {
+	if assetPosition > 0 && closePrice <= lowest {
 		_, err := broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
