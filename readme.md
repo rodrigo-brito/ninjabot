@@ -106,12 +106,14 @@ Chart available at http://localhost:8080
 - [x] Bot Utilities
   - [x] CLI to download historical data
   - [x] Plot (Candles + Sell / Buy orders, Indicators)
-  - [x] Telegram Controller (Status, Buy, Sell)
+  - [x] Telegram Controller (Status, Buy, Sell, and Notification)
 
 
 # Roadmap
   - [ ] Include trailing stop tool
   - [ ] Stop Orders in backtesting
+  - [ ] Include more chart indicators - [Details](https://github.com/rodrigo-brito/ninjabot/issues/110)
+  - [ ] Support future market
 
 ### Exchanges:
 
