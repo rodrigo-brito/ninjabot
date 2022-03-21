@@ -331,7 +331,7 @@ func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, pric
 	log.Infof("[ORDER] Creating OCO order for %s", pair)
 	orders, err := c.exchange.CreateOrderOCO(side, pair, size, price, stop, stopLimit)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
 		return nil, err
 	}
 
@@ -354,7 +354,7 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderLimit(side, pair, size, limit)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
 		return model.Order{}, err
 	}
 
@@ -375,7 +375,7 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, am
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarketQuote(side, pair, amount)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
 		return model.Order{}, err
 	}
 
@@ -399,7 +399,7 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarket(side, pair, size)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %s", err))
+		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
 		return model.Order{}, err
 	}
 

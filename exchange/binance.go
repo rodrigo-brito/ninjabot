@@ -16,7 +16,6 @@ import (
 type OrderError struct {
 	Message string
 	Pair    string
-	Side    model.SideType
 	Amount  float64
 }
 
