@@ -13,6 +13,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type OrderError struct {
+	Message string
+	Pair    string
+	Side    model.SideType
+	Amount  float64
+}
+
+func (o *OrderError) Error() string {
+	return fmt.Sprintf("order creation error: %s", o.Message)
+}
+
 type UserInfo struct {
 	MakerCommission float64
 	TakerCommission float64
@@ -121,7 +132,8 @@ func (b *Binance) validate(pair string, quantity float64) error {
 	}
 
 	if quantity > info.MaxQuantity || quantity < info.MinQuantity {
-		return fmt.Errorf("%w: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity)
+		msg := fmt.Sprintf("%s: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity)
+		return &OrderError{Message: msg, Pair: pair, Amount: quantity}
 	}
 
 	return nil

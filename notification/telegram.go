@@ -369,6 +369,15 @@ func (t telegram) OnOrder(order model.Order) {
 
 func (t telegram) OnError(err error) {
 	title := "🛑 ERROR"
-	message := fmt.Sprintf("%s\n-----\n%s", title, err)
-	t.Notify(message)
+	orderError, ok := err.(*exchange.OrderError)
+	log.Info(ok)
+	if ok {
+		log.Info("ONERROR WORKING WITH CUSTOM ERROR")
+		message := fmt.Sprintf("%s\n-----\nPair: %s, Amount: %v\n-----\n%s", title, orderError.Pair, orderError.Amount, orderError.Message)
+		t.Notify(message)
+	} else {
+		log.Info("NO CUSTOM ERROR")
+		message := fmt.Sprintf("%s\n-----\n%s", title, err)
+		t.Notify(message)
+	}
 }
