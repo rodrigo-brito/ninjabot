@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf
-	github.com/adshao/go-binance/v2 v2.3.4
+	github.com/adshao/go-binance/v2 v2.3.5
 	github.com/evanw/esbuild v0.14.27
 	github.com/jpillora/backoff v1.0.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
@@ -22,9 +22,7 @@ require (
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gin-gonic/gin v1.7.7 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/klauspost/compress v1.13.1 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
@@ -45,5 +43,4 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
-	nhooyr.io/websocket v1.8.7 // indirect
 )
