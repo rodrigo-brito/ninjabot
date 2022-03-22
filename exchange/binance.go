@@ -13,16 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type OrderError struct {
-	Message string
-	Pair    string
-	Amount  float64
-}
-
-func (o *OrderError) Error() string {
-	return fmt.Sprintf("order creation error: %s", o.Message)
-}
-
 type UserInfo struct {
 	MakerCommission float64
 	TakerCommission float64
@@ -124,15 +114,17 @@ func (b *Binance) AssetsInfo(pair string) model.AssetInfo {
 }
 
 func (b *Binance) validate(pair string, quantity float64) error {
-
 	info, ok := b.assetsInfo[pair]
 	if !ok {
 		return ErrInvalidAsset
 	}
 
 	if quantity > info.MaxQuantity || quantity < info.MinQuantity {
-		msg := fmt.Sprintf("%s: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity)
-		return &OrderError{Message: msg, Pair: pair, Amount: quantity}
+		return &OrderError{
+			Err:      fmt.Errorf("%w: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity),
+			Pair:     pair,
+			Quantity: quantity,
+		}
 	}
 
 	return nil

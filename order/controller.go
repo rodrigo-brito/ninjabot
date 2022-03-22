@@ -198,14 +198,14 @@ func (c *Controller) processTrade(order *model.Order) {
 	// register order volume
 	c.Results[order.Pair].Volume += order.Price * order.Quantity
 
-	// calculate profit only for sell orders
+	// calculate profit only to sell orders
 	if order.Side != model.SideTypeSell {
 		return
 	}
 
 	profitValue, profit, err := c.calculateProfit(order)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+		c.notifyError(err)
 		return
 	}
 
@@ -231,7 +231,7 @@ func (c *Controller) updateOrders() {
 		model.OrderStatusTypePendingCancel,
 	))
 	if err != nil {
-		c.notifyError(fmt.Errorf("orderController/start: %s", err))
+		c.notifyError(err)
 		c.mtx.Unlock()
 		return
 	}
@@ -253,7 +253,7 @@ func (c *Controller) updateOrders() {
 		excOrder.ID = order.ID
 		err = c.storage.UpdateOrder(&excOrder)
 		if err != nil {
-			c.notifyError(fmt.Errorf("orderControler/update: %s", err))
+			c.notifyError(err)
 			continue
 		}
 
@@ -331,14 +331,14 @@ func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, pric
 	log.Infof("[ORDER] Creating OCO order for %s", pair)
 	orders, err := c.exchange.CreateOrderOCO(side, pair, size, price, stop, stopLimit)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
+		c.notifyError(err)
 		return nil, err
 	}
 
 	for i := range orders {
 		err := c.storage.CreateOrder(&orders[i])
 		if err != nil {
-			c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+			c.notifyError(err)
 			return nil, err
 		}
 		go c.orderFeed.Publish(orders[i], true)
@@ -354,13 +354,13 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderLimit(side, pair, size, limit)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
+		c.notifyError(err)
 		return model.Order{}, err
 	}
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+		c.notifyError(err)
 		return model.Order{}, err
 	}
 	go c.orderFeed.Publish(order, true)
@@ -375,13 +375,13 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, am
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarketQuote(side, pair, amount)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
+		c.notifyError(err)
 		return model.Order{}, err
 	}
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+		c.notifyError(err)
 		return model.Order{}, err
 	}
 
@@ -399,13 +399,13 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarket(side, pair, size)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller exchange: %w", err))
+		c.notifyError(err)
 		return model.Order{}, err
 	}
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+		c.notifyError(err)
 		return model.Order{}, err
 	}
 
@@ -429,7 +429,7 @@ func (c *Controller) Cancel(order model.Order) error {
 	order.Status = model.OrderStatusTypePendingCancel
 	err = c.storage.UpdateOrder(&order)
 	if err != nil {
-		c.notifyError(fmt.Errorf("order/controller storage: %s", err))
+		c.notifyError(err)
 		return err
 	}
 	log.Infof("[ORDER CANCELED] %s", order)

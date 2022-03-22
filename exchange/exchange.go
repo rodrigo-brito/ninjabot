@@ -38,6 +38,16 @@ type Subscription struct {
 	consumer      DataFeedConsumer
 }
 
+type OrderError struct {
+	Err      error
+	Pair     string
+	Quantity float64
+}
+
+func (o *OrderError) Error() string {
+	return fmt.Sprintf("order error: %v", o.Err)
+}
+
 type DataFeedConsumer func(model.Candle)
 
 func NewDataFeed(exchange service.Exchange) *DataFeedSubscription {
