@@ -114,14 +114,17 @@ func (b *Binance) AssetsInfo(pair string) model.AssetInfo {
 }
 
 func (b *Binance) validate(pair string, quantity float64) error {
-
 	info, ok := b.assetsInfo[pair]
 	if !ok {
 		return ErrInvalidAsset
 	}
 
 	if quantity > info.MaxQuantity || quantity < info.MinQuantity {
-		return fmt.Errorf("%w: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity)
+		return &OrderError{
+			Err:      fmt.Errorf("%w: min: %f max: %f", ErrInvalidQuantity, info.MinQuantity, info.MaxQuantity),
+			Pair:     pair,
+			Quantity: quantity,
+		}
 	}
 
 	return nil

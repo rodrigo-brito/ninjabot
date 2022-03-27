@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -250,7 +251,6 @@ func (t telegram) BuyHandle(m *tb.Message) {
 
 	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeBuy, pair, amount)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	log.Info("[TELEGRAM]: BUY ORDER CREATED: ", order)
@@ -290,15 +290,12 @@ func (t telegram) SellHandle(m *tb.Message) {
 	if command["percent"] != "" {
 		asset, _, err := t.orderController.Position(pair)
 		if err != nil {
-			log.Error(err)
-			t.OnError(err)
 			return
 		}
 
 		amount = amount * asset / 100.0
 		order, err := t.orderController.CreateOrderMarket(model.SideTypeSell, pair, amount)
 		if err != nil {
-			log.Error(err)
 			return
 		}
 		log.Info("[TELEGRAM]: SELL ORDER CREATED: ", order)
@@ -307,7 +304,6 @@ func (t telegram) SellHandle(m *tb.Message) {
 
 	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeSell, pair, amount)
 	if err != nil {
-		log.Error(err)
 		return
 	}
 	log.Info("[TELEGRAM]: SELL ORDER CREATED: ", order)
@@ -369,6 +365,18 @@ func (t telegram) OnOrder(order model.Order) {
 
 func (t telegram) OnError(err error) {
 	title := "🛑 ERROR"
-	message := fmt.Sprintf("%s\n-----\n%s", title, err)
-	t.Notify(message)
+
+	var orderError *exchange.OrderError
+	if errors.As(err, &orderError) {
+		message := fmt.Sprintf(`%s
+		-----
+		Pair: %s
+		Quantity: %.4f
+		-----
+		%s`, title, orderError.Pair, orderError.Quantity, orderError.Err)
+		t.Notify(message)
+		return
+	}
+
+	t.Notify(fmt.Sprintf("%s\n-----\n%s", title, err))
 }

@@ -9,11 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/service"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/rodrigo-brito/ninjabot/service"
 )
 
 type assetInfo struct {
@@ -217,7 +216,11 @@ func (p *PaperWallet) Summary() {
 
 func (p *PaperWallet) lockFunds(asset string, amount float64) error {
 	if value, ok := p.assets[asset]; !ok || value.Free < amount {
-		return ErrInsufficientFunds
+		return &OrderError{
+			Err:      ErrInsufficientFunds,
+			Pair:     asset,
+			Quantity: amount,
+		}
 	}
 	p.assets[asset].Free = p.assets[asset].Free - amount
 	p.assets[asset].Lock = p.assets[asset].Lock + amount
@@ -447,7 +450,11 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 	asset, quote := SplitAssetQuote(pair)
 	if side == model.SideTypeSell {
 		if value, ok := p.assets[asset]; !ok || value.Free < size {
-			return model.Order{}, ErrInsufficientFunds
+			return model.Order{}, &OrderError{
+				Err:      ErrInsufficientFunds,
+				Pair:     pair,
+				Quantity: size,
+			}
 		}
 		if _, ok := p.assets[quote]; !ok {
 			p.assets[quote] = &assetInfo{}
@@ -456,7 +463,11 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 		p.assets[quote].Free = p.assets[quote].Free + p.lastCandle[pair].Close*size
 	} else {
 		if value, ok := p.assets[quote]; !ok || value.Free < size*p.lastCandle[pair].Close {
-			return model.Order{}, ErrInsufficientFunds
+			return model.Order{}, &OrderError{
+				Err:      ErrInsufficientFunds,
+				Pair:     pair,
+				Quantity: size,
+			}
 		}
 		if _, ok := p.assets[asset]; !ok {
 			p.assets[asset] = &assetInfo{}

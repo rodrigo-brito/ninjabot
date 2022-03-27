@@ -35,7 +35,10 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		// try to buy again without funds
 		order, err = wallet.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 100)
 		require.Empty(t, order)
-		require.Equal(t, ErrInsufficientFunds, err)
+		require.Equal(t, &OrderError{
+			Err:      ErrInsufficientFunds,
+			Pair:     "USDT",
+			Quantity: 100}, err)
 
 		// try to sell and profit 100 USDT
 		order, err = wallet.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 1, 200)
@@ -138,7 +141,10 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 
 	// insufficient funds
 	order, err = wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 100)
-	require.Equal(t, ErrInsufficientFunds, err)
+	require.Equal(t, &OrderError{
+		Err:      ErrInsufficientFunds,
+		Pair:     "BTCUSDT",
+		Quantity: 100}, err)
 	require.Empty(t, order)
 
 	// sell
@@ -177,7 +183,10 @@ func TestPaperWallet_OrderOCO(t *testing.T) {
 
 	// insufficient funds
 	orders, err = wallet.CreateOrderOCO(model.SideTypeSell, "BTCUSDT", 1, 100, 40, 39)
-	require.Equal(t, ErrInsufficientFunds, err)
+	require.Equal(t, &OrderError{
+		Err:      ErrInsufficientFunds,
+		Pair:     "BTC",
+		Quantity: 1}, err)
 	require.Nil(t, orders)
 
 	// execute stop and cancel target

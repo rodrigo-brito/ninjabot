@@ -276,7 +276,7 @@ func (n *NinjaBot) backtestCandles() {
 		}
 
 		if err := progressBar.Add(1); err != nil {
-			log.Warningf("update progresbar fail: %s", err.Error())
+			log.Warningf("update progresbar fail: %v", err)
 		}
 	}
 }
