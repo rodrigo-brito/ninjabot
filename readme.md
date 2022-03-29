@@ -96,12 +96,12 @@ Chart available at http://localhost:8080
 
 - [x] Live Trading
   - [x] Custom Strategy
-  - [x] Order Limit, Market, OCO
+  - [x] Order Limit, Market, Stop Limit, OCO
 
 - [x] Backtesting
   - [x] Paper Wallet (Live Trading with fake wallet)
   - [x] Load Feed from CSV
-  - [x] Order Limit, Market, OCO
+  - [x] Order Limit, Market, Stop Limit, OCO
 
 - [x] Bot Utilities
   - [x] CLI to download historical data
@@ -110,10 +110,10 @@ Chart available at http://localhost:8080
 
 
 # Roadmap
+  - [ ] Include Web UI Controller
   - [ ] Include trailing stop tool
-  - [ ] Stop Orders in backtesting
   - [ ] Include more chart indicators - [Details](https://github.com/rodrigo-brito/ninjabot/issues/110)
-  - [ ] Support future market
+  - [ ] Support future market - [Details](https://github.com/rodrigo-brito/ninjabot/issues/106)
 
 ### Exchanges:
 
