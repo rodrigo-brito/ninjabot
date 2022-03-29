@@ -301,10 +301,10 @@ func TestPaperWallet_CreateOrderStop(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
-		order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+		_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
 		require.NoError(t, err)
 
-		order, err = wallet.CreateOrderStop("BTCUSDT", 1, 50)
+		order, err := wallet.CreateOrderStop("BTCUSDT", 1, 50)
 		require.NoError(t, err)
 
 		// create order and lock values
