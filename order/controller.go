@@ -416,6 +416,27 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 	return order, err
 }
 
+func (c *Controller) CreateOrderStop(pair string, size float64, limit float64) (model.Order, error) {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
+	log.Infof("[ORDER] Creating STOP order for %s", pair)
+	order, err := c.exchange.CreateOrderStop(pair, size, limit)
+	if err != nil {
+		c.notifyError(err)
+		return model.Order{}, err
+	}
+
+	err = c.storage.CreateOrder(&order)
+	if err != nil {
+		c.notifyError(err)
+		return model.Order{}, err
+	}
+	go c.orderFeed.Publish(order, true)
+	log.Infof("[ORDER CREATED] %s", order)
+	return order, nil
+}
+
 func (c *Controller) Cancel(order model.Order) error {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()

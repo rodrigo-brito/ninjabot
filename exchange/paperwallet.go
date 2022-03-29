@@ -446,6 +446,32 @@ func (p *PaperWallet) CreateOrderMarket(side model.SideType, pair string, size f
 	return p.createOrderMarket(side, pair, size)
 }
 
+func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) (model.Order, error) {
+	p.Lock()
+	defer p.Unlock()
+
+	asset, _ := SplitAssetQuote(pair)
+	err := p.lockFunds(asset, size)
+	if err != nil {
+		return model.Order{}, err
+	}
+
+	order := model.Order{
+		ExchangeID: p.ID(),
+		CreatedAt:  p.lastCandle[pair].Time,
+		UpdatedAt:  p.lastCandle[pair].Time,
+		Pair:       pair,
+		Side:       model.SideTypeSell,
+		Type:       model.OrderTypeStopLossLimit,
+		Status:     model.OrderStatusTypeNew,
+		Price:      limit,
+		Stop:       &limit,
+		Quantity:   size,
+	}
+	p.orders = append(p.orders, order)
+	return order, nil
+}
+
 func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size float64) (model.Order, error) {
 	asset, quote := SplitAssetQuote(pair)
 	if side == model.SideTypeSell {

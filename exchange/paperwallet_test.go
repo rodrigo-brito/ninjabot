@@ -296,3 +296,32 @@ func TestPaperWallet_AssetsInfo(t *testing.T) {
 	require.Equal(t, info.BaseAsset, "BTC")
 	require.Equal(t, info.QuoteAsset, "USDT")
 }
+
+func TestPaperWallet_CreateOrderStop(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
+		_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+		require.NoError(t, err)
+
+		order, err := wallet.CreateOrderStop("BTCUSDT", 1, 50)
+		require.NoError(t, err)
+
+		// create order and lock values
+		require.Len(t, wallet.orders, 2)
+		require.Equal(t, 1.0, order.Quantity)
+		require.Equal(t, 50.0, order.Price)
+		require.Equal(t, 50.0, *order.Stop)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 1.0, wallet.assets["BTC"].Lock)
+
+		// a new candle should execute order and unlock values
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 40})
+		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[1].Status)
+		require.Equal(t, 50.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+		require.Equal(t, 100.0, wallet.avgPrice["BTCUSDT"])
+	})
+}

@@ -179,7 +179,7 @@ func (b *Binance) CreateOrderOCO(side model.SideType, pair string,
 	return orders, nil
 }
 
-func (b *Binance) OrderStop(pair string, quantity float64, limit float64) (model.Order, error) {
+func (b *Binance) CreateOrderStop(pair string, quantity float64, limit float64) (model.Order, error) {
 	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
