@@ -30,7 +30,6 @@ type DataFeedSubscription struct {
 	Feeds                   *set.LinkedHashSetString
 	DataFeeds               map[string]*DataFeed
 	SubscriptionsByDataFeed map[string][]Subscription
-	SubscriptionsFinish     []func()
 }
 
 type Subscription struct {
@@ -77,10 +76,6 @@ func (d *DataFeedSubscription) Subscribe(pair, timeframe string, consumer DataFe
 	})
 }
 
-func (d *DataFeedSubscription) OnFinish(onClose func()) {
-	d.SubscriptionsFinish = append(d.SubscriptionsFinish, onClose)
-}
-
 func (d *DataFeedSubscription) Preload(pair, timeframe string, candles []model.Candle) {
 	log.Infof("[SETUP] preloading %d candles for %s-%s", len(candles), pair, timeframe)
 	key := d.feedKey(pair, timeframe)
@@ -107,7 +102,7 @@ func (d *DataFeedSubscription) Connect() {
 	}
 }
 
-func (d *DataFeedSubscription) Start() {
+func (d *DataFeedSubscription) Start(loadSync bool) {
 	d.Connect()
 	wg := new(sync.WaitGroup)
 	for key, feed := range d.DataFeeds {
@@ -136,12 +131,7 @@ func (d *DataFeedSubscription) Start() {
 	}
 
 	log.Infof("Data feed connected.")
-	wg.Wait()
-
-	// send signal for all finish subscriptions
-	for _, finish := range d.SubscriptionsFinish {
-		finish()
+	if loadSync {
+		wg.Wait()
 	}
-
-	log.Infof("Data feed disconnected.")
 }
