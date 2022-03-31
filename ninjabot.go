@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -52,8 +51,7 @@ type NinjaBot struct {
 	dataFeed              *exchange.DataFeedSubscription
 	paperWallet           *exchange.PaperWallet
 
-	backtest      bool
-	startBacktest sync.WaitGroup
+	backtest bool
 }
 
 type Option func(*NinjaBot)
@@ -104,29 +102,31 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 	return bot, nil
 }
 
+// WithBacktest sets the bot to run in backtest mode, it is required for backtesting environments
+// Backtest mode optimize the input read for CSV and deal with race conditions
 func WithBacktest(wallet *exchange.PaperWallet) Option {
 	return func(bot *NinjaBot) {
 		bot.backtest = true
-		bot.startBacktest.Add(1)
-
-		// load paper wallet
 		opt := WithPaperWallet(wallet)
 		opt(bot)
 	}
 }
 
+// WithStorage sets the storage for the bot, by default it uses a local file called ninjabot.db
 func WithStorage(storage storage.Storage) Option {
 	return func(bot *NinjaBot) {
 		bot.storage = storage
 	}
 }
 
+// WithLogLevel sets the log level. eg: log.DebugLevel, log.InfoLevel, log.WarnLevel, log.ErrorLevel, log.FatalLevel
 func WithLogLevel(level log.Level) Option {
 	return func(bot *NinjaBot) {
 		log.SetLevel(level)
 	}
 }
 
+// WithNotifier registers a notifier to the bot, currently only email and telegram are supported
 func WithNotifier(notifier service.Notifier) Option {
 	return func(bot *NinjaBot) {
 		bot.notifier = notifier
@@ -252,10 +252,6 @@ func (n *NinjaBot) processCandles() {
 func (n *NinjaBot) backtestCandles() {
 	log.Info("[SETUP] Starting backtesting")
 
-	// when backtesting, we need to wait all candles load
-	// to avoid sync issues between multiple coins
-	n.startBacktest.Wait()
-
 	progressBar := progressbar.Default(int64(n.priorityQueueCandle.Len()))
 	for n.priorityQueueCandle.Len() > 0 {
 		item := n.priorityQueueCandle.Pop()
@@ -296,6 +292,7 @@ func (n *NinjaBot) preload(ctx context.Context, pair string) error {
 	return nil
 }
 
+// Run will initialize the strategy controller, order controller, preload data and start the bot
 func (n *NinjaBot) Run(ctx context.Context) error {
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
@@ -314,6 +311,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.strategiesControllers[pair].Start()
 	}
 
+	// start order feed and controller
 	n.orderFeed.Start()
 	n.orderController.Start()
 	defer n.orderController.Stop()
@@ -321,14 +319,10 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.telegram.Start()
 	}
 
-	n.dataFeed.OnFinish(func() {
-		if n.backtest {
-			n.startBacktest.Done()
-		}
-	})
+	// start data feed and receives new candles
+	n.dataFeed.Start(n.backtest)
 
-	go n.dataFeed.Start()
-
+	// start processing new candles for production or backtesting environment
 	if n.backtest {
 		n.backtestCandles()
 	} else {
