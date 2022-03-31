@@ -4,8 +4,9 @@ import "sync"
 
 type PriorityQueue struct {
 	sync.Mutex
-	length int
-	data   []Item
+	length          int
+	data            []Item
+	notifyCallbacks []func(Item)
 }
 
 type Item interface {
@@ -32,7 +33,20 @@ func (q *PriorityQueue) Push(item Item) {
 	q.data = append(q.data, item)
 	q.length++
 	q.up(q.length - 1)
+
+	for _, notify := range q.notifyCallbacks {
+		notify(item)
+	}
 }
+
+func (q *PriorityQueue) PopLock() <-chan Item {
+	ch := make(chan Item)
+	q.notifyCallbacks = append(q.notifyCallbacks, func(_ Item) {
+		ch <- q.Pop()
+	})
+	return ch
+}
+
 func (q *PriorityQueue) Pop() Item {
 	q.Lock()
 	defer q.Unlock()

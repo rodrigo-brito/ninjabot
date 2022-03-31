@@ -20,10 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	defaultDatabase = "ninjabot.db"
-	bufferSize      = 1 << 20
-)
+const defaultDatabase = "ninjabot.db"
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
@@ -56,7 +53,6 @@ type NinjaBot struct {
 	paperWallet           *exchange.PaperWallet
 
 	backtest      bool
-	candleBuffer  chan bool
 	startBacktest sync.WaitGroup
 }
 
@@ -73,7 +69,6 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		dataFeed:              exchange.NewDataFeed(exch),
 		strategiesControllers: make(map[string]*strategy.Controller),
 		priorityQueueCandle:   model.NewPriorityQueue(nil),
-		candleBuffer:          make(chan bool, bufferSize),
 	}
 
 	for _, pair := range settings.Pairs {
@@ -178,6 +173,8 @@ func (n *NinjaBot) Controller() *order.Controller {
 	return n.orderController
 }
 
+// Summary function displays all trades, accuracy and some bot metrics in stdout
+// To access the raw data, you may access `bot.Controller().Results`
 func (n *NinjaBot) Summary() {
 	var (
 		total  float64
@@ -230,11 +227,6 @@ func (n *NinjaBot) Summary() {
 
 func (n *NinjaBot) onCandle(candle model.Candle) {
 	n.priorityQueueCandle.Push(candle)
-
-	// create a buffer to control async flow
-	if !n.backtest {
-		n.candleBuffer <- true
-	}
 }
 
 func (n *NinjaBot) processCandle(candle model.Candle) {
@@ -248,13 +240,15 @@ func (n *NinjaBot) processCandle(candle model.Candle) {
 	}
 }
 
+// Process pending candles in buffer
 func (n *NinjaBot) processCandles() {
-	for <-n.candleBuffer {
-		item := n.priorityQueueCandle.Pop()
+	for item := range n.priorityQueueCandle.PopLock() {
 		n.processCandle(item.(model.Candle))
 	}
 }
 
+// Start the backtest process and create a progress bar
+// backtestCandles will process candles from a prirority queue in chronological order
 func (n *NinjaBot) backtestCandles() {
 	log.Info("[SETUP] Starting backtesting")
 
@@ -281,6 +275,8 @@ func (n *NinjaBot) backtestCandles() {
 	}
 }
 
+// Before Ninjabot start, we need to load the necessary data to fill strategy indicators
+// Then, we need to get the time frame and warmup period to fetch the necessary candles
 func (n *NinjaBot) preload(ctx context.Context, pair string) error {
 	if n.backtest {
 		return nil
@@ -312,7 +308,7 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		}
 
 		// link to ninja bot controller
-		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, true)
+		n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), n.onCandle, false)
 
 		// start strategy controller
 		n.strategiesControllers[pair].Start()
@@ -329,7 +325,6 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		if n.backtest {
 			n.startBacktest.Done()
 		}
-		close(n.candleBuffer)
 	})
 
 	go n.dataFeed.Start()
