@@ -31,6 +31,14 @@ func (s *Controller) Start() {
 	s.started = true
 }
 
+func (s *Controller) OnPartialCandle(candle model.Candle) {
+	if len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
+		if str, ok := s.strategy.(PartialStrategy); ok {
+			str.OnPartialCandle(candle, s.dataframe, s.broker)
+		}
+	}
+}
+
 func (s *Controller) OnCandle(candle model.Candle) {
 	if len(s.dataframe.Time) > 0 && candle.Time.Before(s.dataframe.Time[len(s.dataframe.Time)-1]) {
 		log.Errorf("late candle received: %#v", candle)
