@@ -35,7 +35,7 @@ func (q *PriorityQueue) Push(item Item) {
 	q.up(q.length - 1)
 
 	for _, notify := range q.notifyCallbacks {
-		notify(item)
+		go notify(item)
 	}
 }
 
