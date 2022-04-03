@@ -86,15 +86,15 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 80.0, wallet.assets["USDT"].Lock)
 
 		// should execute two orders and keep one pending
-		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 40})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 15})
 		require.Equal(t, 20.0, wallet.assets["USDT"].Free)
-		require.Equal(t, 50.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 10.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 2.0, wallet.assets["BTC"].Free)
-		require.Equal(t, 15.0, wallet.avgPrice["BTCUSDT"])
-		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[0].Status)
+		require.Equal(t, 35.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, model.OrderStatusTypeNew, wallet.orders[0].Status)
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[1].Status)
-		require.Equal(t, model.OrderStatusTypeNew, wallet.orders[2].Status)
+		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[2].Status)
 
 		// sell all bitcoin position
 		order, err = wallet.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 2, 40)
@@ -102,23 +102,23 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.NotEmpty(t, order)
 
 		require.Equal(t, 20.0, wallet.assets["USDT"].Free)
-		require.Equal(t, 50.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 10.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 2.0, wallet.assets["BTC"].Lock)
 
-		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 40, High: 40})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50, High: 50})
 		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
-		require.Equal(t, 50.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 10.0, wallet.assets["USDT"].Lock)
 
 		// execute old buy position
-		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50, High: 50})
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 9, High: 9})
 		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-		require.Equal(t, 50.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 10.0, wallet.avgPrice["BTCUSDT"])
 	})
 }
 

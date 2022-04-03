@@ -247,7 +247,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 		}
 
 		asset, quote := SplitAssetQuote(order.Pair)
-		if order.Side == model.SideTypeBuy && order.Price <= candle.Close {
+		if order.Side == model.SideTypeBuy && order.Price >= candle.Close {
 			if _, ok := p.assets[asset]; !ok {
 				p.assets[asset] = &assetInfo{}
 			}
