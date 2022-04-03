@@ -3,20 +3,16 @@
 [![tests](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml/badge.svg)](https://github.com/rodrigo-brito/ninjabot/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/rodrigo-brito/ninjabot/branch/main/graph/badge.svg)](https://codecov.io/gh/rodrigo-brito/ninjabot)
 [![Go Reference](https://pkg.go.dev/badge/github.com/rodrigo-brito/ninjabot.svg)](https://pkg.go.dev/github.com/rodrigo-brito/ninjabot)
+[![Discord](https://img.shields.io/discord/960156400376483840?color=5865F2&label=discord)](https://discord.gg/TGCrUH972E)
+[![Discord](https://img.shields.io/badge/donate-patreon-red)](https://www.patreon.com/ninjabot_github)
 
 A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets. 
 
 Docs: https://rodrigo-brito.github.io/ninjabot/
 
-:warning: **Caution:** Working in progress - It's not production ready :construction:
-
-## Support the project
-
-|  | Address  |
-| --- | --- |
-|**BTC** | `bc1qpk6yqju6rkz33ntzj8kuepmynmztzydmec2zm4`|
-|**ETH** | `0x2226FFe4aBD2Afa84bf7222C2b17BBC65F64555A` |
-|**LTC** | `ltc1qj2n9r4yfsm5dnsmmtzhgj8qcj8fjpcvgkd9v3j` |
+| DISCLAIMER                                                                                                                                                                                                           |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| This software is for educational purposes only. Do not risk money which you are afraid to lose.  USE THE SOFTWARE AT YOUR OWN RISK. THE AUTHORS AND ALL AFFILIATES ASSUME NO RESPONSIBILITY FOR YOUR TRADING RESULTS |
 
 ## Installation
 
@@ -115,6 +111,16 @@ Chart available at http://localhost:8080
   - [ ] Include more chart indicators - [Details](https://github.com/rodrigo-brito/ninjabot/issues/110)
   - [ ] Support future market - [Details](https://github.com/rodrigo-brito/ninjabot/issues/106)
 
-### Exchanges:
+### Exchanges
 
 Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface `Exchange`. You can check some examples in [exchange](./pkg/exchange) directory.
+
+### Support the project
+
+|  | Address  |
+| --- | --- |
+|**BTC** | `bc1qpk6yqju6rkz33ntzj8kuepmynmztzydmec2zm4`|
+|**ETH** | `0x2226FFe4aBD2Afa84bf7222C2b17BBC65F64555A` |
+|**LTC** | `ltc1qj2n9r4yfsm5dnsmmtzhgj8qcj8fjpcvgkd9v3j` |
+
+**Patreon**: https://www.patreon.com/ninjabot_github
