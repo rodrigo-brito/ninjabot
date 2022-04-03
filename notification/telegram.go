@@ -136,14 +136,19 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 	quotesValue := make(map[string]float64)
 	total := 0.0
 
+	account, err := t.orderController.Account()
+	if err != nil {
+		log.Error(err)
+		t.OnError(err)
+		return
+	}
+
 	for _, pair := range t.settings.Pairs {
 		assetPair, quotePair := exchange.SplitAssetQuote(pair)
-		assetSize, quoteSize, err := t.orderController.Position(pair)
-		if err != nil {
-			log.Error(err)
-			t.OnError(err)
-			return
-		}
+		assetBalance, quoteBalance := account.Balance(assetPair, quotePair)
+
+		assetSize := assetBalance.Free + assetBalance.Lock
+		quoteSize := quoteBalance.Free + quoteBalance.Lock
 
 		quote, err := t.orderController.LastQuote(pair)
 		if err != nil {
@@ -165,7 +170,7 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 
 	message += fmt.Sprintf("-----\nTotal: `%.4f`\n", total)
 
-	_, err := t.client.Send(m.Sender, message)
+	_, err = t.client.Send(m.Sender, message)
 	if err != nil {
 		log.Error(err)
 	}
