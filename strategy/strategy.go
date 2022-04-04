@@ -18,7 +18,9 @@ type Strategy interface {
 	OnCandle(df *model.Dataframe, broker service.Broker)
 }
 
-type PartialStrategy interface {
+type HighFrequencyStrategy interface {
 	Strategy
-	OnPartialCandle(candle model.Candle, df *model.Dataframe, broker service.Broker)
+
+	// OnPartialCandle will be executed for each new partial candle, after indicators are filled.
+	OnPartialCandle(df *model.Dataframe, broker service.Broker)
 }

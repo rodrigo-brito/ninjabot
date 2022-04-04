@@ -32,19 +32,16 @@ func (s *Controller) Start() {
 }
 
 func (s *Controller) OnPartialCandle(candle model.Candle) {
-	if len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
-		if str, ok := s.strategy.(PartialStrategy); ok {
-			str.OnPartialCandle(candle, s.dataframe, s.broker)
+	if !candle.Complete && len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
+		if str, ok := s.strategy.(HighFrequencyStrategy); ok {
+			s.updateDataFrame(candle)
+			str.Indicators(s.dataframe)
+			str.OnPartialCandle(s.dataframe, s.broker)
 		}
 	}
 }
 
-func (s *Controller) OnCandle(candle model.Candle) {
-	if len(s.dataframe.Time) > 0 && candle.Time.Before(s.dataframe.Time[len(s.dataframe.Time)-1]) {
-		log.Errorf("late candle received: %#v", candle)
-		return
-	}
-
+func (s *Controller) updateDataFrame(candle model.Candle) {
 	if len(s.dataframe.Time) > 0 && candle.Time.Equal(s.dataframe.Time[len(s.dataframe.Time)-1]) {
 		last := len(s.dataframe.Time) - 1
 		s.dataframe.Close[last] = candle.Close
@@ -62,6 +59,15 @@ func (s *Controller) OnCandle(candle model.Candle) {
 		s.dataframe.Time = append(s.dataframe.Time, candle.Time)
 		s.dataframe.LastUpdate = candle.Time
 	}
+}
+
+func (s *Controller) OnCandle(candle model.Candle) {
+	if len(s.dataframe.Time) > 0 && candle.Time.Before(s.dataframe.Time[len(s.dataframe.Time)-1]) {
+		log.Errorf("late candle received: %#v", candle)
+		return
+	}
+
+	s.updateDataFrame(candle)
 
 	if len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
 		s.strategy.Indicators(s.dataframe)
