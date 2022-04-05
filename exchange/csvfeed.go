@@ -69,9 +69,10 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 			}
 
 			candle := model.Candle{
-				Time:     time.Unix(int64(timestamp), 0).UTC(),
-				Pair:     feed.Pair,
-				Complete: true,
+				Time:      time.Unix(int64(timestamp), 0).UTC(),
+				UpdatedAt: time.Unix(int64(timestamp), 0).UTC(),
+				Pair:      feed.Pair,
+				Complete:  true,
 			}
 
 			candle.Open, err = strconv.ParseFloat(line[1], 64)

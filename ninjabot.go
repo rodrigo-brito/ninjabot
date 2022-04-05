@@ -264,6 +264,7 @@ func (n *NinjaBot) backtestCandles() {
 			n.paperWallet.OnCandle(candle)
 		}
 
+		n.strategiesControllers[candle.Pair].OnPartialCandle(candle)
 		if candle.Complete {
 			n.strategiesControllers[candle.Pair].OnCandle(candle)
 		}
