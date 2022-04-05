@@ -26,6 +26,9 @@ func main() {
 	settings := ninjabot.Settings{
 		Pairs: []string{
 			"BTCUSDT",
+			"ETHUSDT",
+			"BNBUSDT",
+			"LTCUSDT",
 		},
 		Telegram: ninjabot.TelegramSettings{
 			Enabled: true,

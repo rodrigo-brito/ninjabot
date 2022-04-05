@@ -1,10 +1,7 @@
 package strategies
 
 import (
-	"fmt"
-
 	"github.com/rodrigo-brito/ninjabot"
-	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
 
 	"github.com/markcheno/go-talib"
@@ -26,12 +23,7 @@ func (e CrossEMA) Indicators(df *ninjabot.Dataframe) {
 	df.Metadata["ema21"] = talib.Sma(df.Close, 21)
 }
 
-func (e *CrossEMA) OnPartialCandle(df *model.Dataframe, broker service.Broker) {
-	fmt.Println("PARTIAL = ", df.LastUpdate, len(df.Close), df.Pair, df.Close.Last(0), df.Volume.Last(0))
-}
-
 func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
-	fmt.Println("COMPLETE = ", df.LastUpdate, len(df.Close), df.Pair, df.Close.Last(0), df.Volume.Last(0))
 	closePrice := df.Close.Last(0)
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
