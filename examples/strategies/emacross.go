@@ -25,6 +25,7 @@ func (e CrossEMA) Indicators(df *ninjabot.Dataframe) {
 
 func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 	closePrice := df.Close.Last(0)
+
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
 	if err != nil {
 		log.Error(err)
@@ -32,7 +33,7 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 	}
 
 	if quotePosition > 10 && df.Metadata["ema8"].Crossover(df.Metadata["ema21"]) {
-		_, err := broker.CreateOrderMarketQuote(ninjabot.SideTypeBuy, df.Pair, quotePosition/2)
+		_, err := broker.CreateOrderMarketQuote(ninjabot.SideTypeBuy, df.Pair, quotePosition)
 		if err != nil {
 			log.WithFields(map[string]interface{}{
 				"pair":  df.Pair,
