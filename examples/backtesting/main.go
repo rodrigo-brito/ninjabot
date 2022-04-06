@@ -56,7 +56,7 @@ func main() {
 
 	chart, err := plot.NewChart(plot.WithIndicators(
 		indicator.EMA(8, "red"),
-		indicator.EMA(21, "#000"),
+		indicator.SMA(21, "#000"),
 		indicator.RSI(14, "purple"),
 	), plot.WithPaperWallet(wallet))
 	if err != nil {

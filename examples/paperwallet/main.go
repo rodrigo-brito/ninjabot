@@ -61,7 +61,12 @@ func main() {
 	// initializing my strategy
 	strategy := new(strategies.CrossEMA)
 
-	chart, err := plot.NewChart(plot.WithIndicators(indicator.EMA(9, "blue")))
+	chart, err := plot.NewChart(
+		plot.WithIndicators(
+			indicator.EMA(8, "red"),
+			indicator.SMA(21, "blue"),
+		),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
