@@ -56,15 +56,16 @@ type Dataframe struct {
 }
 
 type Candle struct {
-	Pair     string
-	Time     time.Time
-	Open     float64
-	Close    float64
-	Low      float64
-	High     float64
-	Volume   float64
-	Trades   int64
-	Complete bool
+	Pair      string
+	Time      time.Time
+	UpdatedAt time.Time
+	Open      float64
+	Close     float64
+	Low       float64
+	High      float64
+	Volume    float64
+	Trades    int64
+	Complete  bool
 }
 
 func (c Candle) ToSlice(precision int) []string {
@@ -80,10 +81,23 @@ func (c Candle) ToSlice(precision int) []string {
 }
 
 func (c Candle) Less(j Item) bool {
-	if j.(Candle).Time.Equal(c.Time) {
-		return c.Pair < j.(Candle).Pair
+	diff := j.(Candle).Time.Sub(c.Time)
+	if diff < 0 {
+		return false
 	}
-	return c.Time.Before(j.(Candle).Time)
+	if diff > 0 {
+		return true
+	}
+
+	diff = j.(Candle).UpdatedAt.Sub(c.UpdatedAt)
+	if diff < 0 {
+		return false
+	}
+	if diff > 0 {
+		return true
+	}
+
+	return c.Pair < j.(Candle).Pair
 }
 
 type Account struct {

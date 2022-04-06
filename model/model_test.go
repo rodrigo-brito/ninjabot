@@ -27,8 +27,8 @@ func TestCandle_Less(t *testing.T) {
 	now := time.Now()
 
 	t.Run("equal time", func(t *testing.T) {
-		candle := Candle{Time: now, Pair: "A"}
-		item := Item(Candle{Time: now, Pair: "B"})
+		candle := Candle{Time: now, UpdatedAt: now, Pair: "A"}
+		item := Item(Candle{Time: now, UpdatedAt: now.Add(time.Minute), Pair: "B"})
 		require.True(t, candle.Less(item))
 	})
 

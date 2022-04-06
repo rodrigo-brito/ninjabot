@@ -536,7 +536,8 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 }
 
 func CandleFromKline(pair string, k binance.Kline) model.Candle {
-	candle := model.Candle{Pair: pair, Time: time.Unix(0, k.OpenTime*int64(time.Millisecond))}
+	t := time.Unix(0, k.OpenTime*int64(time.Millisecond))
+	candle := model.Candle{Pair: pair, Time: t, UpdatedAt: t}
 	candle.Open, _ = strconv.ParseFloat(k.Open, 64)
 	candle.Close, _ = strconv.ParseFloat(k.Close, 64)
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
@@ -548,7 +549,8 @@ func CandleFromKline(pair string, k binance.Kline) model.Candle {
 }
 
 func CandleFromWsKline(pair string, k binance.WsKline) model.Candle {
-	candle := model.Candle{Pair: pair, Time: time.Unix(0, k.StartTime*int64(time.Millisecond))}
+	t := time.Unix(0, k.StartTime*int64(time.Millisecond))
+	candle := model.Candle{Pair: pair, Time: t, UpdatedAt: t}
 	candle.Open, _ = strconv.ParseFloat(k.Open, 64)
 	candle.Close, _ = strconv.ParseFloat(k.Close, 64)
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
