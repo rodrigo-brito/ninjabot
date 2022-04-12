@@ -359,6 +359,28 @@ func (p *PaperWallet) Position(pair string) (asset, quote float64, err error) {
 	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
 }
 
+func (p *PaperWallet) PositionAllPairs(pairs []string) (assets []model.Assets, err error) {
+	p.Lock()
+	defer p.Unlock()
+	acc, err := p.Account()
+	if err != nil {
+		return []model.Assets{}, err
+	}
+
+	for _, pair := range pairs {
+		assetTick, quoteTick := SplitAssetQuote(pair)
+		assetBalance, quoteBalance := acc.Balance(assetTick, quoteTick)
+		assets = append(assets, model.Assets{
+			Pair:      pair,
+			AssetTick: assetTick,
+			AssetSize: assetBalance.Free + assetBalance.Lock,
+			QuoteTick: quoteTick,
+			QuoteSize: quoteBalance.Free + quoteBalance.Lock,
+		})
+	}
+	return assets, nil
+}
+
 func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 	size, price, stop, stopLimit float64) ([]model.Order, error) {
 	p.Lock()

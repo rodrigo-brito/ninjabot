@@ -23,6 +23,14 @@ type Balance struct {
 	Lock float64
 }
 
+type Assets struct {
+	Pair      string
+	AssetTick string
+	AssetSize float64
+	QuoteTick string
+	QuoteSize float64
+}
+
 type AssetInfo struct {
 	BaseAsset  string
 	QuoteAsset string

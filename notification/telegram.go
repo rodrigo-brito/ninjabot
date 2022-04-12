@@ -136,26 +136,25 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 	quotesValue := make(map[string]float64)
 	total := 0.0
 
-	for _, pair := range t.settings.Pairs {
-		assetPair, quotePair := exchange.SplitAssetQuote(pair)
-		assetSize, quoteSize, err := t.orderController.Position(pair)
+	assets, err := t.orderController.PositionAllPairs(t.settings.Pairs)
+	if err != nil {
+		log.Error(err)
+		t.OnError(err)
+		return
+	}
+	for _, asset := range assets {
+		quote, err := t.orderController.LastQuote(asset.Pair)
 		if err != nil {
 			log.Error(err)
 			t.OnError(err)
 			return
 		}
-
-		quote, err := t.orderController.LastQuote(pair)
-		if err != nil {
-			log.Error(err)
-			t.OnError(err)
-			return
-		}
-
-		assetValue := assetSize * quote
-		quotesValue[quotePair] = quoteSize
+		basePair := asset.AssetTick
+		quotePair := asset.QuoteTick
+		assetValue := asset.AssetSize * quote
+		quotesValue[quotePair] = asset.QuoteSize
 		total += assetValue
-		message += fmt.Sprintf("%s: `%.4f` ≅ `%.2f` %s \n", assetPair, assetSize, assetValue, quotePair)
+		message += fmt.Sprintf("%s: `%.4f` ≅ `%.2f` %s \n", basePair, asset.AssetSize, assetValue, quotePair)
 	}
 
 	for quote, value := range quotesValue {
@@ -165,7 +164,7 @@ func (t telegram) BalanceHandle(m *tb.Message) {
 
 	message += fmt.Sprintf("-----\nTotal: `%.4f`\n", total)
 
-	_, err := t.client.Send(m.Sender, message)
+	_, err = t.client.Send(m.Sender, message)
 	if err != nil {
 		log.Error(err)
 	}

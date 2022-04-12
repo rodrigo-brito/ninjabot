@@ -303,6 +303,10 @@ func (c *Controller) Account() (model.Account, error) {
 	return c.exchange.Account()
 }
 
+func (c *Controller) PositionAllPairs(pairs []string) (assets []model.Assets, err error) {
+	return c.exchange.PositionAllPairs(pairs)
+}
+
 func (c *Controller) Position(pair string) (asset, quote float64, err error) {
 	return c.exchange.Position(pair)
 }

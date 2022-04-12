@@ -453,6 +453,26 @@ func (b *Binance) Position(pair string) (asset, quote float64, err error) {
 	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
 }
 
+func (b *Binance) PositionAllPairs(pairs []string) (assets []model.Assets, err error) {
+	acc, err := b.Account()
+	if err != nil {
+		return []model.Assets{}, err
+	}
+
+	for _, pair := range pairs {
+		assetTick, quoteTick := SplitAssetQuote(pair)
+		assetBalance, quoteBalance := acc.Balance(assetTick, quoteTick)
+		assets = append(assets, model.Assets{
+			Pair:      pair,
+			AssetTick: assetTick,
+			AssetSize: assetBalance.Free + assetBalance.Lock,
+			QuoteTick: quoteTick,
+			QuoteSize: quoteBalance.Free + quoteBalance.Lock,
+		})
+	}
+	return assets, nil
+}
+
 func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
