@@ -122,11 +122,11 @@ Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) ex
   ```go
   csvFeed, err := exchange.NewCSVFeed(
       strategy.Timeframe(),
-      "heikinAshi",
       exchange.PairFeed{
           Pair:      "FTMUSDT",
           File:      "testdata/ftm-1d.csv",
           Timeframe: "1d",
+		  HeikinAshi: true
   },
   ```
   

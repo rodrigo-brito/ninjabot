@@ -67,7 +67,6 @@ func TestDownloader_download(t *testing.T) {
 
 	csvFeed, _ := exchange.NewCSVFeed(
 		"1d",
-		"default",
 		exchange.PairFeed{
 			Pair:      "BTCUSDT",
 			File:      "../testdata/btc-1d.csv",

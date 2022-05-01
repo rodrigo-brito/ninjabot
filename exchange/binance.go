@@ -3,7 +3,6 @@ package exchange
 import (
 	"context"
 	"fmt"
-	"github.com/rodrigo-brito/ninjabot/utils"
 	"strconv"
 	"time"
 
@@ -24,7 +23,7 @@ type Binance struct {
 	client     *binance.Client
 	assetsInfo map[string]model.AssetInfo
 	userInfo   UserInfo
-	CandleType string `default:"default"`
+	HeikinAshi bool `default:"false"`
 
 	APIKey    string
 	APISecret string
@@ -41,7 +40,7 @@ func WithBinanceCredentials(key, secret string) BinanceOption {
 
 func WithBinanceHeikinAshiCandle() BinanceOption {
 	return func(b *Binance) {
-		b.CandleType = "heikinAshi"
+		b.HeikinAshi = true
 	}
 }
 
@@ -465,7 +464,7 @@ func (b *Binance) Position(pair string) (asset, quote float64, err error) {
 func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
-	ha := utils.NewHeikinAshi()
+	ha := model.NewHeikinAshi()
 
 	go func() {
 		ba := &backoff.Backoff{
@@ -477,23 +476,12 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 			done, _, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
 				ba.Reset()
 				candle := CandleFromWsKline(pair, event.Kline)
-				if candle.Complete == true && b.CandleType == "heikinAshi" {
-					haCandle := ha.CalculateHeikinAshi(candle)
-					ccandle <- model.Candle{
-						Pair:      candle.Pair,
-						Open:      haCandle.Open,
-						High:      haCandle.High,
-						Low:       haCandle.Low,
-						Close:     haCandle.Close,
-						Volume:    candle.Volume,
-						Complete:  candle.Complete,
-						Time:      candle.Time,
-						UpdatedAt: candle.UpdatedAt,
-						Trades:    candle.Trades,
-					}
-				} else {
-					ccandle <- candle
+
+				if candle.Complete && b.HeikinAshi == true {
+					candle = candle.ToHeikinAshi(ha)
 				}
+
+				ccandle <- candle
 
 			}, func(err error) {
 				cerr <- err
@@ -522,7 +510,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
-	ha := utils.NewHeikinAshi()
+	ha := model.NewHeikinAshi()
 
 	data, err := klineService.Symbol(pair).
 		Interval(period).
@@ -535,24 +523,12 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 
 	for _, d := range data {
 		candle := CandleFromKline(pair, *d)
-		if b.CandleType == "heikinAshi" {
-			haCandle := ha.CalculateHeikinAshi(candle)
 
-			candles = append(candles, model.Candle{
-				Pair:      candle.Pair,
-				Open:      haCandle.Open,
-				High:      haCandle.High,
-				Low:       haCandle.Low,
-				Close:     haCandle.Close,
-				Volume:    candle.Volume,
-				Complete:  candle.Complete,
-				Time:      candle.Time,
-				UpdatedAt: candle.UpdatedAt,
-				Trades:    candle.Trades,
-			})
-		} else {
-			candles = append(candles, candle)
+		if b.HeikinAshi == true {
+			candle = candle.ToHeikinAshi(ha)
 		}
+
+		candles = append(candles, candle)
 	}
 
 	// discard last candle, because it is incomplete
@@ -564,7 +540,7 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
-	ha := utils.NewHeikinAshi()
+	ha := model.NewHeikinAshi()
 
 	data, err := klineService.Symbol(pair).
 		Interval(period).
@@ -579,24 +555,11 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 	for _, d := range data {
 		candle := CandleFromKline(pair, *d)
 
-		if b.CandleType == "heikinAshi" {
-			haCandle := ha.CalculateHeikinAshi(candle)
-
-			candles = append(candles, model.Candle{
-				Pair:      candle.Pair,
-				Open:      haCandle.Open,
-				High:      haCandle.High,
-				Low:       haCandle.Low,
-				Close:     haCandle.Close,
-				Volume:    candle.Volume,
-				Complete:  candle.Complete,
-				Time:      candle.Time,
-				UpdatedAt: candle.UpdatedAt,
-				Trades:    candle.Trades,
-			})
-		} else {
-			candles = append(candles, candle)
+		if b.HeikinAshi == true {
+			candle = candle.ToHeikinAshi(ha)
 		}
+
+		candles = append(candles, candle)
 	}
 
 	return candles, nil

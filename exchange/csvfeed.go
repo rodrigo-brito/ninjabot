@@ -5,29 +5,27 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"github.com/rodrigo-brito/ninjabot/utils"
 	"math"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/model"
-
 	"github.com/xhit/go-str2duration/v2"
 )
 
 var ErrInsufficientData = errors.New("insufficient data")
 
 type PairFeed struct {
-	Pair      string
-	File      string
-	Timeframe string
+	Pair       string
+	File       string
+	Timeframe  string
+	HeikinAshi bool `default:"false"`
 }
 
 type CSVFeed struct {
 	Feeds               map[string]PairFeed
 	CandlePairTimeFrame map[string][]model.Candle
-	CandleType          string `default:"default"`
 }
 
 func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
@@ -44,11 +42,10 @@ func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
 	}
 }
 
-func NewCSVFeed(targetTimeframe string, candleType string, feeds ...PairFeed) (*CSVFeed, error) {
+func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	csvFeed := &CSVFeed{
 		Feeds:               make(map[string]PairFeed),
 		CandlePairTimeFrame: make(map[string][]model.Candle),
-		CandleType:          candleType,
 	}
 
 	for _, feed := range feeds {
@@ -65,7 +62,7 @@ func NewCSVFeed(targetTimeframe string, candleType string, feeds ...PairFeed) (*
 		}
 
 		var candles []model.Candle
-		ha := utils.NewHeikinAshi()
+		ha := model.NewHeikinAshi()
 
 		for _, line := range csvLines {
 			timestamp, err := strconv.Atoi(line[0])
@@ -105,18 +102,11 @@ func NewCSVFeed(targetTimeframe string, candleType string, feeds ...PairFeed) (*
 				return nil, err
 			}
 
-			if csvFeed.CandleType == "heikinAshi" {
-				haCandle := ha.CalculateHeikinAshi(candle)
-
-				candle.Low = haCandle.Low
-				candle.Close = haCandle.Close
-				candle.High = haCandle.High
-				candle.Open = haCandle.Open
-
-				candles = append(candles, candle)
-			} else {
-				candles = append(candles, candle)
+			if feed.HeikinAshi == true {
+				candle = candle.ToHeikinAshi(ha)
 			}
+
+			candles = append(candles, candle)
 		}
 
 		csvFeed.CandlePairTimeFrame[csvFeed.feedTimeframeKey(feed.Pair, feed.Timeframe)] = candles
