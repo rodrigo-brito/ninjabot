@@ -59,6 +59,7 @@ func TestMarketOrder(t *testing.T) {
 	strategy := new(fakeStrategy)
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
+		"default",
 		exchange.PairFeed{
 			Pair:      "BTCUSDT",
 			File:      "testdata/btc-1h.csv",

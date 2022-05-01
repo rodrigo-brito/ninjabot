@@ -102,7 +102,7 @@ Chart available at http://localhost:8080
   - [x] CLI to download historical data
   - [x] Plot (Candles + Sell / Buy orders, Indicators)
   - [x] Telegram Controller (Status, Buy, Sell, and Notification)
-
+  - [x] Heikin Ashi candle type support
 
 # Roadmap
   - [ ] Include Web UI Controller
@@ -113,6 +113,27 @@ Chart available at http://localhost:8080
 ### Exchanges
 
 Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) exchange. If you want to include support for other exchanges, you need to implement a new `struct` that implements the interface `Exchange`. You can check some examples in [exchange](./pkg/exchange) directory.
+
+### Heikin Ashi candle type support
+
+<img width="100%"  src="https://i.ibb.co/N6sTVd6/Screenshot-2022-05-01-at-08-02-05.png" />
+
+* CSV Feed exchange
+  ```go
+  csvFeed, err := exchange.NewCSVFeed(
+      strategy.Timeframe(),
+      "heikinAshi",
+      exchange.PairFeed{
+          Pair:      "FTMUSDT",
+          File:      "testdata/ftm-1d.csv",
+          Timeframe: "1d",
+  },
+  ```
+  
+* Binance
+  ```go
+  binance, err := exchange.NewBinance(ctx, exchange.WithBinanceHeikinAshiCandle())
+  ```
 
 ### Support the project
 
