@@ -125,8 +125,8 @@ Currently, we only support [Binance](https://www.binance.com/en?ref=35723227) ex
       exchange.PairFeed{
           Pair:      "FTMUSDT",
           File:      "testdata/ftm-1d.csv",
-          Timeframe: "1d",
-		  HeikinAshi: true
+          Timeframe: "1d", 
+          HeikinAshi: true,
   },
   ```
   
