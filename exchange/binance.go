@@ -23,7 +23,7 @@ type Binance struct {
 	client     *binance.Client
 	assetsInfo map[string]model.AssetInfo
 	userInfo   UserInfo
-	HeikinAshi bool `default:"false"`
+	HeikinAshi bool
 
 	APIKey    string
 	APISecret string
@@ -477,7 +477,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 				ba.Reset()
 				candle := CandleFromWsKline(pair, event.Kline)
 
-				if candle.Complete && b.HeikinAshi == true {
+				if candle.Complete && b.HeikinAshi {
 					candle = candle.ToHeikinAshi(ha)
 				}
 
@@ -524,7 +524,7 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 	for _, d := range data {
 		candle := CandleFromKline(pair, *d)
 
-		if b.HeikinAshi == true {
+		if b.HeikinAshi {
 			candle = candle.ToHeikinAshi(ha)
 		}
 
@@ -555,7 +555,7 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 	for _, d := range data {
 		candle := CandleFromKline(pair, *d)
 
-		if b.HeikinAshi == true {
+		if b.HeikinAshi {
 			candle = candle.ToHeikinAshi(ha)
 		}
 

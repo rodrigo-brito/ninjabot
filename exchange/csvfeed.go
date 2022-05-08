@@ -20,7 +20,7 @@ type PairFeed struct {
 	Pair       string
 	File       string
 	Timeframe  string
-	HeikinAshi bool `default:"false"`
+	HeikinAshi bool
 }
 
 type CSVFeed struct {
@@ -102,7 +102,7 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 				return nil, err
 			}
 
-			if feed.HeikinAshi == true {
+			if feed.HeikinAshi {
 				candle = candle.ToHeikinAshi(ha)
 			}
 

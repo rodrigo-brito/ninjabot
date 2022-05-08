@@ -95,20 +95,9 @@ func TestHeikinAshi_CalculateHeikinAshi(t *testing.T) {
 	}
 
 	for index, expectedHaCandle := range expected {
-		if results[index].Open != expectedHaCandle.Open {
-			t.Errorf("Open value %v doesn't match expected value: %v", results[index].Open, expectedHaCandle.Open)
-		}
-
-		if results[index].Close != expectedHaCandle.Close {
-			t.Errorf("Close value %v doesn't match expected value: %v", results[index].Close, expectedHaCandle.Close)
-		}
-
-		if results[index].High != expectedHaCandle.High {
-			t.Errorf("High value %v doesn't match expected value: %v", results[index].High, expectedHaCandle.High)
-		}
-
-		if results[index].Low != expectedHaCandle.Low {
-			t.Errorf("Low value %v doesn't match expected value: %v", results[index].Low, expectedHaCandle.Low)
-		}
+		require.Equal(t, expectedHaCandle.Open, results[index].Open)
+		require.Equal(t, expectedHaCandle.Close, results[index].Close)
+		require.Equal(t, expectedHaCandle.High, results[index].High)
+		require.Equal(t, expectedHaCandle.Low, results[index].Low)
 	}
 }
