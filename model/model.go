@@ -172,11 +172,6 @@ func (ha *HeikinAshi) CalculateHeikinAshi(c Candle) Candle {
 	hkCandle.High = highValues[2]
 	hkCandle.Close = (c.Open + c.High + c.Low + c.Close) / 4
 	hkCandle.Low = lowValues[0]
-
-	//if hkCandle.Open < hkCandle.Close {
-	//	hkCandle.IsBullish = true
-	//}
-
 	ha.PreviousHACandle = hkCandle
 
 	return hkCandle
