@@ -56,7 +56,8 @@ func TestHeikinAshi_CalculateHeikinAshi(t *testing.T) {
 	}
 
 	// BTC-USDT weekly candles from Binance from 2017-08-14 to 2017-10-09
-	// First market candles were used to easily test accuracy against TradingView without having to download all market data.
+	// First market candles were used to easily test accuracy against
+	// TradingView without having to download all market data.
 	candles := []Candle{
 		{Open: 4261.48, Close: 4086.29, High: 4485.39, Low: 3850.00},
 		{Open: 4069.13, Close: 4310.01, High: 4453.91, Low: 3400.00},
