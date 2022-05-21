@@ -199,7 +199,25 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 }
 }
 }
-&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="heikin-ashi-candle-type-support">Heikin Ashi candle type support&lt;/h3>
+&lt;p>&lt;!-- raw HTML omitted -->&lt;/p>
+&lt;ul>
+&lt;li>
+&lt;p>CSV Feed exchange&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">csvFeed&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewCSVFeed&lt;/span>(
+&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">Timeframe&lt;/span>(),
+&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">PairFeed&lt;/span>{
+&lt;span style="color:#a6e22e">Pair&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;FTMUSDT&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">File&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;testdata/ftm-1d.csv&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Timeframe&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">HeikinAshi&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
+},
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;li>
+&lt;p>Binance&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinance&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceHeikinAshiCandle&lt;/span>())
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;/ul></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
 &lt;h2 id="installation">Installation&lt;/h2>
 &lt;p>To set up a Telegram bot, you should follow these steps:&lt;/p>
 &lt;h3 id="create-a-new-bot-in-your-telegram-account">Create a new bot in your Telegram account&lt;/h3>

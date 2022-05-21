@@ -86,6 +86,16 @@
 <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
 <div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
 </div>
+<div class=td-toc><nav id=TableOfContents>
+<ul>
+<li><a href=#strategy-functions>Strategy Functions</a></li>
+<li><a href=#example>Example</a>
+<ul>
+<li><a href=#heikin-ashi-candle-type-support>Heikin Ashi candle type support</a></li>
+</ul>
+</li>
+</ul>
+</nav></div>
 <div class="taxonomy taxonomy-terms-cloud taxo-categories">
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
@@ -179,7 +189,25 @@
 		}
 	}
 }
-</code></pre></div>
+</code></pre></div><h3 id=heikin-ashi-candle-type-support>Heikin Ashi candle type support</h3>
+<p></p>
+<ul>
+<li>
+<p>CSV Feed exchange</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>csvFeed</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewCSVFeed</span>(
+    <span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>Timeframe</span>(),
+    <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>PairFeed</span>{
+        <span style=color:#a6e22e>Pair</span>:      <span style=color:#e6db74>&#34;FTMUSDT&#34;</span>,
+        <span style=color:#a6e22e>File</span>:      <span style=color:#e6db74>&#34;testdata/ftm-1d.csv&#34;</span>,
+        <span style=color:#a6e22e>Timeframe</span>: <span style=color:#e6db74>&#34;1d&#34;</span>, 
+        <span style=color:#a6e22e>HeikinAshi</span>: <span style=color:#66d9ef>true</span>,
+},
+</code></pre></div></li>
+<li>
+<p>Binance</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>binance</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewBinance</span>(<span style=color:#a6e22e>ctx</span>, <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithBinanceHeikinAshiCandle</span>())
+</code></pre></div></li>
+</ul>
 <div class=section-index>
 </div>
 </div>
