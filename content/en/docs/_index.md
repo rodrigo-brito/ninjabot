@@ -19,4 +19,5 @@ This software is for educational purposes only. Do not risk money which you are 
 - Create custom strategies
 - Backtesting with historical data
 - Plot trading results
+- Heikin Ashi candle type
 - Telegram integration
