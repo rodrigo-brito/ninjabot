@@ -23,6 +23,7 @@ type Binance struct {
 	client     *binance.Client
 	assetsInfo map[string]model.AssetInfo
 	userInfo   UserInfo
+	HeikinAshi bool
 
 	APIKey    string
 	APISecret string
@@ -34,6 +35,12 @@ func WithBinanceCredentials(key, secret string) BinanceOption {
 	return func(b *Binance) {
 		b.APIKey = key
 		b.APISecret = secret
+	}
+}
+
+func WithBinanceHeikinAshiCandle() BinanceOption {
+	return func(b *Binance) {
+		b.HeikinAshi = true
 	}
 }
 
@@ -457,16 +464,25 @@ func (b *Binance) Position(pair string) (asset, quote float64, err error) {
 func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
+	ha := model.NewHeikinAshi()
 
 	go func() {
-		b := &backoff.Backoff{
+		ba := &backoff.Backoff{
 			Min: 100 * time.Millisecond,
 			Max: 1 * time.Second,
 		}
+
 		for {
 			done, _, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
-				b.Reset()
-				ccandle <- CandleFromWsKline(pair, event.Kline)
+				ba.Reset()
+				candle := CandleFromWsKline(pair, event.Kline)
+
+				if candle.Complete && b.HeikinAshi {
+					candle = candle.ToHeikinAshi(ha)
+				}
+
+				ccandle <- candle
+
 			}, func(err error) {
 				cerr <- err
 			})
@@ -483,7 +499,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 				close(ccandle)
 				return
 			case <-done:
-				time.Sleep(b.Duration())
+				time.Sleep(ba.Duration())
 			}
 		}
 	}()
@@ -494,6 +510,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
+	ha := model.NewHeikinAshi()
 
 	data, err := klineService.Symbol(pair).
 		Interval(period).
@@ -505,7 +522,13 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 	}
 
 	for _, d := range data {
-		candles = append(candles, CandleFromKline(pair, *d))
+		candle := CandleFromKline(pair, *d)
+
+		if b.HeikinAshi {
+			candle = candle.ToHeikinAshi(ha)
+		}
+
+		candles = append(candles, candle)
 	}
 
 	// discard last candle, because it is incomplete
@@ -517,6 +540,7 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
+	ha := model.NewHeikinAshi()
 
 	data, err := klineService.Symbol(pair).
 		Interval(period).
@@ -529,7 +553,13 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 	}
 
 	for _, d := range data {
-		candles = append(candles, CandleFromKline(pair, *d))
+		candle := CandleFromKline(pair, *d)
+
+		if b.HeikinAshi {
+			candle = candle.ToHeikinAshi(ha)
+		}
+
+		candles = append(candles, candle)
 	}
 
 	return candles, nil

@@ -11,16 +11,16 @@ import (
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/model"
-
 	"github.com/xhit/go-str2duration/v2"
 )
 
 var ErrInsufficientData = errors.New("insufficient data")
 
 type PairFeed struct {
-	Pair      string
-	File      string
-	Timeframe string
+	Pair       string
+	File       string
+	Timeframe  string
+	HeikinAshi bool
 }
 
 type CSVFeed struct {
@@ -62,6 +62,8 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 		}
 
 		var candles []model.Candle
+		ha := model.NewHeikinAshi()
+
 		for _, line := range csvLines {
 			timestamp, err := strconv.Atoi(line[0])
 			if err != nil {
@@ -98,6 +100,10 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 			candle.Volume, err = strconv.ParseFloat(line[5], 64)
 			if err != nil {
 				return nil, err
+			}
+
+			if feed.HeikinAshi {
+				candle = candle.ToHeikinAshi(ha)
 			}
 
 			candles = append(candles, candle)

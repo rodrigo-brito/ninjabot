@@ -102,7 +102,7 @@ Chart available at http://localhost:8080
   - [x] CLI to download historical data
   - [x] Plot (Candles + Sell / Buy orders, Indicators)
   - [x] Telegram Controller (Status, Buy, Sell, and Notification)
-
+  - [x] Heikin Ashi candle type support
 
 # Roadmap
   - [ ] Include Web UI Controller
