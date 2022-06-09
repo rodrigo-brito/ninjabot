@@ -10,7 +10,7 @@ import (
 	"github.com/markcheno/go-talib"
 )
 
-func BollingerBands(period, stdDeviation int, upDnBandColor, midBandColor string) plot.Indicator {
+func BollingerBands(period int, stdDeviation float64, upDnBandColor, midBandColor string) plot.Indicator {
 	return &bollingerBands{
 		Period:        period,
 		StdDeviation:  stdDeviation,
@@ -21,7 +21,7 @@ func BollingerBands(period, stdDeviation int, upDnBandColor, midBandColor string
 
 type bollingerBands struct {
 	Period        int
-	StdDeviation  int
+	StdDeviation  float64
 	UpDnBandColor string
 	MidBandColor  string
 	UpperBand     model.Series
@@ -43,9 +43,7 @@ func (bb *bollingerBands) Load(dataframe *model.Dataframe) {
 		return
 	}
 
-	deviation := float64(bb.StdDeviation)
-
-	upper, mid, lower := talib.BBands(dataframe.Close, bb.Period, deviation, deviation, talib.EMA)
+	upper, mid, lower := talib.BBands(dataframe.Close, bb.Period, bb.StdDeviation, bb.StdDeviation, talib.EMA)
 	bb.UpperBand, bb.MiddleBand, bb.LowerBand = upper[bb.Period:], mid[bb.Period:], lower[bb.Period:]
 
 	bb.Time = dataframe.Time[bb.Period:]
