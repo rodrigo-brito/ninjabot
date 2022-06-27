@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf
 	github.com/adshao/go-binance/v2 v2.3.5
-	github.com/evanw/esbuild v0.14.39
+	github.com/evanw/esbuild v0.14.47
 	github.com/jpillora/backoff v1.0.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/olekukonko/tablewriter v0.0.5
