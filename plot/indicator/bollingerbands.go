@@ -31,7 +31,7 @@ type bollingerBands struct {
 }
 
 func (bb bollingerBands) Name() string {
-	return fmt.Sprintf("BB(%d, %d)", bb.Period, bb.StdDeviation)
+	return fmt.Sprintf("BB(%d, %.2f)", bb.Period, bb.StdDeviation)
 }
 
 func (bb bollingerBands) Overlay() bool {
