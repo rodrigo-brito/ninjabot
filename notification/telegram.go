@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	buyRegexp  = regexp.MustCompile(`/buy\s+(?P<pair>\w+)\s+(?P<amount>[0-9]+(?:\.\d+)?)(?P<percent>%)?`)
-	sellRegexp = regexp.MustCompile(`/sell\s+(?P<pair>\w+)\s+(?P<amount>[0-9]+(?:\.\d+)?)(?P<percent>%)?`)
+	buyRegexp  = regexp.MustCompile(`/buy\s+(?P<pair>\w+)\s+(?P<amount>\d+(?:\.\d+)?)(?P<percent>%)?`)
+	sellRegexp = regexp.MustCompile(`/sell\s+(?P<pair>\w+)\s+(?P<amount>\d+(?:\.\d+)?)(?P<percent>%)?`)
 )
 
 type telegram struct {

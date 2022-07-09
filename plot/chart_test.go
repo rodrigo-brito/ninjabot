@@ -16,7 +16,6 @@ func TestChart_CandleAndOrder(t *testing.T) {
 	c, err := NewChart()
 	require.NoErrorf(t, err, "error when initial chart")
 
-	//feed candle and order 1
 	candle := model.Candle{
 		Pair:     "ETHUSDT",
 		Time:     time.Date(2021, 9, 26, 20, 0, 0, 0, time.UTC),
@@ -43,23 +42,11 @@ func TestChart_CandleAndOrder(t *testing.T) {
 		UpdatedAt:  time.Date(2021, 9, 26, 20, 0, 0, 0, time.UTC),
 		Stop:       nil,
 		GroupID:    nil,
-		RefPrice:   0,
-		Profit:     0,
-		Candle:     model.Candle{},
+		RefPrice:   10,
+		Profit:     10,
 	}
 	c.OnOrder(order)
-	expectOrder := Order{
-		ID:        1,
-		Side:      "BUY",
-		Type:      "MARKET",
-		Status:    "FILLED",
-		Price:     3059.37,
-		Quantity:  1.634323,
-		CreatedAt: time.Date(2021, 9, 26, 20, 0, 0, 0, time.UTC),
-		UpdatedAt: time.Date(2021, 9, 26, 20, 0, 0, 0, time.UTC),
-		RefPrice:  0,
-	}
-	require.Equal(t, &expectOrder, c.orderByID[order.ID])
+	require.Equal(t, order, c.orderByID[order.ID])
 
 	//feed candle and oco order
 	candle2 := model.Candle{
@@ -91,19 +78,7 @@ func TestChart_CandleAndOrder(t *testing.T) {
 		RefPrice:   3059.37,
 	}
 	c.OnOrder(limitMakerOrder)
-	expectLimitMakerOrder := Order{
-		ID:        3,
-		Side:      "SELL",
-		Type:      "LIMIT_MAKER",
-		Status:    "NEW",
-		Price:     2926,
-		Quantity:  1.634323,
-		CreatedAt: time.Date(2021, 9, 28, 8, 0, 0, 0, time.UTC),
-		UpdatedAt: time.Date(2021, 9, 28, 8, 0, 0, 0, time.UTC),
-		OCOGroup:  &groupID,
-		RefPrice:  3059.37,
-	}
-	require.Equal(t, &expectLimitMakerOrder, c.orderByID[limitMakerOrder.ID])
+	require.Equal(t, limitMakerOrder, c.orderByID[limitMakerOrder.ID])
 
 	stop := 2900.00
 	stopOrder := model.Order{
@@ -122,20 +97,7 @@ func TestChart_CandleAndOrder(t *testing.T) {
 		RefPrice:   3059.37,
 	}
 	c.OnOrder(stopOrder)
-	expectStopOrder := Order{
-		ID:        4,
-		Side:      "SELL",
-		Type:      "STOP_LOSS",
-		Status:    "NEW",
-		Price:     3000,
-		Quantity:  1.634323,
-		CreatedAt: time.Date(2021, 9, 28, 8, 0, 0, 0, time.UTC),
-		UpdatedAt: time.Date(2021, 9, 28, 8, 0, 0, 0, time.UTC),
-		Stop:      &stop,
-		OCOGroup:  &groupID,
-		RefPrice:  3059.37,
-	}
-	require.Equal(t, &expectStopOrder, c.orderByID[stopOrder.ID])
+	require.Equal(t, stopOrder, c.orderByID[stopOrder.ID])
 
 	//test candles by pair
 	expectCandleByPair := []Candle{
@@ -146,8 +108,8 @@ func TestChart_CandleAndOrder(t *testing.T) {
 			High:   3115.51,
 			Low:    3011.00,
 			Volume: 87666.8,
-			Orders: []Order{
-				expectOrder,
+			Orders: []model.Order{
+				order,
 			},
 		},
 		{
@@ -157,9 +119,9 @@ func TestChart_CandleAndOrder(t *testing.T) {
 			High:   2940.74,
 			Low:    2876.12,
 			Volume: 88470.1,
-			Orders: []Order{
-				expectLimitMakerOrder,
-				expectStopOrder,
+			Orders: []model.Order{
+				limitMakerOrder,
+				stopOrder,
 			},
 		},
 	}
@@ -185,18 +147,6 @@ func TestChart_CandleAndOrder(t *testing.T) {
 	}
 	shaped := c.shapesByPair(pair)
 	require.Equal(t, expectShapesByPair, shaped)
-
-	//test equity value by pair
-	expectAsset := []assetValue{}
-	expectQuote := []assetValue{}
-	asset, quote := c.equityValuesByPair(pair)
-	require.Equal(t, expectAsset, asset)
-	require.Equal(t, expectQuote, quote)
-
-	//test indicator by pair
-	expectIndicators := []plotIndicator{}
-	indicators := c.indicatorsByPair(pair)
-	require.Equal(t, expectIndicators, indicators)
 }
 
 func TestChart_WithPort(t *testing.T) {
@@ -232,7 +182,7 @@ func TestChart_OrderStringByPair(t *testing.T) {
 
 	pair1 := "ETHUSDT"
 	pair2 := "BNBUSDT"
-	order1 := &Order{
+	order1 := model.Order{
 		ID:        1,
 		Side:      "SELL",
 		Type:      "MARKET",
@@ -241,7 +191,7 @@ func TestChart_OrderStringByPair(t *testing.T) {
 		Quantity:  4783.34,
 		CreatedAt: time.Date(2021, 9, 26, 20, 0, 0, 0, time.UTC),
 	}
-	order2 := &Order{
+	order2 := model.Order{
 		ID:        2,
 		Side:      "BUY",
 		Type:      "MARKET",
@@ -251,7 +201,7 @@ func TestChart_OrderStringByPair(t *testing.T) {
 		CreatedAt: time.Date(2021, 10, 13, 20, 0, 0, 0, time.UTC),
 	}
 
-	order3 := &Order{
+	order3 := model.Order{
 		ID:        13,
 		Side:      "BUY",
 		Type:      "MARKET",

@@ -24,6 +24,7 @@ type Binance struct {
 	assetsInfo map[string]model.AssetInfo
 	userInfo   UserInfo
 	HeikinAshi bool
+	Testnet    bool
 
 	APIKey    string
 	APISecret string
@@ -41,6 +42,13 @@ func WithBinanceCredentials(key, secret string) BinanceOption {
 func WithBinanceHeikinAshiCandle() BinanceOption {
 	return func(b *Binance) {
 		b.HeikinAshi = true
+	}
+}
+
+// WithTestNet activate Bianance testnet
+func WithTestNet() BinanceOption {
+	return func(b *Binance) {
+		binance.UseTestnet = true
 	}
 }
 
