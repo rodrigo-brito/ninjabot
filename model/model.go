@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"sort"
+	"math"
 	"strconv"
 	"time"
 )
@@ -153,12 +153,6 @@ func (a Account) Equity() float64 {
 func (ha *HeikinAshi) CalculateHeikinAshi(c Candle) Candle {
 	var hkCandle Candle
 
-	highValues := []float64{c.High, c.Open, c.Close}
-	sort.Float64s(highValues)
-
-	lowValues := []float64{c.Low, c.Open, c.Close}
-	sort.Float64s(lowValues)
-
 	openValue := ha.PreviousHACandle.Open
 	closeValue := ha.PreviousHACandle.Close
 
@@ -169,9 +163,9 @@ func (ha *HeikinAshi) CalculateHeikinAshi(c Candle) Candle {
 	}
 
 	hkCandle.Open = (openValue + closeValue) / 2
-	hkCandle.High = highValues[2]
 	hkCandle.Close = (c.Open + c.High + c.Low + c.Close) / 4
-	hkCandle.Low = lowValues[0]
+	hkCandle.High = math.Max(c.High, math.Max(hkCandle.Open, hkCandle.Close))
+	hkCandle.Low = math.Min(c.Low, math.Min(hkCandle.Open, hkCandle.Close))
 	ha.PreviousHACandle = hkCandle
 
 	return hkCandle
