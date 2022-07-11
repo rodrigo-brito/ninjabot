@@ -13,8 +13,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/evanw/esbuild v0.14.48 h1:WlYmG8pvhVMKzE2EUEZr96cgi3DHBCODwVY53LzSXuo=
-github.com/evanw/esbuild v0.14.48/go.mod h1:GG+zjdi59yh3ehDn4ZWfPcATxjPDUH53iU4ZJbp7dkY=
+github.com/evanw/esbuild v0.14.49 h1:jpZ/ut75socKiFF2XWSzjTAVAQP7IkRvrkLFaIb/Ueg=
+github.com/evanw/esbuild v0.14.49/go.mod h1:GG+zjdi59yh3ehDn4ZWfPcATxjPDUH53iU4ZJbp7dkY=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
