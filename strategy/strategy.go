@@ -12,7 +12,7 @@ type Strategy interface {
 	// This time is measured in the period specified in the `Timeframe` function.
 	WarmupPeriod() int
 	// Indicators will be executed for each new candle, in order to fill indicators before `OnCandle` function is called.
-	Indicators(df *model.Dataframe)
+	Indicators(df *model.Dataframe) []ChartIndicator
 	// OnCandle will be executed for each new candle, after indicators are filled, here you can do your trading logic.
 	// OnCandle is executed after the candle close.
 	OnCandle(df *model.Dataframe, broker service.Broker)

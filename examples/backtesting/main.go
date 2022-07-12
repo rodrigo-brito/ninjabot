@@ -54,11 +54,14 @@ func main() {
 		exchange.WithDataFeed(csvFeed),
 	)
 
-	chart, err := plot.NewChart(plot.WithIndicators(
-		indicator.EMA(8, "red"),
-		indicator.SMA(21, "#000"),
-		indicator.RSI(14, "purple"),
-	), plot.WithPaperWallet(wallet))
+	chart, err := plot.NewChart(
+		plot.WithStrategyIndicators(strategy),
+		plot.WithCustomIndicators(
+			indicator.RSI(14, "purple"),
+			indicator.Stoch(8, 3, 3, "red", "blue"),
+		),
+		plot.WithPaperWallet(wallet),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
