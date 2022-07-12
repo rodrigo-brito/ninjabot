@@ -207,7 +207,7 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 					Values: metric.Values[warmup:],
 					Name:   metric.Name,
 					Color:  metric.Color,
-					Style:  metric.Style,
+					Style:  string(metric.Style),
 				})
 			}
 			indicators = append(indicators, indicator)
