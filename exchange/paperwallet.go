@@ -524,11 +524,14 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 }
 
 func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string,
-	quantity float64) (model.Order, error) {
+	quoteQuantity float64) (model.Order, error) {
 	p.Lock()
 	defer p.Unlock()
 
-	return p.createOrderMarket(side, pair, quantity/p.lastCandle[pair].Close)
+	quantity := quoteQuantity / p.lastCandle[pair].Close
+	places := math.Pow10(int(p.AssetsInfo(pair).QtyDecimalPrecision))
+	quantity = math.Floor(quantity*places) / places
+	return p.createOrderMarket(side, pair, quantity)
 }
 
 func (p *PaperWallet) Cancel(order model.Order) error {
