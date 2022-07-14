@@ -35,9 +35,8 @@ type AssetInfo struct {
 	StepSize    float64
 	TickSize    float64
 
-	// Number of decimal places
-	QtyDecimalPrecision   int64
-	PriceDecimalPrecision int64
+	QuotePrecision     int
+	BaseAssetPrecision int
 }
 
 type Dataframe struct {

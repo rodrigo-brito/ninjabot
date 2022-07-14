@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/adshao/go-binance/v2/common"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -47,14 +48,14 @@ type PaperWallet struct {
 func (p *PaperWallet) AssetsInfo(pair string) model.AssetInfo {
 	asset, quote := SplitAssetQuote(pair)
 	return model.AssetInfo{
-		BaseAsset:             asset,
-		QuoteAsset:            quote,
-		MaxPrice:              math.MaxFloat64,
-		MaxQuantity:           math.MaxFloat64,
-		StepSize:              0.00000001,
-		TickSize:              0.00000001,
-		QtyDecimalPrecision:   8,
-		PriceDecimalPrecision: 8,
+		BaseAsset:          asset,
+		QuoteAsset:         quote,
+		MaxPrice:           math.MaxFloat64,
+		MaxQuantity:        math.MaxFloat64,
+		StepSize:           0.00000001,
+		TickSize:           0.00000001,
+		QuotePrecision:     8,
+		BaseAssetPrecision: 8,
 	}
 }
 
@@ -528,9 +529,8 @@ func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string,
 	p.Lock()
 	defer p.Unlock()
 
-	quantity := quoteQuantity / p.lastCandle[pair].Close
-	places := math.Pow10(int(p.AssetsInfo(pair).QtyDecimalPrecision))
-	quantity = math.Floor(quantity*places) / places
+	info := p.AssetsInfo(pair)
+	quantity := common.AmountToLotSize(info.StepSize, info.BaseAssetPrecision, quoteQuantity/p.lastCandle[pair].Close)
 	return p.createOrderMarket(side, pair, quantity)
 }
 

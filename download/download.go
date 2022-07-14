@@ -110,7 +110,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 		}
 
 		for _, candle := range candles {
-			err := writer.Write(candle.ToSlice(int(info.PriceDecimalPrecision)))
+			err := writer.Write(candle.ToSlice(info.QuotePrecision))
 			if err != nil {
 				return err
 			}
