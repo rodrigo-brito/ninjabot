@@ -171,7 +171,7 @@ func TestChart_WithDebug(t *testing.T) {
 
 func TestChart_WithIndicator(t *testing.T) {
 	var indicator []Indicator
-	c, err := NewChart(WithIndicators(indicator...))
+	c, err := NewChart(WithCustomIndicators(indicator...))
 	require.NoErrorf(t, err, "error when initial chart")
 	require.Equal(t, indicator, c.indicators)
 }

@@ -3,6 +3,7 @@ package strategies
 import (
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/service"
+	"github.com/rodrigo-brito/ninjabot/strategy"
 
 	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
@@ -18,9 +19,31 @@ func (e CrossEMA) WarmupPeriod() int {
 	return 21
 }
 
-func (e CrossEMA) Indicators(df *ninjabot.Dataframe) {
+func (e CrossEMA) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
 	df.Metadata["ema8"] = talib.Ema(df.Close, 8)
 	df.Metadata["sma21"] = talib.Sma(df.Close, 21)
+
+	return []strategy.ChartIndicator{
+		{
+			Overlay:   true,
+			GroupName: "MA's",
+			Time:      df.Time,
+			Metrics: []strategy.IndicatorMetric{
+				{
+					Values: df.Metadata["ema8"],
+					Name:   "EMA 8",
+					Color:  "red",
+					Style:  strategy.StyleLine,
+				},
+				{
+					Values: df.Metadata["sma21"],
+					Name:   "SMA 21",
+					Color:  "blue",
+					Style:  strategy.StyleLine,
+				},
+			},
+		},
+	}
 }
 
 func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {

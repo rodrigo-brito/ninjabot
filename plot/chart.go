@@ -15,6 +15,7 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/rodrigo-brito/ninjabot/strategy"
 
 	"github.com/StudioSol/set"
 	"github.com/evanw/esbuild/pkg/api"
@@ -38,6 +39,7 @@ type Chart struct {
 	paperWallet   *exchange.PaperWallet
 	scriptContent string
 	indexHTML     *template.Template
+	strategy      strategy.Strategy
 }
 
 type Candle struct {
@@ -188,6 +190,30 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 
 		indicators = append(indicators, indicator)
 	}
+
+	if c.strategy != nil {
+		warmup := c.strategy.WarmupPeriod()
+		strategyIndicators := c.strategy.Indicators(c.dataframe[pair])
+		for _, i := range strategyIndicators {
+			indicator := plotIndicator{
+				Name:    i.GroupName,
+				Overlay: i.Overlay,
+				Metrics: make([]indicatorMetric, 0),
+			}
+
+			for _, metric := range i.Metrics {
+				indicator.Metrics = append(indicator.Metrics, indicatorMetric{
+					Time:   i.Time[warmup:],
+					Values: metric.Values[warmup:],
+					Name:   metric.Name,
+					Color:  metric.Color,
+					Style:  string(metric.Style),
+				})
+			}
+			indicators = append(indicators, indicator)
+		}
+	}
+
 	return indicators
 }
 
@@ -375,6 +401,12 @@ func WithPort(port int) Option {
 	}
 }
 
+func WithStrategyIndicators(strategy strategy.Strategy) Option {
+	return func(chart *Chart) {
+		chart.strategy = strategy
+	}
+}
+
 func WithPaperWallet(paperWallet *exchange.PaperWallet) Option {
 	return func(chart *Chart) {
 		chart.paperWallet = paperWallet
@@ -388,7 +420,7 @@ func WithDebug() Option {
 	}
 }
 
-func WithIndicators(indicators ...Indicator) Option {
+func WithCustomIndicators(indicators ...Indicator) Option {
 	return func(chart *Chart) {
 		chart.indicators = indicators
 	}
