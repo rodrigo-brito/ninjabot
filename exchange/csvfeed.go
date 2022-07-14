@@ -31,14 +31,14 @@ type CSVFeed struct {
 func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
 	asset, quote := SplitAssetQuote(pair)
 	return model.AssetInfo{
-		BaseAsset:             asset,
-		QuoteAsset:            quote,
-		MaxPrice:              math.MaxFloat64,
-		MaxQuantity:           math.MaxFloat64,
-		StepSize:              0.00000001,
-		TickSize:              0.00000001,
-		QtyDecimalPrecision:   8,
-		PriceDecimalPrecision: 8,
+		BaseAsset:          asset,
+		QuoteAsset:         quote,
+		MaxPrice:           math.MaxFloat64,
+		MaxQuantity:        math.MaxFloat64,
+		StepSize:           0.00000001,
+		TickSize:           0.00000001,
+		QuotePrecision:     8,
+		BaseAssetPrecision: 8,
 	}
 }
 
