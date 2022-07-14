@@ -11,11 +11,13 @@ func TestFormatQuantity(t *testing.T) {
 	binance := Binance{assetsInfo: map[string]model.AssetInfo{
 		"BTCUSDT": {
 			StepSize:           0.00001000,
+			TickSize:           0.00001000,
 			BaseAssetPrecision: 5,
 			QuotePrecision:     5,
 		},
 		"BATUSDT": {
 			StepSize:           0.01,
+			TickSize:           0.01,
 			BaseAssetPrecision: 2,
 			QuotePrecision:     2,
 		},
@@ -37,6 +39,7 @@ func TestFormatQuantity(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(fmt.Sprintf("given %f %s", tc.quantity, tc.pair), func(t *testing.T) {
 			require.Equal(t, tc.expected, binance.formatQuantity(tc.pair, tc.quantity))
+			require.Equal(t, tc.expected, binance.formatPrice(tc.pair, tc.quantity))
 		})
 	}
 }

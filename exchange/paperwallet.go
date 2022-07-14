@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/adshao/go-binance/v2/common"
 	"math"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/adshao/go-binance/v2/common"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/model"
