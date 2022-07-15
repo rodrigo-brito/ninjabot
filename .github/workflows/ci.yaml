@@ -13,14 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Setup go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: 1.18
       - run: go test -race -coverprofile="coverage.txt" -covermode=atomic ./...
 
       - name: lint
         if: github.event_name == 'pull_request'
-        uses: golangci/golangci-lint-action@v2.5.2
+        uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           skip-build-cache: true

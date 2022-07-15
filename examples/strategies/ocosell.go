@@ -31,7 +31,27 @@ func (e OCOSell) Indicators(df *model.Dataframe) []strategy.ChartIndicator {
 		talib.SMA,
 	)
 
-	return nil
+	return []strategy.ChartIndicator{
+		{
+			Overlay:   false,
+			GroupName: "Stochastic",
+			Time:      df.Time,
+			Metrics: []strategy.IndicatorMetric{
+				{
+					Values: df.Metadata["stoch"],
+					Name:   "K",
+					Color:  "red",
+					Style:  strategy.StyleLine,
+				},
+				{
+					Values: df.Metadata["stoch_signal"],
+					Name:   "D",
+					Color:  "blue",
+					Style:  strategy.StyleLine,
+				},
+			},
+		},
+	}
 }
 
 func (e *OCOSell) OnCandle(df *model.Dataframe, broker service.Broker) {
