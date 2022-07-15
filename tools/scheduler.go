@@ -23,11 +23,17 @@ func NewScheduler(pair string) *Scheduler {
 }
 
 func (s *Scheduler) SellWhen(size float64, condition func(df *ninjabot.Dataframe) bool) {
-	s.orderConditions = append(s.orderConditions, OrderCondition{Condition: condition, Size: size, Side: ninjabot.SideTypeSell})
+	s.orderConditions = append(
+		s.orderConditions,
+		OrderCondition{Condition: condition, Size: size, Side: ninjabot.SideTypeSell},
+	)
 }
 
 func (s *Scheduler) BuyWhen(size float64, condition func(df *ninjabot.Dataframe) bool) {
-	s.orderConditions = append(s.orderConditions, OrderCondition{Condition: condition, Size: size, Side: ninjabot.SideTypeSell})
+	s.orderConditions = append(
+		s.orderConditions,
+		OrderCondition{Condition: condition, Size: size, Side: ninjabot.SideTypeSell},
+	)
 }
 
 func (s *Scheduler) Update(df *ninjabot.Dataframe, broker service.Broker) {
