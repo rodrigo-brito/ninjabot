@@ -103,10 +103,11 @@ Chart available at http://localhost:8080
   - [x] Plot (Candles + Sell / Buy orders, Indicators)
   - [x] Telegram Controller (Status, Buy, Sell, and Notification)
   - [x] Heikin Ashi candle type support
+  - [x] Trailing stop tool
+  - [x] In app order scheduler
 
 # Roadmap
   - [ ] Include Web UI Controller
-  - [ ] Include trailing stop tool
   - [ ] Include more chart indicators - [Details](https://github.com/rodrigo-brito/ninjabot/issues/110)
   - [ ] Support future market - [Details](https://github.com/rodrigo-brito/ninjabot/issues/106)
 
