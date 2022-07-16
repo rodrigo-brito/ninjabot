@@ -194,12 +194,14 @@
 	)
 
 	<span style=color:#75715e>// Initialize a chart to plot trading results
-</span><span style=color:#75715e></span>	<span style=color:#a6e22e>chart</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>NewChart</span>(<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithIndicators</span>(
-		<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>EMA</span>(<span style=color:#ae81ff>8</span>, <span style=color:#e6db74>&#34;red&#34;</span>),
-		<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>EMA</span>(<span style=color:#ae81ff>21</span>, <span style=color:#e6db74>&#34;#000&#34;</span>),
-		<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>RSI</span>(<span style=color:#ae81ff>14</span>, <span style=color:#e6db74>&#34;purple&#34;</span>),
-		<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>Stoch</span>(<span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>3</span>, <span style=color:#e6db74>&#34;red&#34;</span>, <span style=color:#e6db74>&#34;blue&#34;</span>),
-	), <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>))
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>chart</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>NewChart</span>(
+		<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithStrategyIndicators</span>(<span style=color:#a6e22e>strategy</span>), <span style=color:#75715e>// load indicators from strategy
+</span><span style=color:#75715e></span>		<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithCustomIndicators</span>( <span style=color:#75715e>// you can specify additiona indicators
+</span><span style=color:#75715e></span>			<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>RSI</span>(<span style=color:#ae81ff>14</span>, <span style=color:#e6db74>&#34;purple&#34;</span>),
+			<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>Stoch</span>(<span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>3</span>, <span style=color:#e6db74>&#34;red&#34;</span>, <span style=color:#e6db74>&#34;blue&#34;</span>),
+		),
+		<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>), <span style=color:#75715e>// necessary to display the equity chart
+</span><span style=color:#75715e></span>	)
 	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
 		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
 	}
@@ -237,39 +239,39 @@
 </code></pre></div><p>To execute your strategy, just run:</p>
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go run main.go
 </code></pre></div><p>Output:</p>
-<pre tabindex=0><code>INFO[2021-10-31 18:13] [SETUP] Using paper wallet                   
-INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT 
-+---------+--------+-----+------+--------+--------+----------+-----------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT  |  VOLUME   |
-+---------+--------+-----+------+--------+--------+----------+-----------+
-| BTCUSDT |     22 |  10 |   12 | 45.5 % |  4.726 |  7086.25 | 279230.67 |
-| ETHUSDT |     22 |  14 |    8 | 63.6 % |  4.356 | 12723.04 | 272443.48 |
-+---------+--------+-----+------+--------+--------+----------+-----------+
-|   TOTAL |     44 |  24 |   20 | 54.5 % |  4.541 | 19809.29 | 551674.15 |
-+---------+--------+-----+------+--------+--------+----------+-----------+
+<pre tabindex=0><code>INFO[2021-10-31 18:13] [SETUP] Using paper wallet
+INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | SQN |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
+| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.929 | 1.5 | 13511.66 | 448030.05 |
+| ETHUSDT |      9 |   6 |    3 | 66.7 % |  3.407 | 1.3 | 21748.41 | 407769.64 |
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
+|   TOTAL |     23 |  12 |   11 | 52.2 % |  4.942 | 1.4 | 35260.07 | 855799.68 |
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
 
---------------
-WALLET SUMMARY
---------------
-0.000000 BTC = 0.000000 USDT
-0.000000 ETH = 0.000000 USDT
+-- FINAL WALLET --
+0.0000 BTC = 0.0000 USDT
+0.0000 ETH = 0.0000 USDT
+45260.0735 USDT
 
-TRADING VOLUME
-BTCUSDT        = 279230.67 USDT
-ETHUSDT        = 272443.48 USDT
+----- RETURNS -----
+START PORTFOLIO     = 10000.00 USDT
+FINAL PORTFOLIO     = 45260.07 USDT
+GROSS PROFIT        =  35260.073493 USDT (352.60%)
+MARKET CHANGE (B&amp;H) =  407.09%
 
-29809.287688 USDT
---------------
-START PORTFOLIO = 10000.00 USDT
-FINAL PORTFOLIO = 29809.29 USDT
-GROSS PROFIT    =  19809.287688 USDT (198.09%)
-MARKET (B&amp;H)    =  407.84%
-MAX DRAWDOWN    =  -7.55 %
-VOLUME          =  551674.15 USDT
-COSTS (0.001*V) =  551.67 USDT (ESTIMATION) 
---------------
+------ RISK -------
+MAX DRAWDOWN = -11.76 %
 
+------ VOLUME -----
+ETHUSDT         = 407769.64 USDT
+BTCUSDT         = 448030.05 USDT
+TOTAL           = 855799.68 USDT
+COSTS (0.001*V) = 855.80 USDT (ESTIMATION)
+-------------------
 Chart available at http://localhost:8080
+
 </code></pre><p><img src=https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png alt=SignatureJohnLennon></p>
 <div class=section-index>
 </div>
