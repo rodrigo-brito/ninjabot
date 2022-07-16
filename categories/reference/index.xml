@@ -47,24 +47,28 @@ OPTIONS:
 &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot&amp;#34;&lt;/span>
 &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot/indicator&amp;#34;&lt;/span>
 )
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, you can create a chart using &lt;code>plot.NewChart&lt;/code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the options &lt;code>WithIndicators&lt;/code>, in which receives one or more idicators.&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, you can create a chart using &lt;code>plot.NewChart&lt;/code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the options &lt;code>WithCustomIndicators&lt;/code>, in which receives one or more idicators.&lt;/p>
 &lt;p>Currently, Ninjabot supports the following indicators in charts:&lt;/p>
 &lt;ul>
 &lt;li>Exponential Moving Average (EMA)&lt;/li>
+&lt;li>Simple Moving Average (SMA)&lt;/li>
+&lt;li>Commodity Channel Index (CCI)&lt;/li>
 &lt;li>Relative Strength Index (RSI)&lt;/li>
 &lt;li>Stochastic Oscillator (STOCH)&lt;/li>
+&lt;li>Williams' %R&lt;/li>
 &lt;li>Bollinger Bands&lt;/li>
 &lt;li>Supertrend&lt;/li>
 &lt;/ul>
 &lt;p>For each indicator, you need to inform the parameters that are necessary and colors. We accept the color name and HEX code as bellow.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">chart&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">NewChart&lt;/span>(
-&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithIndicators&lt;/span>( &lt;span style="color:#75715e">// Optional parameter to include indicators
+&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithCustomIndicators&lt;/span>( &lt;span style="color:#75715e">// Optional parameter to include indicators
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>),
 &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">21&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;#000&amp;#34;&lt;/span>),
 &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">RSI&lt;/span>(&lt;span style="color:#ae81ff">14&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;purple&amp;#34;&lt;/span>),
 &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">Stoch&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;blue&amp;#34;&lt;/span>),
 ),
-&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
+&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithStrategyIndicators&lt;/span>(&lt;span style="color:#a6e22e">strategy&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include indicators from your strategy
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPort&lt;/span>(&lt;span style="color:#ae81ff">8080&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to customize the port number
 &lt;/span>&lt;span style="color:#75715e">&lt;/span>)
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
@@ -149,14 +153,16 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Strategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
 &lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span>
 &lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span>
-&lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>)
+&lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>
 &lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>)
-}
+&lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) &lt;span style="color:#75715e">// Optional
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
 &lt;/code>&lt;/pre>&lt;/div>&lt;ul>
 &lt;li>&lt;code>Timeframe&lt;/code>: specifies the strategy timeframe, eg: &amp;ldquo;15m&amp;rdquo;, &amp;ldquo;1h&amp;rdquo;, &amp;ldquo;1d&amp;rdquo;, &amp;ldquo;1w&amp;rdquo;.&lt;/li>
 &lt;li>&lt;code>WarmupPeriod&lt;/code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the &lt;code>WarmupPeriod&lt;/code> should be 9.&lt;/li>
-&lt;li>&lt;code>Indicators&lt;/code>: this function creates custom indicators, it is called for each new candle received.&lt;/li>
-&lt;li>&lt;code>OnCandle&lt;/code>: this function is also called for each new candle, after &lt;code>Indicators&lt;/code> execution. This function should contain your buy and sell rules. &lt;code>Dataframe&lt;/code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the &lt;code>Broker&lt;/code> operator.&lt;/li>
+&lt;li>&lt;code>Indicators&lt;/code>: this function creates custom indicators, it is called for each new candle received. You can also return a list of indicators to display in the chart.&lt;/li>
+&lt;li>&lt;code>OnCandle&lt;/code>: this function is also called for each new &lt;strong>closed candle&lt;/strong>, after &lt;code>Indicators&lt;/code> execution. This function should contain your buy and sell rules. &lt;code>Dataframe&lt;/code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the &lt;code>Broker&lt;/code> operator.&lt;/li>
+&lt;li>&lt;code>OnPartialCandle&lt;/code>: this functions is optional, it will be called with high frequency, usually called every 2 seconds with partial data of current candle.&lt;/li>
 &lt;/ul>
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.&lt;/p>
@@ -171,11 +177,27 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>
 }
 &lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span> {
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#ae81ff">9&lt;/span>
-}
-&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#ae81ff">9&lt;/span> &lt;span style="color:#75715e">// warmup period, to preload indicators
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">ChartIndicator&lt;/span> {
 &lt;span style="color:#75715e">// define a custom indicator, Exponential Moving Average of 9 periods
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">talib&lt;/span>.&lt;span style="color:#a6e22e">Ema&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>, &lt;span style="color:#ae81ff">9&lt;/span>)
+&lt;span style="color:#75715e">// you can return a list of indicators to include in the final chart
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">return&lt;/span> []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>{
+{
+&lt;span style="color:#a6e22e">Overlay&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
+&lt;span style="color:#a6e22e">Time&lt;/span>: &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>,
+&lt;span style="color:#a6e22e">GroupName&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;EMA&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Metrics&lt;/span>: []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span>{
+{
+&lt;span style="color:#a6e22e">Values&lt;/span>: &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>],
+&lt;span style="color:#a6e22e">Name&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;EMA 9&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Style&lt;/span>: &lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">StyleLine&lt;/span>,
+},
+},
+},
+}
 }
 &lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
 &lt;span style="color:#75715e">// Get the quote and assets information
@@ -185,7 +207,7 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 }
 &lt;span style="color:#75715e">// Check if we have more than 10 USDT available in the wallet and the buy signal is triggered
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">quotePosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">10&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossover&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
-&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarketQuote&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeBuy&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>&lt;span style="color:#f92672">/&lt;/span>&lt;span style="color:#ae81ff">2&lt;/span>)
+&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarketQuote&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeBuy&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#ae81ff">0.99&lt;/span>)
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
 &lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
 }
@@ -202,8 +224,7 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="heikin-ashi-candle-type-support">Heikin Ashi candle type support&lt;/h3>
 &lt;p>&lt;!-- raw HTML omitted -->&lt;/p>
 &lt;ul>
-&lt;li>
-&lt;p>CSV Feed exchange&lt;/p>
+&lt;li>CSV Feed exchange
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">csvFeed&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewCSVFeed&lt;/span>(
 &lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">Timeframe&lt;/span>(),
 &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">PairFeed&lt;/span>{
@@ -213,11 +234,16 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#a6e22e">HeikinAshi&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
 },
 &lt;/code>&lt;/pre>&lt;/div>&lt;/li>
-&lt;li>
-&lt;p>Binance&lt;/p>
+&lt;li>Binance
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinance&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceHeikinAshiCandle&lt;/span>())
 &lt;/code>&lt;/pre>&lt;/div>&lt;/li>
-&lt;/ul></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
+&lt;/ul>
+&lt;h3 id="high-frequency-trading-hft">High Frequency Trading (HFT)&lt;/h3>
+&lt;p>You also have access to partial candle updates through the function &lt;code>OnPartialCandle&lt;/code>. This can be useful for handling high frequency logic, such as using trailing stop or scalping techniques. See an example of usage below. This function is usually called every 2 seconds and may have small time variations.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
+&lt;span style="color:#75715e">// my logic here...
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
 &lt;h2 id="installation">Installation&lt;/h2>
 &lt;p>To set up a Telegram bot, you should follow these steps:&lt;/p>
 &lt;h3 id="create-a-new-bot-in-your-telegram-account">Create a new bot in your Telegram account&lt;/h3>

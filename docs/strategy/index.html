@@ -92,6 +92,7 @@
 <li><a href=#example>Example</a>
 <ul>
 <li><a href=#heikin-ashi-candle-type-support>Heikin Ashi candle type support</a></li>
+<li><a href=#high-frequency-trading-hft>High Frequency Trading (HFT)</a></li>
 </ul>
 </li>
 </ul>
@@ -131,21 +132,23 @@
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#66d9ef>type</span> <span style=color:#a6e22e>Strategy</span> <span style=color:#66d9ef>interface</span> {
 	<span style=color:#a6e22e>Timeframe</span>() <span style=color:#66d9ef>string</span>
 	<span style=color:#a6e22e>WarmupPeriod</span>() <span style=color:#66d9ef>int</span>
-	<span style=color:#a6e22e>Indicators</span>(<span style=color:#a6e22e>dataframe</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>)
+	<span style=color:#a6e22e>Indicators</span>(<span style=color:#a6e22e>dataframe</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>) []<span style=color:#a6e22e>ChartIndicator</span>
 	<span style=color:#a6e22e>OnCandle</span>(<span style=color:#a6e22e>dataframe</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>, <span style=color:#a6e22e>broker</span> <span style=color:#a6e22e>service</span>.<span style=color:#a6e22e>Broker</span>)
-}
+	<span style=color:#a6e22e>OnPartialCandle</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>, <span style=color:#a6e22e>broker</span> <span style=color:#a6e22e>service</span>.<span style=color:#a6e22e>Broker</span>) <span style=color:#75715e>// Optional
+</span><span style=color:#75715e></span>}
 </code></pre></div><ul>
 <li><code>Timeframe</code>: specifies the strategy timeframe, eg: &ldquo;15m&rdquo;, &ldquo;1h&rdquo;, &ldquo;1d&rdquo;, &ldquo;1w&rdquo;.</li>
 <li><code>WarmupPeriod</code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the <code>WarmupPeriod</code> should be 9.</li>
-<li><code>Indicators</code>: this function creates custom indicators, it is called for each new candle received.</li>
-<li><code>OnCandle</code>: this function is also called for each new candle, after <code>Indicators</code> execution. This function should contain your buy and sell rules. <code>Dataframe</code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the <code>Broker</code> operator.</li>
+<li><code>Indicators</code>: this function creates custom indicators, it is called for each new candle received. You can also return a list of indicators to display in the chart.</li>
+<li><code>OnCandle</code>: this function is also called for each new <strong>closed candle</strong>, after <code>Indicators</code> execution. This function should contain your buy and sell rules. <code>Dataframe</code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the <code>Broker</code> operator.</li>
+<li><code>OnPartialCandle</code>: this functions is optional, it will be called with high frequency, usually called every 2 seconds with partial data of current candle.</li>
 </ul>
 <h2 id=example>Example</h2>
 <p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.</p>
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>import</span> (
     <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot&#34;</span>
     <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/service&#34;</span>
-    
+
     <span style=color:#e6db74>&#34;github.com/markcheno/go-talib&#34;</span>
     <span style=color:#a6e22e>log</span> <span style=color:#e6db74>&#34;github.com/sirupsen/logrus&#34;</span>
 )
@@ -157,12 +160,30 @@
 }
 
 <span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>WarmupPeriod</span>() <span style=color:#66d9ef>int</span> {
-	<span style=color:#66d9ef>return</span> <span style=color:#ae81ff>9</span>
-}
+	<span style=color:#66d9ef>return</span> <span style=color:#ae81ff>9</span> <span style=color:#75715e>// warmup period, to preload indicators
+</span><span style=color:#75715e></span>}
 
-<span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>Indicators</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>) {
+<span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>Indicators</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>) []<span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>ChartIndicator</span> {
 	<span style=color:#75715e>// define a custom indicator, Exponential Moving Average of 9 periods
 </span><span style=color:#75715e></span>	<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>] = <span style=color:#a6e22e>talib</span>.<span style=color:#a6e22e>Ema</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>, <span style=color:#ae81ff>9</span>)
+
+
+	<span style=color:#75715e>// you can return a list of indicators to include in the final chart
+</span><span style=color:#75715e></span>	<span style=color:#66d9ef>return</span> []<span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>ChartIndicator</span>{
+		{
+			<span style=color:#a6e22e>Overlay</span>:   <span style=color:#66d9ef>true</span>,
+			<span style=color:#a6e22e>Time</span>:      <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Time</span>,
+			<span style=color:#a6e22e>GroupName</span>: <span style=color:#e6db74>&#34;EMA&#34;</span>,
+			<span style=color:#a6e22e>Metrics</span>: []<span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>IndicatorMetric</span>{
+				{
+					<span style=color:#a6e22e>Values</span>: <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>],
+					<span style=color:#a6e22e>Name</span>:   <span style=color:#e6db74>&#34;EMA 9&#34;</span>,
+					<span style=color:#a6e22e>Color</span>:  <span style=color:#e6db74>&#34;red&#34;</span>,
+					<span style=color:#a6e22e>Style</span>:  <span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>StyleLine</span>,
+				},
+			},
+		},
+	}
 }
 
 <span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>OnCandle</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>, <span style=color:#a6e22e>broker</span> <span style=color:#a6e22e>service</span>.<span style=color:#a6e22e>Broker</span>) {
@@ -171,15 +192,15 @@
 	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
 		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>)
 	}
-	
+
 	<span style=color:#75715e>// Check if we have more than 10 USDT available in the wallet and the buy signal is triggered
 </span><span style=color:#75715e></span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>quotePosition</span> &gt; <span style=color:#ae81ff>10</span> <span style=color:#f92672>&amp;&amp;</span> <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>.<span style=color:#a6e22e>Crossover</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>]) {
-		<span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>CreateOrderMarketQuote</span>(<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>SideTypeBuy</span>, <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Pair</span>, <span style=color:#a6e22e>quotePosition</span><span style=color:#f92672>/</span><span style=color:#ae81ff>2</span>)
+		<span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>CreateOrderMarketQuote</span>(<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>SideTypeBuy</span>, <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Pair</span>, <span style=color:#a6e22e>quotePosition</span><span style=color:#f92672>*</span><span style=color:#ae81ff>0.99</span>)
 		<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
 			<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>)
 		}
 	}
-	
+
 	<span style=color:#75715e>// Check if we have position in the pair and the sell signal is triggered
 </span><span style=color:#75715e></span>	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>assetPosition</span> &gt; <span style=color:#ae81ff>0</span> <span style=color:#f92672>&amp;&amp;</span>
 		<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>.<span style=color:#a6e22e>Crossunder</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>]) {
@@ -192,22 +213,26 @@
 </code></pre></div><h3 id=heikin-ashi-candle-type-support>Heikin Ashi candle type support</h3>
 <p></p>
 <ul>
-<li>
-<p>CSV Feed exchange</p>
+<li>CSV Feed exchange
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>csvFeed</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewCSVFeed</span>(
     <span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>Timeframe</span>(),
     <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>PairFeed</span>{
         <span style=color:#a6e22e>Pair</span>:      <span style=color:#e6db74>&#34;FTMUSDT&#34;</span>,
         <span style=color:#a6e22e>File</span>:      <span style=color:#e6db74>&#34;testdata/ftm-1d.csv&#34;</span>,
-        <span style=color:#a6e22e>Timeframe</span>: <span style=color:#e6db74>&#34;1d&#34;</span>, 
+        <span style=color:#a6e22e>Timeframe</span>: <span style=color:#e6db74>&#34;1d&#34;</span>,
         <span style=color:#a6e22e>HeikinAshi</span>: <span style=color:#66d9ef>true</span>,
 },
 </code></pre></div></li>
-<li>
-<p>Binance</p>
+<li>Binance
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>binance</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewBinance</span>(<span style=color:#a6e22e>ctx</span>, <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithBinanceHeikinAshiCandle</span>())
 </code></pre></div></li>
 </ul>
+<h3 id=high-frequency-trading-hft>High Frequency Trading (HFT)</h3>
+<p>You also have access to partial candle updates through the function <code>OnPartialCandle</code>. This can be useful for handling high frequency logic, such as using trailing stop or scalping techniques. See an example of usage below. This function is usually called every 2 seconds and may have small time variations.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>OnPartialCandle</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>model</span>.<span style=color:#a6e22e>Dataframe</span>, <span style=color:#a6e22e>broker</span> <span style=color:#a6e22e>service</span>.<span style=color:#a6e22e>Broker</span>) {
+	<span style=color:#75715e>// my logic here...
+</span><span style=color:#75715e></span>}
+</code></pre></div>
 <div class=section-index>
 </div>
 </div>

@@ -132,24 +132,28 @@
 	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/plot&#34;</span>
 	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/plot/indicator&#34;</span>
 )
-</code></pre></div><p>Then, you can create a chart using <code>plot.NewChart</code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the options <code>WithIndicators</code>, in which receives one or more idicators.</p>
+</code></pre></div><p>Then, you can create a chart using <code>plot.NewChart</code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the options <code>WithCustomIndicators</code>, in which receives one or more idicators.</p>
 <p>Currently, Ninjabot supports the following indicators in charts:</p>
 <ul>
 <li>Exponential Moving Average (EMA)</li>
+<li>Simple Moving Average (SMA)</li>
+<li>Commodity Channel Index (CCI)</li>
 <li>Relative Strength Index (RSI)</li>
 <li>Stochastic Oscillator (STOCH)</li>
+<li>Williams' %R</li>
 <li>Bollinger Bands</li>
 <li>Supertrend</li>
 </ul>
 <p>For each indicator, you need to inform the parameters that are necessary and colors. We accept the color name and HEX code as bellow.</p>
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>chart</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>NewChart</span>(
-	<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithIndicators</span>( <span style=color:#75715e>// Optional parameter to include indicators
+	<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithCustomIndicators</span>( <span style=color:#75715e>// Optional parameter to include indicators
 </span><span style=color:#75715e></span>        <span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>EMA</span>(<span style=color:#ae81ff>8</span>, <span style=color:#e6db74>&#34;red&#34;</span>),
         <span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>EMA</span>(<span style=color:#ae81ff>21</span>, <span style=color:#e6db74>&#34;#000&#34;</span>),
         <span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>RSI</span>(<span style=color:#ae81ff>14</span>, <span style=color:#e6db74>&#34;purple&#34;</span>),
         <span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>Stoch</span>(<span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>3</span>, <span style=color:#e6db74>&#34;red&#34;</span>, <span style=color:#e6db74>&#34;blue&#34;</span>),
     ),
-    <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>), <span style=color:#75715e>// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
+	<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithStrategyIndicators</span>(<span style=color:#a6e22e>strategy</span>), <span style=color:#75715e>// Optional parameter to include indicators from your strategy
+</span><span style=color:#75715e></span>    <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>), <span style=color:#75715e>// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
 </span><span style=color:#75715e></span>    <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithPort</span>(<span style=color:#ae81ff>8080</span>), <span style=color:#75715e>// Optional parameter to customize the port number
 </span><span style=color:#75715e></span>)
 <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
@@ -164,7 +168,7 @@
     <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithBacktest</span>(<span style=color:#a6e22e>wallet</span>),
     <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithStorage</span>(<span style=color:#a6e22e>storage</span>),
     <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithLogLevel</span>(<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>WarnLevel</span>),
-    
+
     <span style=color:#75715e>// chart settings
 </span><span style=color:#75715e></span>    <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithCandleSubscription</span>(<span style=color:#a6e22e>chart</span>),
     <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithOrderSubscription</span>(<span style=color:#a6e22e>chart</span>),
