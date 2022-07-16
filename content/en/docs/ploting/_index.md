@@ -4,7 +4,7 @@ linkTitle: "Plotting"
 categories: ["Reference"]
 weight: 2
 description: >
-    This page describes how to set up Ninjabot chart.
+  This page describes how to set up Ninjabot chart.
 ---
 
 ## Basic Usage
@@ -18,25 +18,30 @@ import (
 )
 ```
 
-Then, you can create a chart using `plot.NewChart`. The following example creates a chart with 3 indicators. To include indicators, you must pass the options `WithIndicators`, in which receives one or more idicators.
+Then, you can create a chart using `plot.NewChart`. The following example creates a chart with 3 indicators. To include indicators, you must pass the options `WithCustomIndicators`, in which receives one or more idicators.
 
 Currently, Ninjabot supports the following indicators in charts:
 
 - Exponential Moving Average (EMA)
+- Simple Moving Average (SMA)
+- Commodity Channel Index (CCI)
 - Relative Strength Index (RSI)
 - Stochastic Oscillator (STOCH)
+- Williams' %R
 - Bollinger Bands
 - Supertrend
 
 For each indicator, you need to inform the parameters that are necessary and colors. We accept the color name and HEX code as bellow.
+
 ```go
 chart, err := plot.NewChart(
-	plot.WithIndicators( // Optional parameter to include indicators
+	plot.WithCustomIndicators( // Optional parameter to include indicators
         indicator.EMA(8, "red"),
         indicator.EMA(21, "#000"),
         indicator.RSI(14, "purple"),
         indicator.Stoch(8, 3, 3, "red", "blue"),
     ),
+	plot.WithStrategyIndicators(strategy), // Optional parameter to include indicators from your strategy
     plot.WithPaperWallet(wallet), // Optional parameter to include portfolio results (drawdown, equity evolution, etc)
     plot.WithPort(8080), // Optional parameter to customize the port number
 )
@@ -56,7 +61,7 @@ bot, err := ninjabot.NewBot(
     ninjabot.WithBacktest(wallet),
     ninjabot.WithStorage(storage),
     ninjabot.WithLogLevel(log.WarnLevel),
-    
+
     // chart settings
     ninjabot.WithCandleSubscription(chart),
     ninjabot.WithOrderSubscription(chart),
