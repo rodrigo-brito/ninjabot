@@ -4,7 +4,7 @@ linkTitle: "Getting Started"
 categories: ["Guides"]
 weight: 2
 description: >
-    This page describes the first steps do install and setup a basic bot with Ninjabot
+  This page describes the first steps do install and setup a basic bot with Ninjabot
 ---
 
 ## Install CLI
@@ -12,9 +12,11 @@ description: >
 Ninjabot CLI provides utilities commands to support backtesting and bot development.
 
 You can install CLI with the following command
+
 ```bash
 go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest
 ```
+
 Or downloading pre-build binaries in [release page](https://github.com/rodrigo-brito/ninjabot/releases).
 
 ## Creating a new project
@@ -26,11 +28,13 @@ go mod init example
 ```
 
 Download the latest version of Ninjabot library
+
 ```bash
 go get -u github.com/rodrigo-brito/ninjabot/...
 ```
 
 Downloading 720 days from BTCUSDT historical data for backtesting.
+
 ```bash
 ninjabot download --pair BTCUSDT --timeframe 1d --days 720 --output ./btc.csv
 ```
@@ -97,12 +101,14 @@ func main() {
 	)
 
 	// Initialize a chart to plot trading results
-	chart, err := plot.NewChart(plot.WithIndicators(
-		indicator.EMA(8, "red"),
-		indicator.EMA(21, "#000"),
-		indicator.RSI(14, "purple"),
-		indicator.Stoch(8, 3, 3, "red", "blue"),
-	), plot.WithPaperWallet(wallet))
+	chart, err := plot.NewChart(
+		plot.WithStrategyIndicators(strategy), // load indicators from strategy
+		plot.WithCustomIndicators( // you can specify additiona indicators
+			indicator.RSI(14, "purple"),
+			indicator.Stoch(8, 3, 3, "red", "blue"),
+		),
+		plot.WithPaperWallet(wallet), // necessary to display the equity chart
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -145,43 +151,42 @@ To execute your strategy, just run:
 go run main.go
 ```
 
-
 Output:
 
 ```
-INFO[2021-10-31 18:13] [SETUP] Using paper wallet                   
-INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT 
-+---------+--------+-----+------+--------+--------+----------+-----------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF |  PROFIT  |  VOLUME   |
-+---------+--------+-----+------+--------+--------+----------+-----------+
-| BTCUSDT |     22 |  10 |   12 | 45.5 % |  4.726 |  7086.25 | 279230.67 |
-| ETHUSDT |     22 |  14 |    8 | 63.6 % |  4.356 | 12723.04 | 272443.48 |
-+---------+--------+-----+------+--------+--------+----------+-----------+
-|   TOTAL |     44 |  24 |   20 | 54.5 % |  4.541 | 19809.29 | 551674.15 |
-+---------+--------+-----+------+--------+--------+----------+-----------+
+INFO[2021-10-31 18:13] [SETUP] Using paper wallet
+INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | SQN |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
+| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.929 | 1.5 | 13511.66 | 448030.05 |
+| ETHUSDT |      9 |   6 |    3 | 66.7 % |  3.407 | 1.3 | 21748.41 | 407769.64 |
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
+|   TOTAL |     23 |  12 |   11 | 52.2 % |  4.942 | 1.4 | 35260.07 | 855799.68 |
++---------+--------+-----+------+--------+--------+-----+----------+-----------+
 
---------------
-WALLET SUMMARY
---------------
-0.000000 BTC = 0.000000 USDT
-0.000000 ETH = 0.000000 USDT
+-- FINAL WALLET --
+0.0000 BTC = 0.0000 USDT
+0.0000 ETH = 0.0000 USDT
+45260.0735 USDT
 
-TRADING VOLUME
-BTCUSDT        = 279230.67 USDT
-ETHUSDT        = 272443.48 USDT
+----- RETURNS -----
+START PORTFOLIO     = 10000.00 USDT
+FINAL PORTFOLIO     = 45260.07 USDT
+GROSS PROFIT        =  35260.073493 USDT (352.60%)
+MARKET CHANGE (B&H) =  407.09%
 
-29809.287688 USDT
---------------
-START PORTFOLIO = 10000.00 USDT
-FINAL PORTFOLIO = 29809.29 USDT
-GROSS PROFIT    =  19809.287688 USDT (198.09%)
-MARKET (B&H)    =  407.84%
-MAX DRAWDOWN    =  -7.55 %
-VOLUME          =  551674.15 USDT
-COSTS (0.001*V) =  551.67 USDT (ESTIMATION) 
---------------
+------ RISK -------
+MAX DRAWDOWN = -11.76 %
 
+------ VOLUME -----
+ETHUSDT         = 407769.64 USDT
+BTCUSDT         = 448030.05 USDT
+TOTAL           = 855799.68 USDT
+COSTS (0.001*V) = 855.80 USDT (ESTIMATION)
+-------------------
 Chart available at http://localhost:8080
+
 ```
 
 ![SignatureJohnLennon](https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png)
