@@ -77,7 +77,8 @@ func SARExt(inHigh []float64, inLow []float64,
 	inAccelerationInitShort float64,
 	inAccelerationShort float64,
 	inAccelerationMaxShort float64) []float64 {
-	return talib.SarExt(inHigh, inLow, inStartValue, inOffsetOnReverse, inAccelerationInitLong, inAccelerationLong, inAccelerationMaxLong, inAccelerationInitShort, inAccelerationShort, inAccelerationMaxShort)
+	return talib.SarExt(inHigh, inLow, inStartValue, inOffsetOnReverse, inAccelerationInitLong, inAccelerationLong,
+		inAccelerationMaxLong, inAccelerationInitShort, inAccelerationShort, inAccelerationMaxShort)
 }
 
 // SMA - simple moving average
@@ -153,7 +154,8 @@ func MACD(input []float64, inFastPeriod int, inSlowPeriod int, inSignalPeriod in
 	return talib.Macd(input, inFastPeriod, inSlowPeriod, inSignalPeriod)
 }
 
-func MACDExt(input []float64, inFastPeriod int, inFastMAType MaType, inSlowPeriod int, inSlowMAType MaType, inSignalPeriod int, inSignalMAType MaType) ([]float64, []float64, []float64) {
+func MACDExt(input []float64, inFastPeriod int, inFastMAType MaType, inSlowPeriod int, inSlowMAType MaType,
+	inSignalPeriod int, inSignalMAType MaType) ([]float64, []float64, []float64) {
 	return talib.MacdExt(input, inFastPeriod, inFastMAType, inSlowPeriod, inSlowMAType, inSignalPeriod, inSignalMAType)
 }
 
@@ -217,17 +219,23 @@ func RSI(input []float64, period int) []float64 {
 }
 
 // Stoch is slow stochastic indicator.
-func Stoch(inHigh []float64, inLow []float64, inClose []float64, inFastKPeriod int, inSlowKPeriod int, inSlowKMAType MaType, inSlowDPeriod int, inSlowDMAType MaType) ([]float64, []float64) {
+func Stoch(inHigh []float64, inLow []float64, inClose []float64, inFastKPeriod int, inSlowKPeriod int,
+	inSlowKMAType MaType, inSlowDPeriod int, inSlowDMAType MaType) ([]float64, []float64) {
+
 	return talib.Stoch(inHigh, inLow, inClose, inFastKPeriod, inSlowKPeriod, inSlowKMAType, inSlowDPeriod, inSlowDMAType)
 }
 
 // StochF is fast stochastic indicator.
-func StochF(inHigh []float64, inLow []float64, inClose []float64, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]float64, []float64) {
+func StochF(inHigh []float64, inLow []float64, inClose []float64, inFastKPeriod int, inFastDPeriod int,
+	inFastDMAType MaType) ([]float64, []float64) {
+
 	return talib.StochF(inHigh, inLow, inClose, inFastKPeriod, inFastDPeriod, inFastDMAType)
 }
 
 // StochRSI is stochastic RSI indicator.
-func StochRSI(input []float64, period int, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]float64, []float64) {
+func StochRSI(input []float64, period int, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]float64,
+	[]float64) {
+
 	return talib.StochRsi(input, period, inFastKPeriod, inFastDPeriod, inFastDMAType)
 }
 
