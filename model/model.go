@@ -24,6 +24,14 @@ type Balance struct {
 	Lock float64
 }
 
+type Assets struct {
+	Pair      string
+	AssetTick string
+	AssetSize float64
+	QuoteTick string
+	QuoteSize float64
+}
+
 type AssetInfo struct {
 	BaseAsset  string
 	QuoteAsset string
@@ -129,13 +137,26 @@ type Account struct {
 	Balances []Balance
 }
 
-func (a Account) Balance(tick string) Balance {
+func (a Account) Balance(assetTick, quoteTick string) (Balance, Balance) {
+	var assetBalance, quoteBalance Balance
+	var isSetAsset, isSetQuote bool
+
 	for _, balance := range a.Balances {
-		if balance.Tick == tick {
-			return balance
+		switch balance.Tick {
+		case assetTick:
+			assetBalance = balance
+			isSetAsset = true
+		case quoteTick:
+			quoteBalance = balance
+			isSetQuote = true
+		}
+
+		if isSetAsset && isSetQuote {
+			break
 		}
 	}
-	return Balance{}
+
+	return assetBalance, quoteBalance
 }
 
 func (a Account) Equity() float64 {
