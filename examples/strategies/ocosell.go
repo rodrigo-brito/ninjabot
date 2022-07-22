@@ -1,11 +1,12 @@
 package strategies
 
 import (
+	"github.com/markcheno/go-talib"
+	"github.com/rodrigo-brito/ninjabot/indicator"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/strategy"
 
-	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,7 +21,7 @@ func (e OCOSell) WarmupPeriod() int {
 }
 
 func (e OCOSell) Indicators(df *model.Dataframe) []strategy.ChartIndicator {
-	df.Metadata["stoch"], df.Metadata["stoch_signal"] = talib.Stoch(
+	df.Metadata["stoch"], df.Metadata["stoch_signal"] = indicator.Stoch(
 		df.High,
 		df.Low,
 		df.Close,

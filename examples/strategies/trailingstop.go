@@ -1,12 +1,13 @@
 package strategies
 
 import (
-	"github.com/markcheno/go-talib"
 	"github.com/rodrigo-brito/ninjabot"
+	"github.com/rodrigo-brito/ninjabot/indicator"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/strategy"
 	"github.com/rodrigo-brito/ninjabot/tools"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -38,8 +39,8 @@ func (t trailing) WarmupPeriod() int {
 }
 
 func (t trailing) Indicators(df *model.Dataframe) []strategy.ChartIndicator {
-	df.Metadata["ema_fast"] = talib.Ema(df.Close, 8)
-	df.Metadata["sma_slow"] = talib.Sma(df.Close, 21)
+	df.Metadata["ema_fast"] = indicator.EMA(df.Close, 8)
+	df.Metadata["sma_slow"] = indicator.SMA(df.Close, 21)
 
 	return nil
 }
