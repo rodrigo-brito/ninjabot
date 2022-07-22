@@ -17,34 +17,37 @@ const (
 	TypeT3MA  = talib.T3MA
 )
 
-func BBands(input []float64, period int, deviation float64, maType MaType) ([]float64, []float64, []float64) {
+// BB - Bollinger Bands
+func BB(input []float64, period int, deviation float64, maType MaType) ([]float64, []float64, []float64) {
 	return talib.BBands(input, period, deviation, deviation, maType)
 }
 
-// DEMA is a double exponential moving average
+// DEMA - double exponential moving average
 func DEMA(input []float64, period int) []float64 {
 	return talib.Dema(input, period)
 }
 
-// EMA is a exponential moving average
+// EMA - exponential moving average
 func EMA(input []float64, period int) []float64 {
 	return talib.Ema(input, period)
 }
 
-func HtTrendline(input []float64) []float64 {
+func HTTrendline(input []float64) []float64 {
 	return talib.HtTrendline(input)
 }
 
-func Kama(input []float64, period int) []float64 {
+// KAMA - Kaufman Adaptive Moving Average
+func KAMA(input []float64, period int) []float64 {
 	return talib.Kama(input, period)
 }
 
-// MA is a moving average
+// MA - moving average
 func MA(input []float64, period int, maType MaType) []float64 {
 	return talib.Ma(input, period, maType)
 }
 
-func Mama(input []float64, inFastLimit float64, inSlowLimit float64) ([]float64, []float64) {
+// MAMA - moving average convergence/divergence
+func MAMA(input []float64, inFastLimit float64, inSlowLimit float64) ([]float64, []float64) {
 	return talib.Mama(input, inFastLimit, inSlowLimit)
 }
 
@@ -60,12 +63,12 @@ func MidPrice(inHigh []float64, inLow []float64, period int) []float64 {
 	return talib.MidPrice(inHigh, inLow, period)
 }
 
-// SAR is a parabolic SAR
+// SAR - parabolic SAR
 func SAR(inHigh []float64, inLow []float64, inAcceleration float64, inMaximum float64) []float64 {
 	return talib.Sar(inHigh, inLow, inAcceleration, inMaximum)
 }
 
-func SarExt(inHigh []float64, inLow []float64,
+func SARExt(inHigh []float64, inLow []float64,
 	inStartValue float64,
 	inOffsetOnReverse float64,
 	inAccelerationInitLong float64,
@@ -77,7 +80,7 @@ func SarExt(inHigh []float64, inLow []float64,
 	return talib.SarExt(inHigh, inLow, inStartValue, inOffsetOnReverse, inAccelerationInitLong, inAccelerationLong, inAccelerationMaxLong, inAccelerationInitShort, inAccelerationShort, inAccelerationMaxShort)
 }
 
-// SMA is a simple moving average
+// SMA - simple moving average
 func SMA(input []float64, period int) []float64 {
 	return talib.Sma(input, period)
 }
@@ -87,26 +90,28 @@ func T3(input []float64, period int, inVFactor float64) []float64 {
 	return talib.T3(input, period, inVFactor)
 }
 
-// TEMA is a triple exponential moving average
+// TEMA - triple exponential moving average
 func TEMA(input []float64, period int) []float64 {
 	return talib.Tema(input, period)
 }
 
-func Trima(input []float64, period int) []float64 {
+// TRIMA - Triangular Moving Average
+func TRIMA(input []float64, period int) []float64 {
 	return talib.Trima(input, period)
 }
 
-// WMA is a weighted moving average
+// WMA - weighted moving average
 func WMA(input []float64, period int) []float64 {
 	return talib.Wma(input, period)
 }
 
-// ADX is a relative strength index
+// ADX - relative strength index
 func ADX(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
 	return talib.Adx(inHigh, inLow, inClose, period)
 }
 
-func AdxR(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
+// ADXR - Average Directional Movement Index Rating
+func ADXR(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
 	return talib.AdxR(inHigh, inLow, inClose, period)
 }
 
@@ -128,12 +133,12 @@ func BOP(inOpen []float64, inHigh []float64, inLow []float64, inClose []float64)
 	return talib.Bop(inOpen, inHigh, inLow, inClose)
 }
 
-// CMO is a Chande Momentum Oscillator
+// CMO - Chande Momentum Oscillator
 func CMO(input []float64, period int) []float64 {
 	return talib.Cmo(input, period)
 }
 
-// CCI is a commodity channel index
+// CCI - commodity channel index
 func CCI(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
 	return talib.Cci(inHigh, inLow, inClose, period)
 }
@@ -143,7 +148,7 @@ func DX(inHigh []float64, inLow []float64, inClose []float64, period int) []floa
 	return talib.Dx(inHigh, inLow, inClose, period)
 }
 
-// MACD is a moving average convergence/divergence
+// MACD - moving average convergence/divergence
 func MACD(input []float64, inFastPeriod int, inSlowPeriod int, inSignalPeriod int) ([]float64, []float64, []float64) {
 	return talib.Macd(input, inFastPeriod, inSlowPeriod, inSignalPeriod)
 }
@@ -164,7 +169,7 @@ func MinusDM(inHigh []float64, inLow []float64, period int) []float64 {
 	return talib.MinusDM(inHigh, inLow, period)
 }
 
-// MFI is a money flow index
+// MFI - money flow index
 func MFI(inHigh []float64, inLow []float64, inClose []float64, inVolume []float64, period int) []float64 {
 	return talib.Mfi(inHigh, inLow, inClose, inVolume, period)
 }
@@ -206,7 +211,7 @@ func ROCR100(input []float64, period int) []float64 {
 	return talib.Rocr100(input, period)
 }
 
-// RSI is a relative strength index.
+// RSI - relative strength index.
 func RSI(input []float64, period int) []float64 {
 	return talib.Rsi(input, period)
 }
@@ -234,7 +239,7 @@ func UltOsc(inHigh []float64, inLow []float64, inClose []float64, period1 int, p
 	return talib.UltOsc(inHigh, inLow, inClose, period1, period2, period3)
 }
 
-// WilliamsR is a Williams %R indicator.
+// WilliamsR - Williams %R indicator.
 func WilliamsR(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
 	return talib.WillR(inHigh, inLow, inClose, period)
 }
