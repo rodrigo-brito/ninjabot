@@ -2,10 +2,10 @@ package strategies
 
 import (
 	"github.com/rodrigo-brito/ninjabot"
+	"github.com/rodrigo-brito/ninjabot/indicator"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/strategy"
 
-	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,8 +20,8 @@ func (e CrossEMA) WarmupPeriod() int {
 }
 
 func (e CrossEMA) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
-	df.Metadata["ema8"] = talib.Ema(df.Close, 8)
-	df.Metadata["sma21"] = talib.Sma(df.Close, 21)
+	df.Metadata["ema8"] = indicator.EMA(df.Close, 8)
+	df.Metadata["sma21"] = indicator.SMA(df.Close, 21)
 
 	return []strategy.ChartIndicator{
 		{
