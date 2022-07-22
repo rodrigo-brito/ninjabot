@@ -47,38 +47,38 @@ func MA(input []float64, period int, maType MaType) []float64 {
 }
 
 // MAMA - moving average convergence/divergence
-func MAMA(input []float64, inFastLimit float64, inSlowLimit float64) ([]float64, []float64) {
-	return talib.Mama(input, inFastLimit, inSlowLimit)
+func MAMA(input []float64, fastLimit float64, slowLimit float64) ([]float64, []float64) {
+	return talib.Mama(input, fastLimit, slowLimit)
 }
 
-func MaVp(input []float64, inPeriods []float64, inMinPeriod int, inMaxPeriod int, maType MaType) []float64 {
-	return talib.MaVp(input, inPeriods, inMinPeriod, inMaxPeriod, maType)
+func MaVp(input []float64, periods []float64, minPeriod int, maxPeriod int, maType MaType) []float64 {
+	return talib.MaVp(input, periods, minPeriod, maxPeriod, maType)
 }
 
 func MidPoint(input []float64, period int) []float64 {
 	return talib.MidPoint(input, period)
 }
 
-func MidPrice(inHigh []float64, inLow []float64, period int) []float64 {
-	return talib.MidPrice(inHigh, inLow, period)
+func MidPrice(high []float64, low []float64, period int) []float64 {
+	return talib.MidPrice(high, low, period)
 }
 
 // SAR - parabolic SAR
-func SAR(inHigh []float64, inLow []float64, inAcceleration float64, inMaximum float64) []float64 {
-	return talib.Sar(inHigh, inLow, inAcceleration, inMaximum)
+func SAR(high []float64, low []float64, inAcceleration float64, inMaximum float64) []float64 {
+	return talib.Sar(high, low, inAcceleration, inMaximum)
 }
 
-func SARExt(inHigh []float64, inLow []float64,
-	inStartValue float64,
-	inOffsetOnReverse float64,
-	inAccelerationInitLong float64,
-	inAccelerationLong float64,
-	inAccelerationMaxLong float64,
-	inAccelerationInitShort float64,
-	inAccelerationShort float64,
-	inAccelerationMaxShort float64) []float64 {
-	return talib.SarExt(inHigh, inLow, inStartValue, inOffsetOnReverse, inAccelerationInitLong, inAccelerationLong,
-		inAccelerationMaxLong, inAccelerationInitShort, inAccelerationShort, inAccelerationMaxShort)
+func SARExt(high []float64, low []float64,
+	startValue float64,
+	offsetOnReverse float64,
+	accelerationInitLong float64,
+	accelerationLong float64,
+	accelerationMaxLong float64,
+	accelerationInitShort float64,
+	accelerationShort float64,
+	accelerationMaxShort float64) []float64 {
+	return talib.SarExt(high, low, startValue, offsetOnReverse, accelerationInitLong, accelerationLong,
+		accelerationMaxLong, accelerationInitShort, accelerationShort, accelerationMaxShort)
 }
 
 // SMA - simple moving average
@@ -107,31 +107,31 @@ func WMA(input []float64, period int) []float64 {
 }
 
 // ADX - relative strength index
-func ADX(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.Adx(inHigh, inLow, inClose, period)
+func ADX(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.Adx(high, low, close, period)
 }
 
 // ADXR - Average Directional Movement Index Rating
-func ADXR(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.AdxR(inHigh, inLow, inClose, period)
+func ADXR(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.AdxR(high, low, close, period)
 }
 
 // APO - Absolute Price Oscillator
-func APO(input []float64, inFastPeriod int, inSlowPeriod int, maType MaType) []float64 {
-	return talib.Apo(input, inFastPeriod, inSlowPeriod, maType)
+func APO(input []float64, fastPeriod int, slowPeriod int, maType MaType) []float64 {
+	return talib.Apo(input, fastPeriod, slowPeriod, maType)
 }
 
-func Aroon(inHigh []float64, inLow []float64, period int) ([]float64, []float64) {
-	return talib.Aroon(inHigh, inLow, period)
+func Aroon(high []float64, low []float64, period int) ([]float64, []float64) {
+	return talib.Aroon(high, low, period)
 }
 
-func AroonOsc(inHigh []float64, inLow []float64, period int) []float64 {
-	return talib.AroonOsc(inHigh, inLow, period)
+func AroonOsc(high []float64, low []float64, period int) []float64 {
+	return talib.AroonOsc(high, low, period)
 }
 
 // BOP - Balance Of Power
-func BOP(inOpen []float64, inHigh []float64, inLow []float64, inClose []float64) []float64 {
-	return talib.Bop(inOpen, inHigh, inLow, inClose)
+func BOP(inOpen []float64, high []float64, low []float64, close []float64) []float64 {
+	return talib.Bop(inOpen, high, low, close)
 }
 
 // CMO - Chande Momentum Oscillator
@@ -140,57 +140,57 @@ func CMO(input []float64, period int) []float64 {
 }
 
 // CCI - commodity channel index
-func CCI(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.Cci(inHigh, inLow, inClose, period)
+func CCI(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.Cci(high, low, close, period)
 }
 
 // DX - Directional Movement Index
-func DX(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.Dx(inHigh, inLow, inClose, period)
+func DX(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.Dx(high, low, close, period)
 }
 
 // MACD - moving average convergence/divergence
-func MACD(input []float64, inFastPeriod int, inSlowPeriod int, inSignalPeriod int) ([]float64, []float64, []float64) {
-	return talib.Macd(input, inFastPeriod, inSlowPeriod, inSignalPeriod)
+func MACD(input []float64, fastPeriod int, slowPeriod int, signalPeriod int) ([]float64, []float64, []float64) {
+	return talib.Macd(input, fastPeriod, slowPeriod, signalPeriod)
 }
 
-func MACDExt(input []float64, inFastPeriod int, inFastMAType MaType, inSlowPeriod int, inSlowMAType MaType,
-	inSignalPeriod int, inSignalMAType MaType) ([]float64, []float64, []float64) {
-	return talib.MacdExt(input, inFastPeriod, inFastMAType, inSlowPeriod, inSlowMAType, inSignalPeriod, inSignalMAType)
+func MACDExt(input []float64, fastPeriod int, fastMAType MaType, slowPeriod int, inSlowMAType MaType,
+	signalPeriod int, signalMAType MaType) ([]float64, []float64, []float64) {
+	return talib.MacdExt(input, fastPeriod, fastMAType, slowPeriod, inSlowMAType, signalPeriod, signalMAType)
 }
 
-func MACDFix(input []float64, inSignalPeriod int) ([]float64, []float64, []float64) {
-	return talib.MacdFix(input, inSignalPeriod)
+func MACDFix(input []float64, signalPeriod int) ([]float64, []float64, []float64) {
+	return talib.MacdFix(input, signalPeriod)
 }
 
-func MinusDI(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.MinusDI(inHigh, inLow, inClose, period)
+func MinusDI(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.MinusDI(high, low, close, period)
 }
 
-func MinusDM(inHigh []float64, inLow []float64, period int) []float64 {
-	return talib.MinusDM(inHigh, inLow, period)
+func MinusDM(high []float64, low []float64, period int) []float64 {
+	return talib.MinusDM(high, low, period)
 }
 
 // MFI - money flow index
-func MFI(inHigh []float64, inLow []float64, inClose []float64, inVolume []float64, period int) []float64 {
-	return talib.Mfi(inHigh, inLow, inClose, inVolume, period)
+func MFI(high []float64, low []float64, close []float64, volume []float64, period int) []float64 {
+	return talib.Mfi(high, low, close, volume, period)
 }
 
 func Momentum(input []float64, period int) []float64 {
 	return talib.Mom(input, period)
 }
 
-func PlusDI(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.PlusDI(inHigh, inLow, inClose, period)
+func PlusDI(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.PlusDI(high, low, close, period)
 }
 
-func PlusDM(inHigh []float64, inLow []float64, period int) []float64 {
-	return talib.PlusDM(inHigh, inLow, period)
+func PlusDM(high []float64, low []float64, period int) []float64 {
+	return talib.PlusDM(high, low, period)
 }
 
 // PPO - Percentage Price Oscillator
-func PPO(input []float64, inFastPeriod int, inSlowPeriod int, maType MaType) []float64 {
-	return talib.Ppo(input, inFastPeriod, inSlowPeriod, maType)
+func PPO(input []float64, fastPeriod int, slowPeriod int, maType MaType) []float64 {
+	return talib.Ppo(input, fastPeriod, slowPeriod, maType)
 }
 
 // ROCP - Rate of change Percentage: (price-prevPrice)/prevPrice
@@ -219,81 +219,82 @@ func RSI(input []float64, period int) []float64 {
 }
 
 // Stoch is slow stochastic indicator.
-func Stoch(inHigh []float64, inLow []float64, inClose []float64, inFastKPeriod int, inSlowKPeriod int,
-	inSlowKMAType MaType, inSlowDPeriod int, inSlowDMAType MaType) ([]float64, []float64) {
+func Stoch(high []float64, low []float64, close []float64, fastKPeriod int, slowKPeriod int,
+	slowKMAType MaType, slowDPeriod int, slowDMAType MaType) ([]float64, []float64) {
 
-	return talib.Stoch(inHigh, inLow, inClose, inFastKPeriod, inSlowKPeriod, inSlowKMAType, inSlowDPeriod, inSlowDMAType)
+	return talib.Stoch(high, low, close, fastKPeriod, slowKPeriod, slowKMAType, slowDPeriod, slowDMAType)
 }
 
 // StochF is fast stochastic indicator.
-func StochF(inHigh []float64, inLow []float64, inClose []float64, inFastKPeriod int, inFastDPeriod int,
-	inFastDMAType MaType) ([]float64, []float64) {
+func StochF(high []float64, low []float64, close []float64, fastKPeriod int, fastDPeriod int,
+	fastDMAType MaType) ([]float64, []float64) {
 
-	return talib.StochF(inHigh, inLow, inClose, inFastKPeriod, inFastDPeriod, inFastDMAType)
+	return talib.StochF(high, low, close, fastKPeriod, fastDPeriod, fastDMAType)
 }
 
 // StochRSI is stochastic RSI indicator.
-func StochRSI(input []float64, period int, inFastKPeriod int, inFastDPeriod int, inFastDMAType MaType) ([]float64,
+func StochRSI(input []float64, period int, fastKPeriod int, fastDPeriod int, fastDMAType MaType) ([]float64,
 	[]float64) {
 
-	return talib.StochRsi(input, period, inFastKPeriod, inFastDPeriod, inFastDMAType)
+	return talib.StochRsi(input, period, fastKPeriod, fastDPeriod, fastDMAType)
 }
 
 func Trix(input []float64, period int) []float64 {
 	return talib.Trix(input, period)
 }
 
-func UltOsc(inHigh []float64, inLow []float64, inClose []float64, period1 int, period2 int, period3 int) []float64 {
-	return talib.UltOsc(inHigh, inLow, inClose, period1, period2, period3)
+func UltOsc(high []float64, low []float64, close []float64, period1 int, period2 int, period3 int) []float64 {
+	return talib.UltOsc(high, low, close, period1, period2, period3)
 }
 
 // WilliamsR - Williams %R indicator.
-func WilliamsR(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.WillR(inHigh, inLow, inClose, period)
+func WilliamsR(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.WillR(high, low, close, period)
 }
 
-func Ad(inHigh []float64, inLow []float64, inClose []float64, inVolume []float64) []float64 {
-	return talib.Ad(inHigh, inLow, inClose, inVolume)
+func Ad(high []float64, low []float64, close []float64, volume []float64) []float64 {
+	return talib.Ad(high, low, close, volume)
 }
 
-func AdOsc(inHigh []float64, inLow []float64, inClose []float64, inVolume []float64, inFastPeriod int, inSlowPeriod int) []float64 {
-	return talib.AdOsc(inHigh, inLow, inClose, inVolume, inFastPeriod, inSlowPeriod)
+func AdOsc(high []float64, low []float64, close []float64, volume []float64, fastPeriod int,
+	slowPeriod int) []float64 {
+	return talib.AdOsc(high, low, close, volume, fastPeriod, slowPeriod)
 }
 
 // OBV is the On Balance Volume indicator.
-func OBV(input []float64, inVolume []float64) []float64 {
-	return talib.Obv(input, inVolume)
+func OBV(input []float64, volume []float64) []float64 {
+	return talib.Obv(input, volume)
 }
 
 // ATR is the Average True Range indicator.
-func ATR(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.Atr(inHigh, inLow, inClose, period)
+func ATR(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.Atr(high, low, close, period)
 }
 
 // NATR is the normalized Average True Range indicator.
-func Natr(inHigh []float64, inLow []float64, inClose []float64, period int) []float64 {
-	return talib.Natr(inHigh, inLow, inClose, period)
+func NATR(high []float64, low []float64, close []float64, period int) []float64 {
+	return talib.Natr(high, low, close, period)
 }
 
 // TRANGE is the True Range indicator.
-func TRANGE(inHigh []float64, inLow []float64, inClose []float64) []float64 {
-	return talib.TRange(inHigh, inLow, inClose)
+func TRANGE(high []float64, low []float64, close []float64) []float64 {
+	return talib.TRange(high, low, close)
 }
 
-func AvgPrice(inOpen []float64, inHigh []float64, inLow []float64, inClose []float64) []float64 {
-	return talib.AvgPrice(inOpen, inHigh, inLow, inClose)
+func AvgPrice(inOpen []float64, high []float64, low []float64, close []float64) []float64 {
+	return talib.AvgPrice(inOpen, high, low, close)
 }
 
-func MedPrice(inHigh []float64, inLow []float64) []float64 {
-	return talib.MedPrice(inHigh, inLow)
+func MedPrice(high []float64, low []float64) []float64 {
+	return talib.MedPrice(high, low)
 }
 
-func TypPrice(inHigh []float64, inLow []float64, inClose []float64) []float64 {
-	return talib.TypPrice(inHigh, inLow, inClose)
+func TypPrice(high []float64, low []float64, close []float64) []float64 {
+	return talib.TypPrice(high, low, close)
 }
 
-func WCLPrice(inHigh []float64, inLow []float64, inClose []float64) []float64 {
-	return talib.WclPrice(inHigh, inLow, inClose)
+func WCLPrice(high []float64, low []float64, close []float64) []float64 {
+	return talib.WclPrice(high, low, close)
 }
 
 func HTDcPeriod(input []float64) []float64 {
@@ -417,11 +418,11 @@ func Tanh(input []float64) []float64 {
 
 /* Math Operator Functions */
 
-func Add(input0 []float64, input1 []float64) []float64 {
+func Add(input0, input1 []float64) []float64 {
 	return talib.Add(input0, input1)
 }
 
-func Div(input0 []float64, input1 []float64) []float64 {
+func Div(input0, input1 []float64) []float64 {
 	return talib.Div(input0, input1)
 }
 
@@ -449,11 +450,11 @@ func MinMaxIndex(input []float64, period int) ([]float64, []float64) {
 	return talib.MinMaxIndex(input, period)
 }
 
-func Mult(input0 []float64, input1 []float64) []float64 {
+func Mult(input0, input1 []float64) []float64 {
 	return talib.Mult(input0, input1)
 }
 
-func Sub(input0 []float64, input1 []float64) []float64 {
+func Sub(input0, input1 []float64) []float64 {
 	return talib.Sub(input0, input1)
 }
 
