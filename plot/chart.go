@@ -15,6 +15,7 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/rodrigo-brito/ninjabot/strategy"
 
 	"github.com/StudioSol/set"
 	"github.com/evanw/esbuild/pkg/api"
@@ -33,21 +34,22 @@ type Chart struct {
 	candles       map[string][]Candle
 	dataframe     map[string]*model.Dataframe
 	ordersByPair  map[string]*set.LinkedHashSetINT64
-	orderByID     map[int64]*Order
+	orderByID     map[int64]model.Order
 	indicators    []Indicator
 	paperWallet   *exchange.PaperWallet
 	scriptContent string
 	indexHTML     *template.Template
+	strategy      strategy.Strategy
 }
 
 type Candle struct {
-	Time   time.Time `json:"time"`
-	Open   float64   `json:"open"`
-	Close  float64   `json:"close"`
-	High   float64   `json:"high"`
-	Low    float64   `json:"low"`
-	Volume float64   `json:"volume"`
-	Orders []Order   `json:"orders"`
+	Time   time.Time     `json:"time"`
+	Open   float64       `json:"open"`
+	Close  float64       `json:"close"`
+	High   float64       `json:"high"`
+	Low    float64       `json:"low"`
+	Volume float64       `json:"volume"`
+	Orders []model.Order `json:"orders"`
 }
 
 type Shape struct {
@@ -56,23 +58,6 @@ type Shape struct {
 	StartY float64   `json:"y0"`
 	EndY   float64   `json:"y1"`
 	Color  string    `json:"color"`
-}
-
-type Order struct {
-	ID        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Status    string    `json:"status"`
-	Price     float64   `json:"price"`
-	Quantity  float64   `json:"quantity"`
-	Type      string    `json:"type"`
-	Side      string    `json:"side"`
-	Profit    float64   `json:"profit"`
-
-	// Only for OCO Orders
-	Stop     *float64 `json:"stop"`
-	OCOGroup *int64   `json:"oco_group"`
-	RefPrice float64  `json:"ref_price"`
 }
 
 type assetValue struct {
@@ -119,23 +104,8 @@ func (c *Chart) OnOrder(order model.Order) {
 	c.Lock()
 	defer c.Unlock()
 
-	item := &Order{
-		ID:        order.ID,
-		CreatedAt: order.CreatedAt,
-		UpdatedAt: order.UpdatedAt,
-		Status:    string(order.Status),
-		Price:     order.Price,
-		Quantity:  order.Quantity,
-		Type:      string(order.Type),
-		Side:      string(order.Side),
-		Profit:    order.Profit,
-		Stop:      order.Stop,
-		OCOGroup:  order.GroupID,
-		RefPrice:  order.RefPrice,
-	}
-
 	c.ordersByPair[order.Pair].Add(order.ID)
-	c.orderByID[order.ID] = item
+	c.orderByID[order.ID] = order
 
 }
 
@@ -153,7 +123,7 @@ func (c *Chart) OnCandle(candle model.Candle) {
 			High:   candle.High,
 			Low:    candle.Low,
 			Volume: candle.Volume,
-			Orders: make([]Order, 0),
+			Orders: make([]model.Order, 0),
 		})
 
 		if c.dataframe[candle.Pair] == nil {
@@ -220,6 +190,30 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 
 		indicators = append(indicators, indicator)
 	}
+
+	if c.strategy != nil {
+		warmup := c.strategy.WarmupPeriod()
+		strategyIndicators := c.strategy.Indicators(c.dataframe[pair])
+		for _, i := range strategyIndicators {
+			indicator := plotIndicator{
+				Name:    i.GroupName,
+				Overlay: i.Overlay,
+				Metrics: make([]indicatorMetric, 0),
+			}
+
+			for _, metric := range i.Metrics {
+				indicator.Metrics = append(indicator.Metrics, indicatorMetric{
+					Time:   i.Time[warmup:],
+					Values: metric.Values[warmup:],
+					Name:   metric.Name,
+					Color:  metric.Color,
+					Style:  string(metric.Style),
+				})
+			}
+			indicators = append(indicators, indicator)
+		}
+	}
+
 	return indicators
 }
 
@@ -234,7 +228,7 @@ func (c *Chart) candlesByPair(pair string) []Candle {
 				(order.UpdatedAt.After(c.candles[pair][i].Time) &&
 					order.UpdatedAt.Before(c.candles[pair][i+1].Time)) ||
 				order.UpdatedAt.Equal(c.candles[pair][i].Time) {
-				candles[i].Orders = append(candles[i].Orders, *order)
+				candles[i].Orders = append(candles[i].Orders, order)
 			}
 		}
 	}
@@ -247,8 +241,8 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 	for id := range c.ordersByPair[pair].Iter() {
 		order := c.orderByID[id]
 
-		if order.Type != string(model.OrderTypeStopLoss) &&
-			order.Type != string(model.OrderTypeLimitMaker) {
+		if order.Type != model.OrderTypeStopLoss &&
+			order.Type != model.OrderTypeLimitMaker {
 			continue
 		}
 
@@ -260,7 +254,7 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 			Color:  "rgba(0, 255, 0, 0.3)",
 		}
 
-		if order.Type == string(model.OrderTypeStopLoss) {
+		if order.Type == model.OrderTypeStopLoss {
 			shape.Color = "rgba(255, 0, 0, 0.3)"
 		}
 
@@ -407,6 +401,12 @@ func WithPort(port int) Option {
 	}
 }
 
+func WithStrategyIndicators(strategy strategy.Strategy) Option {
+	return func(chart *Chart) {
+		chart.strategy = strategy
+	}
+}
+
 func WithPaperWallet(paperWallet *exchange.PaperWallet) Option {
 	return func(chart *Chart) {
 		chart.paperWallet = paperWallet
@@ -420,7 +420,7 @@ func WithDebug() Option {
 	}
 }
 
-func WithIndicators(indicators ...Indicator) Option {
+func WithCustomIndicators(indicators ...Indicator) Option {
 	return func(chart *Chart) {
 		chart.indicators = indicators
 	}
@@ -432,7 +432,7 @@ func NewChart(options ...Option) (*Chart, error) {
 		candles:      make(map[string][]Candle),
 		dataframe:    make(map[string]*model.Dataframe),
 		ordersByPair: make(map[string]*set.LinkedHashSetINT64),
-		orderByID:    make(map[int64]*Order),
+		orderByID:    make(map[int64]model.Order),
 	}
 
 	for _, option := range options {

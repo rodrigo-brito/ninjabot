@@ -2,9 +2,10 @@ package strategies
 
 import (
 	"github.com/rodrigo-brito/ninjabot"
+	"github.com/rodrigo-brito/ninjabot/indicator"
 	"github.com/rodrigo-brito/ninjabot/service"
+	"github.com/rodrigo-brito/ninjabot/strategy"
 
-	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,9 +20,11 @@ func (e Turtle) WarmupPeriod() int {
 	return 40
 }
 
-func (e Turtle) Indicators(df *ninjabot.Dataframe) {
-	df.Metadata["turtleHighest"] = talib.Max(df.Close, 40)
-	df.Metadata["turtleLowest"] = talib.Min(df.Close, 20)
+func (e Turtle) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
+	df.Metadata["turtleHighest"] = indicator.Max(df.Close, 40)
+	df.Metadata["turtleLowest"] = indicator.Min(df.Close, 20)
+
+	return nil
 }
 
 func (e *Turtle) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {

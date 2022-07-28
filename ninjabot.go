@@ -135,12 +135,14 @@ func WithNotifier(notifier service.Notifier) Option {
 	}
 }
 
+// WithCandleSubscription subscribes a given struct to the candle feed
 func WithCandleSubscription(subscriber CandleSubscriber) Option {
 	return func(bot *NinjaBot) {
 		bot.SubscribeCandle(subscriber)
 	}
 }
 
+// WithPaperWallet sets the paper wallet for the bot (used for backtesting and live simulation)
 func WithPaperWallet(wallet *exchange.PaperWallet) Option {
 	return func(bot *NinjaBot) {
 		bot.paperWallet = wallet
@@ -181,11 +183,12 @@ func (n *NinjaBot) Summary() {
 		wins   int
 		loses  int
 		volume float64
+		sqn    float64
 	)
 
 	buffer := bytes.NewBuffer(nil)
 	table := tablewriter.NewWriter(buffer)
-	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "Profit", "Volume"})
+	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "SQN", "Profit", "Volume"})
 	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
 	avgPayoff := 0.0
 
@@ -198,10 +201,12 @@ func (n *NinjaBot) Summary() {
 			strconv.Itoa(len(summary.Lose)),
 			fmt.Sprintf("%.1f %%", float64(len(summary.Win))/float64(len(summary.Win)+len(summary.Lose))*100),
 			fmt.Sprintf("%.3f", summary.Payoff()),
+			fmt.Sprintf("%.1f", summary.SQN()),
 			fmt.Sprintf("%.2f", summary.Profit()),
 			fmt.Sprintf("%.2f", summary.Volume),
 		})
 		total += summary.Profit()
+		sqn += summary.SQN()
 		wins += len(summary.Win)
 		loses += len(summary.Lose)
 		volume += summary.Volume
@@ -214,6 +219,7 @@ func (n *NinjaBot) Summary() {
 		strconv.Itoa(loses),
 		fmt.Sprintf("%.1f %%", float64(wins)/float64(wins+loses)*100),
 		fmt.Sprintf("%.3f", avgPayoff/float64(wins+loses)),
+		fmt.Sprintf("%.1f", sqn/float64(len(n.orderController.Results))),
 		fmt.Sprintf("%.2f", total),
 		fmt.Sprintf("%.2f", volume),
 	})
@@ -234,6 +240,7 @@ func (n *NinjaBot) processCandle(candle model.Candle) {
 		n.paperWallet.OnCandle(candle)
 	}
 
+	n.strategiesControllers[candle.Pair].OnPartialCandle(candle)
 	if candle.Complete {
 		n.strategiesControllers[candle.Pair].OnCandle(candle)
 		n.orderController.OnCandle(candle)
@@ -261,6 +268,7 @@ func (n *NinjaBot) backtestCandles() {
 			n.paperWallet.OnCandle(candle)
 		}
 
+		n.strategiesControllers[candle.Pair].OnPartialCandle(candle)
 		if candle.Complete {
 			n.strategiesControllers[candle.Pair].OnCandle(candle)
 		}

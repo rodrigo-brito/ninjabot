@@ -2,6 +2,7 @@ package ninjabot
 
 import (
 	"context"
+	"github.com/rodrigo-brito/ninjabot/strategy"
 	"testing"
 
 	"github.com/markcheno/go-talib"
@@ -23,8 +24,9 @@ func (e fakeStrategy) WarmupPeriod() int {
 	return 9
 }
 
-func (e fakeStrategy) Indicators(df *Dataframe) {
+func (e fakeStrategy) Indicators(df *Dataframe) []strategy.ChartIndicator {
 	df.Metadata["ema9"] = talib.Ema(df.Close, 9)
+	return nil
 }
 
 func (e *fakeStrategy) OnCandle(df *Dataframe, broker service.Broker) {

@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
                           .toLocaleString()}<br>Type: ${order.type}<br>${
                 (order.profit &&
                   "Profit: " +
-                    (order.profit * 100).toPrecision(2).toLocaleString() +
+                    +(order.profit * 100).toPrecision(2).toLocaleString() +
                     "%") ||
                 ""
               }`,

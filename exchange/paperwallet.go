@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/adshao/go-binance/v2/common"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -47,14 +48,14 @@ type PaperWallet struct {
 func (p *PaperWallet) AssetsInfo(pair string) model.AssetInfo {
 	asset, quote := SplitAssetQuote(pair)
 	return model.AssetInfo{
-		BaseAsset:             asset,
-		QuoteAsset:            quote,
-		MaxPrice:              math.MaxFloat64,
-		MaxQuantity:           math.MaxFloat64,
-		StepSize:              0.00000001,
-		TickSize:              0.00000001,
-		QtyDecimalPrecision:   8,
-		PriceDecimalPrecision: 8,
+		BaseAsset:          asset,
+		QuoteAsset:         quote,
+		MaxPrice:           math.MaxFloat64,
+		MaxQuantity:        math.MaxFloat64,
+		StepSize:           0.00000001,
+		TickSize:           0.00000001,
+		QuotePrecision:     8,
+		BaseAssetPrecision: 8,
 	}
 }
 
@@ -178,40 +179,38 @@ func (p *PaperWallet) Summary() {
 		volume       float64
 	)
 
-	fmt.Println("--------------")
-	fmt.Println("WALLET SUMMARY")
-	fmt.Println("--------------")
-
+	fmt.Println("-- FINAL WALLET --")
 	for pair, price := range p.avgPrice {
 		asset, quote := SplitAssetQuote(pair)
 		quantity := p.assets[asset].Free + p.assets[asset].Lock
 		total += quantity * price
 		marketChange += (p.lastCandle[pair].Close - p.fistCandle[pair].Close) / p.fistCandle[pair].Close
-		fmt.Printf("%f %s = %f %s\n", quantity, asset, total, quote)
+		fmt.Printf("%.4f %s = %.4f %s\n", quantity, asset, total, quote)
 	}
-
-	fmt.Println()
-	fmt.Println("TRADING VOLUME")
-	for pair, vol := range p.volume {
-		volume += vol
-		fmt.Printf("%s        = %.2f %s\n", pair, vol, p.baseCoin)
-	}
-	fmt.Println()
 
 	avgMarketChange := marketChange / float64(len(p.avgPrice))
 	baseCoinValue := p.assets[p.baseCoin].Free + p.assets[p.baseCoin].Lock
 	profit := total + baseCoinValue - p.initialValue
+	fmt.Printf("%.4f %s\n", baseCoinValue, p.baseCoin)
+	fmt.Println()
 	maxDrawDown, _, _ := p.MaxDrawdown()
-	fmt.Printf("%f %s\n", baseCoinValue, p.baseCoin)
-	fmt.Println("--------------")
-	fmt.Printf("START PORTFOLIO = %.2f %s\n", p.initialValue, p.baseCoin)
-	fmt.Printf("FINAL PORTFOLIO = %.2f %s\n", total+baseCoinValue, p.baseCoin)
-	fmt.Printf("GROSS PROFIT    =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
-	fmt.Printf("MARKET (B&H)    =  %.2f%%\n", avgMarketChange*100)
-	fmt.Printf("MAX DRAWDOWN    =  %.2f %%\n", maxDrawDown*100)
-	fmt.Printf("VOLUME          =  %.2f %s\n", volume, p.baseCoin)
-	fmt.Printf("COSTS (0.001*V) =  %.2f %s (ESTIMATION) \n", volume*0.001, p.baseCoin)
-	fmt.Println("--------------")
+	fmt.Println("----- RETURNS -----")
+	fmt.Printf("START PORTFOLIO     = %.2f %s\n", p.initialValue, p.baseCoin)
+	fmt.Printf("FINAL PORTFOLIO     = %.2f %s\n", total+baseCoinValue, p.baseCoin)
+	fmt.Printf("GROSS PROFIT        =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
+	fmt.Printf("MARKET CHANGE (B&H) =  %.2f%%\n", avgMarketChange*100)
+	fmt.Println()
+	fmt.Println("------ RISK -------")
+	fmt.Printf("MAX DRAWDOWN = %.2f %%\n", maxDrawDown*100)
+	fmt.Println()
+	fmt.Println("------ VOLUME -----")
+	for pair, vol := range p.volume {
+		volume += vol
+		fmt.Printf("%s         = %.2f %s\n", pair, vol, p.baseCoin)
+	}
+	fmt.Printf("TOTAL           = %.2f %s\n", volume, p.baseCoin)
+	fmt.Printf("COSTS (0.001*V) = %.2f %s (ESTIMATION) \n", volume*0.001, p.baseCoin)
+	fmt.Println("-------------------")
 }
 
 func (p *PaperWallet) lockFunds(asset string, amount float64) error {
@@ -525,11 +524,13 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 }
 
 func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string,
-	quantity float64) (model.Order, error) {
+	quoteQuantity float64) (model.Order, error) {
 	p.Lock()
 	defer p.Unlock()
 
-	return p.createOrderMarket(side, pair, quantity/p.lastCandle[pair].Close)
+	info := p.AssetsInfo(pair)
+	quantity := common.AmountToLotSize(info.StepSize, info.BaseAssetPrecision, quoteQuantity/p.lastCandle[pair].Close)
+	return p.createOrderMarket(side, pair, quantity)
 }
 
 func (p *PaperWallet) Cancel(order model.Order) error {

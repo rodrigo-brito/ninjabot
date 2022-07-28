@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 )
@@ -34,9 +35,8 @@ type AssetInfo struct {
 	StepSize    float64
 	TickSize    float64
 
-	// Number of decimal places
-	QtyDecimalPrecision   int64
-	PriceDecimalPrecision int64
+	QuotePrecision     int
+	BaseAssetPrecision int
 }
 
 type Dataframe struct {
@@ -56,15 +56,24 @@ type Dataframe struct {
 }
 
 type Candle struct {
-	Pair     string
-	Time     time.Time
-	Open     float64
-	Close    float64
-	Low      float64
-	High     float64
-	Volume   float64
-	Trades   int64
-	Complete bool
+	Pair      string
+	Time      time.Time
+	UpdatedAt time.Time
+	Open      float64
+	Close     float64
+	Low       float64
+	High      float64
+	Volume    float64
+	Trades    int64
+	Complete  bool
+}
+
+type HeikinAshi struct {
+	PreviousHACandle Candle
+}
+
+func NewHeikinAshi() *HeikinAshi {
+	return &HeikinAshi{}
 }
 
 func (c Candle) ToSlice(precision int) []string {
@@ -79,11 +88,41 @@ func (c Candle) ToSlice(precision int) []string {
 	}
 }
 
-func (c Candle) Less(j Item) bool {
-	if j.(Candle).Time.Equal(c.Time) {
-		return c.Pair < j.(Candle).Pair
+func (c Candle) ToHeikinAshi(ha *HeikinAshi) Candle {
+	haCandle := ha.CalculateHeikinAshi(c)
+
+	return Candle{
+		Pair:      c.Pair,
+		Open:      haCandle.Open,
+		High:      haCandle.High,
+		Low:       haCandle.Low,
+		Close:     haCandle.Close,
+		Volume:    c.Volume,
+		Complete:  c.Complete,
+		Time:      c.Time,
+		UpdatedAt: c.UpdatedAt,
+		Trades:    c.Trades,
 	}
-	return c.Time.Before(j.(Candle).Time)
+}
+
+func (c Candle) Less(j Item) bool {
+	diff := j.(Candle).Time.Sub(c.Time)
+	if diff < 0 {
+		return false
+	}
+	if diff > 0 {
+		return true
+	}
+
+	diff = j.(Candle).UpdatedAt.Sub(c.UpdatedAt)
+	if diff < 0 {
+		return false
+	}
+	if diff > 0 {
+		return true
+	}
+
+	return c.Pair < j.(Candle).Pair
 }
 
 type Account struct {
@@ -121,4 +160,25 @@ func (a Account) Equity() float64 {
 	}
 
 	return total
+}
+
+func (ha *HeikinAshi) CalculateHeikinAshi(c Candle) Candle {
+	var hkCandle Candle
+
+	openValue := ha.PreviousHACandle.Open
+	closeValue := ha.PreviousHACandle.Close
+
+	// First HA candle is calculated using current candle
+	if (ha.PreviousHACandle == Candle{}) {
+		openValue = c.Open
+		closeValue = c.Close
+	}
+
+	hkCandle.Open = (openValue + closeValue) / 2
+	hkCandle.Close = (c.Open + c.High + c.Low + c.Close) / 4
+	hkCandle.High = math.Max(c.High, math.Max(hkCandle.Open, hkCandle.Close))
+	hkCandle.Low = math.Min(c.Low, math.Min(hkCandle.Open, hkCandle.Close))
+	ha.PreviousHACandle = hkCandle
+
+	return hkCandle
 }

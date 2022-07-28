@@ -48,8 +48,8 @@ type Order struct {
 	GroupID *int64   `db:"group_id" json:"group_id"`
 
 	// Internal use (Plot)
-	RefPrice float64 `json:"-"`
-	Profit   float64 `json:"-"`
+	RefPrice float64 `json:"ref_price"`
+	Profit   float64 `json:"profit"`
 	Candle   Candle  `json:"-"`
 }
 
