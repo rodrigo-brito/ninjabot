@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/xhit/go-str2duration/v2"
 )
@@ -42,6 +44,7 @@ func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
 	}
 }
 
+// NewCSVFeed creates a new data feed from CSV files and resample
 func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	csvFeed := &CSVFeed{
 		Feeds:               make(map[string]PairFeed),
@@ -126,6 +129,16 @@ func (c CSVFeed) feedTimeframeKey(pair, timeframe string) string {
 
 func (c CSVFeed) LastQuote(_ context.Context, _ string) (float64, error) {
 	return 0, errors.New("invalid operation")
+}
+
+func (c *CSVFeed) Limit(duration time.Duration) *CSVFeed {
+	for pair, candles := range c.CandlePairTimeFrame {
+		start := candles[len(candles)-1].Time.Add(-duration)
+		c.CandlePairTimeFrame[pair] = lo.Filter(candles, func(candle model.Candle, _ int) bool {
+			return candle.Time.After(start)
+		})
+	}
+	return c
 }
 
 func isFistCandlePeriod(t time.Time, fromTimeframe, targetTimeframe string) (bool, error) {

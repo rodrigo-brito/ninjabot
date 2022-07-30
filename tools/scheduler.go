@@ -44,7 +44,8 @@ func (s *Scheduler) Update(df *ninjabot.Dataframe, broker service.Broker) {
 				log.Error(err)
 				return true
 			}
+			return false
 		}
-		return false
+		return true
 	})
 }
