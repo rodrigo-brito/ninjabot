@@ -353,8 +353,7 @@ func (p *PaperWallet) Position(pair string) (asset, quote float64, err error) {
 		return 0, 0, err
 	}
 
-	assetBalance := acc.Balance(assetTick)
-	quoteBalance := acc.Balance(quoteTick)
+	assetBalance, quoteBalance := acc.Balance(assetTick, quoteTick)
 
 	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
 }
