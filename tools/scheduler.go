@@ -32,7 +32,7 @@ func (s *Scheduler) SellWhen(size float64, condition func(df *ninjabot.Dataframe
 func (s *Scheduler) BuyWhen(size float64, condition func(df *ninjabot.Dataframe) bool) {
 	s.orderConditions = append(
 		s.orderConditions,
-		OrderCondition{Condition: condition, Size: size, Side: ninjabot.SideTypeSell},
+		OrderCondition{Condition: condition, Size: size, Side: ninjabot.SideTypeBuy},
 	)
 }
 
