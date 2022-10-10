@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type SqlKV struct {
+type SQL struct {
 	lastID int64
 	db     *gorm.DB
 }
@@ -40,17 +40,17 @@ func FromSQL(dialector gorm.Dialector, opts ...gorm.Option) (Storage, error) {
 		return nil, err
 	}
 
-	return &SqlKV{
+	return &SQL{
 		lastID: 0,
 		db:     db,
 	}, nil
 }
 
-func (s *SqlKV) getID() int64 {
+func (s *SQL) getID() int64 {
 	return atomic.AddInt64(&s.lastID, 1)
 }
 
-func (s *SqlKV) CreateOrder(order *model.Order) error {
+func (s *SQL) CreateOrder(order *model.Order) error {
 	order.ID = s.getID()
 	content, err := json.Marshal(order)
 	if err != nil {
@@ -65,7 +65,7 @@ func (s *SqlKV) CreateOrder(order *model.Order) error {
 	return result.Error
 }
 
-func (s *SqlKV) UpdateOrder(order *model.Order) error {
+func (s *SQL) UpdateOrder(order *model.Order) error {
 	content, err := json.Marshal(order)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (s *SqlKV) UpdateOrder(order *model.Order) error {
 	return result.Error
 }
 
-func (s *SqlKV) Orders(filters ...OrderFilter) ([]*model.Order, error) {
+func (s *SQL) Orders(filters ...OrderFilter) ([]*model.Order, error) {
 	orders := make([]*model.Order, 0)
 	var sqlDatas []sqlData
 
