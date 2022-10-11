@@ -31,6 +31,9 @@ func FromSQL(dialector gorm.Dialector, opts ...gorm.Option) (Storage, error) {
 	}
 
 	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
