@@ -50,6 +50,9 @@ func (s *Controller) updateDataFrame(candle model.Candle) {
 		s.dataframe.Low[last] = candle.Low
 		s.dataframe.Volume[last] = candle.Volume
 		s.dataframe.Time[last] = candle.Time
+		for k, v := range candle.Metadata {
+			s.dataframe.Metadata[k][last] = v
+		}
 	} else {
 		s.dataframe.Close = append(s.dataframe.Close, candle.Close)
 		s.dataframe.Open = append(s.dataframe.Open, candle.Open)
@@ -58,6 +61,9 @@ func (s *Controller) updateDataFrame(candle model.Candle) {
 		s.dataframe.Volume = append(s.dataframe.Volume, candle.Volume)
 		s.dataframe.Time = append(s.dataframe.Time, candle.Time)
 		s.dataframe.LastUpdate = candle.Time
+		for k, v := range candle.Metadata {
+			s.dataframe.Metadata[k] = append(s.dataframe.Metadata[k], v)
+		}
 	}
 }
 

@@ -66,6 +66,13 @@ type Candle struct {
 	Volume    float64
 	Trades    int64
 	Complete  bool
+
+	// Aditional collums from CSV inputs
+	Metadata map[string]float64
+}
+
+func (c Candle) Empty() bool {
+	return c.Pair == "" && c.Close == 0 && c.Open == 0 && c.Volume == 0
 }
 
 type HeikinAshi struct {
@@ -169,7 +176,7 @@ func (ha *HeikinAshi) CalculateHeikinAshi(c Candle) Candle {
 	closeValue := ha.PreviousHACandle.Close
 
 	// First HA candle is calculated using current candle
-	if (ha.PreviousHACandle == Candle{}) {
+	if ha.PreviousHACandle.Empty() {
 		openValue = c.Open
 		closeValue = c.Close
 	}

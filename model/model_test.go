@@ -50,7 +50,7 @@ func TestAccount_Balance(t *testing.T) {
 func TestHeikinAshi_CalculateHeikinAshi(t *testing.T) {
 	ha := NewHeikinAshi()
 
-	if (HeikinAshi{}.PreviousHACandle != Candle{}) {
+	if (!HeikinAshi{}.PreviousHACandle.Empty()) {
 		t.Errorf("PreviousCandle should be empty")
 	}
 
