@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"log"
 	"os"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 func TestFromSQL(t *testing.T) {
 	file, err := os.CreateTemp(os.TempDir(), "*.db")
 	require.NoError(t, err)
-	log.Println(file.Name())
 	defer func() {
 		os.Remove(file.Name())
 	}()
