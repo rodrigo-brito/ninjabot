@@ -2,7 +2,6 @@ package download
 
 import (
 	"context"
-	"io"
 	"os"
 	"testing"
 	"time"
@@ -54,6 +53,7 @@ func TestDownloader_withInterval(t *testing.T) {
 }
 
 func TestDownloader_download(t *testing.T) {
+	ctx := context.Background()
 	tmpFile, err := os.CreateTemp(os.TempDir(), "*.csv")
 	require.NoError(t, err)
 
@@ -65,13 +65,14 @@ func TestDownloader_download(t *testing.T) {
 		End:   time.AddDate(0, 0, 20),
 	}
 
-	csvFeed, _ := exchange.NewCSVFeed(
+	csvFeed, err := exchange.NewCSVFeed(
 		"1d",
 		exchange.PairFeed{
 			Pair:      "BTCUSDT",
 			File:      "../testdata/btc-1d.csv",
 			Timeframe: "1d",
 		})
+	require.NoError(t, err)
 
 	fakeExchange := struct {
 		service.Broker
@@ -82,20 +83,18 @@ func TestDownloader_download(t *testing.T) {
 
 	downloader := Downloader{fakeExchange}
 
-	t.Run("Success case", func(t *testing.T) {
-		err = downloader.Download(context.Background(), "BTCUSDT", "1d", tmpFile.Name(), WithInterval(param.Start, param.End))
+	t.Run("success", func(t *testing.T) {
+		err = downloader.Download(ctx, "BTCUSDT", "1d", tmpFile.Name(), WithInterval(param.Start, param.End))
 		require.NoError(t, err)
 
-		bytesRead, err := tmpFile.Read([]byte{1})
+		csvFeed, err := exchange.NewCSVFeed(
+			"1d",
+			exchange.PairFeed{
+				Pair:      "BTCUSDT",
+				File:      "../testdata/btc-1d.csv",
+				Timeframe: "1d",
+			})
 		require.NoError(t, err)
-
-		assert.Equal(t, bytesRead, 1)
-	})
-	t.Run("Empty file", func(t *testing.T) {
-		err = downloader.Download(context.Background(), "BTCUSDT", "1d", tmpFile.Name(), WithDays(4))
-		require.NoError(t, err)
-
-		_, err := tmpFile.Read([]byte{1})
-		require.Error(t, err, io.EOF)
+		require.Len(t, csvFeed.CandlePairTimeFrame["BTCUSDT--1d"], 14)
 	})
 }
