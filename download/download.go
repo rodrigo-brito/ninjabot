@@ -95,6 +95,14 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 	lostData := 0
 	isLastLoop := false
 
+	// write headers
+	err = writer.Write([]string{
+		"time", "open", "close", "low", "high", "volume", "trades",
+	})
+	if err != nil {
+		return err
+	}
+
 	for begin := parameters.Start; begin.Before(parameters.End); begin = begin.Add(interval * batchSize) {
 		end := begin.Add(interval * batchSize)
 		if end.Before(parameters.End) {

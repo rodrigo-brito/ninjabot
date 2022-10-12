@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/samber/lo"
+	"github.com/xhit/go-str2duration/v2"
 
 	"github.com/rodrigo-brito/ninjabot/model"
-	"github.com/xhit/go-str2duration/v2"
 )
 
 var ErrInsufficientData = errors.New("insufficient data")
@@ -44,6 +44,23 @@ func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
 	}
 }
 
+func parseHeaders(headers []string) (map[string]int, bool) {
+	headerMap := map[string]int{
+		"time": 0, "open": 1, "close": 2, "low": 3, "high": 4, "volume": 5, "trades": 6,
+	}
+
+	_, err := strconv.Atoi(headers[0])
+	if err == nil {
+		return headerMap, false
+	}
+
+	for index, h := range headers {
+		headerMap[h] = index
+	}
+
+	return headerMap, true
+}
+
 // NewCSVFeed creates a new data feed from CSV files and resample
 func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	csvFeed := &CSVFeed{
@@ -67,8 +84,14 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 		var candles []model.Candle
 		ha := model.NewHeikinAshi()
 
+		// map each header label with its index
+		headerMap, ok := parseHeaders(csvLines[0])
+		if ok {
+			csvLines = csvLines[1:]
+		}
+
 		for _, line := range csvLines {
-			timestamp, err := strconv.Atoi(line[0])
+			timestamp, err := strconv.Atoi(line[headerMap["time"]])
 			if err != nil {
 				return nil, err
 			}
@@ -80,27 +103,27 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 				Complete:  true,
 			}
 
-			candle.Open, err = strconv.ParseFloat(line[1], 64)
+			candle.Open, err = strconv.ParseFloat(line[headerMap["open"]], 64)
 			if err != nil {
 				return nil, err
 			}
 
-			candle.Close, err = strconv.ParseFloat(line[2], 64)
+			candle.Close, err = strconv.ParseFloat(line[headerMap["close"]], 64)
 			if err != nil {
 				return nil, err
 			}
 
-			candle.Low, err = strconv.ParseFloat(line[3], 64)
+			candle.Low, err = strconv.ParseFloat(line[headerMap["low"]], 64)
 			if err != nil {
 				return nil, err
 			}
 
-			candle.High, err = strconv.ParseFloat(line[4], 64)
+			candle.High, err = strconv.ParseFloat(line[headerMap["high"]], 64)
 			if err != nil {
 				return nil, err
 			}
 
-			candle.Volume, err = strconv.ParseFloat(line[5], 64)
+			candle.Volume, err = strconv.ParseFloat(line[headerMap["volume"]], 64)
 			if err != nil {
 				return nil, err
 			}

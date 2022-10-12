@@ -11,20 +11,41 @@ import (
 )
 
 func TestNewCSVFeed(t *testing.T) {
-	feed, err := NewCSVFeed("1d", PairFeed{
-		Timeframe: "1d",
-		Pair:      "BTCUSDT",
-		File:      "../testdata/btc-1d.csv",
+	t.Run("no header", func(t *testing.T) {
+		feed, err := NewCSVFeed("1d", PairFeed{
+			Timeframe: "1d",
+			Pair:      "BTCUSDT",
+			File:      "../testdata/btc-1d.csv",
+		})
+
+		candle := feed.CandlePairTimeFrame["BTCUSDT--1d"][0]
+		require.NoError(t, err)
+		require.Len(t, feed.CandlePairTimeFrame["BTCUSDT--1d"], 14)
+		require.Equal(t, "2021-04-26 00:00:00", candle.Time.UTC().Format("2006-01-02 15:04:05"))
+		require.Equal(t, 49066.76, candle.Open)
+		require.Equal(t, 54001.39, candle.Close)
+		require.Equal(t, 48753.44, candle.Low)
+		require.Equal(t, 54356.62, candle.High)
+		require.Equal(t, 86310.8, candle.Volume)
 	})
-	candle := feed.CandlePairTimeFrame["BTCUSDT--1d"][0]
-	require.NoError(t, err)
-	require.Len(t, feed.CandlePairTimeFrame["BTCUSDT--1d"], 14)
-	require.Equal(t, "2021-04-26 00:00:00", candle.Time.UTC().Format("2006-01-02 15:04:05"))
-	require.Equal(t, 49066.76, candle.Open)
-	require.Equal(t, 54001.39, candle.Close)
-	require.Equal(t, 48753.44, candle.Low)
-	require.Equal(t, 54356.62, candle.High)
-	require.Equal(t, 86310.8, candle.Volume)
+
+	t.Run("with header", func(t *testing.T) {
+		feed, err := NewCSVFeed("1d", PairFeed{
+			Timeframe: "1d",
+			Pair:      "BTCUSDT",
+			File:      "../testdata/btc-1d-header.csv",
+		})
+		require.NoError(t, err)
+
+		candle := feed.CandlePairTimeFrame["BTCUSDT--1d"][0]
+		require.Len(t, feed.CandlePairTimeFrame["BTCUSDT--1d"], 14)
+		require.Equal(t, "2021-04-26 00:00:00", candle.Time.UTC().Format("2006-01-02 15:04:05"))
+		require.Equal(t, 49066.76, candle.Open)
+		require.Equal(t, 54001.39, candle.Close)
+		require.Equal(t, 48753.44, candle.Low)
+		require.Equal(t, 54356.62, candle.High)
+		require.Equal(t, 86310.8, candle.Volume)
+	})
 }
 
 func TestCSVFeed_CandlesByLimit(t *testing.T) {
