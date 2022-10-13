@@ -16,11 +16,9 @@ func TestCandle_ToSlice(t *testing.T) {
 		Low:      10000.1,
 		High:     10000.1,
 		Volume:   10000.1,
-		Trades:   10000,
 		Complete: true,
 	}
-	require.Equal(t, []string{"1609459200", "10000.1", "10000.1", "10000.1", "10000.1",
-		"10000.1", "10000"}, candle.ToSlice(1))
+	require.Equal(t, []string{"1609459200", "10000.1", "10000.1", "10000.1", "10000.1", "10000.1"}, candle.ToSlice(1))
 }
 
 func TestCandle_Less(t *testing.T) {
@@ -50,7 +48,7 @@ func TestAccount_Balance(t *testing.T) {
 func TestHeikinAshi_CalculateHeikinAshi(t *testing.T) {
 	ha := NewHeikinAshi()
 
-	if (HeikinAshi{}.PreviousHACandle != Candle{}) {
+	if (!HeikinAshi{}.PreviousHACandle.Empty()) {
 		t.Errorf("PreviousCandle should be empty")
 	}
 

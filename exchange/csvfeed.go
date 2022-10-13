@@ -44,21 +44,24 @@ func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
 	}
 }
 
-func parseHeaders(headers []string) (map[string]int, bool) {
+func parseHeaders(headers []string) (index map[string]int, additional []string, ok bool) {
 	headerMap := map[string]int{
-		"time": 0, "open": 1, "close": 2, "low": 3, "high": 4, "volume": 5, "trades": 6,
+		"time": 0, "open": 1, "close": 2, "low": 3, "high": 4, "volume": 5,
 	}
 
 	_, err := strconv.Atoi(headers[0])
 	if err == nil {
-		return headerMap, false
+		return headerMap, additional, false
 	}
 
 	for index, h := range headers {
+		if _, ok := headerMap[h]; !ok {
+			additional = append(additional, h)
+		}
 		headerMap[h] = index
 	}
 
-	return headerMap, true
+	return headerMap, additional, true
 }
 
 // NewCSVFeed creates a new data feed from CSV files and resample
@@ -85,8 +88,8 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 		ha := model.NewHeikinAshi()
 
 		// map each header label with its index
-		headerMap, ok := parseHeaders(csvLines[0])
-		if ok {
+		headerMap, additionalHeaders, hasCustomHeaders := parseHeaders(csvLines[0])
+		if hasCustomHeaders {
 			csvLines = csvLines[1:]
 		}
 
@@ -126,6 +129,16 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 			candle.Volume, err = strconv.ParseFloat(line[headerMap["volume"]], 64)
 			if err != nil {
 				return nil, err
+			}
+
+			if hasCustomHeaders {
+				candle.Metadata = make(map[string]float64)
+				for _, header := range additionalHeaders {
+					candle.Metadata[header], err = strconv.ParseFloat(line[headerMap[header]], 64)
+					if err != nil {
+						return nil, err
+					}
+				}
 			}
 
 			if feed.HeikinAshi {
@@ -247,7 +260,6 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 			candle.High = math.Max(candles[lastIndex].High, candle.High)
 			candle.Low = math.Min(candles[lastIndex].Low, candle.Low)
 			candle.Volume += candles[lastIndex].Volume
-			candle.Trades += candles[lastIndex].Trades
 		}
 		candles = append(candles, candle)
 	}

@@ -64,8 +64,14 @@ type Candle struct {
 	Low       float64
 	High      float64
 	Volume    float64
-	Trades    int64
 	Complete  bool
+
+	// Aditional collums from CSV inputs
+	Metadata map[string]float64
+}
+
+func (c Candle) Empty() bool {
+	return c.Pair == "" && c.Close == 0 && c.Open == 0 && c.Volume == 0
 }
 
 type HeikinAshi struct {
@@ -84,7 +90,6 @@ func (c Candle) ToSlice(precision int) []string {
 		strconv.FormatFloat(c.Low, 'f', precision, 64),
 		strconv.FormatFloat(c.High, 'f', precision, 64),
 		fmt.Sprintf("%.1f", c.Volume),
-		fmt.Sprintf("%d", c.Trades),
 	}
 }
 
@@ -101,7 +106,6 @@ func (c Candle) ToHeikinAshi(ha *HeikinAshi) Candle {
 		Complete:  c.Complete,
 		Time:      c.Time,
 		UpdatedAt: c.UpdatedAt,
-		Trades:    c.Trades,
 	}
 }
 
@@ -169,7 +173,7 @@ func (ha *HeikinAshi) CalculateHeikinAshi(c Candle) Candle {
 	closeValue := ha.PreviousHACandle.Close
 
 	// First HA candle is calculated using current candle
-	if (ha.PreviousHACandle == Candle{}) {
+	if ha.PreviousHACandle.Empty() {
 		openValue = c.Open
 		closeValue = c.Close
 	}

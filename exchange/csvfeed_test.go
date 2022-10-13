@@ -29,7 +29,7 @@ func TestNewCSVFeed(t *testing.T) {
 		require.Equal(t, 86310.8, candle.Volume)
 	})
 
-	t.Run("with header", func(t *testing.T) {
+	t.Run("with header and custom data", func(t *testing.T) {
 		feed, err := NewCSVFeed("1d", PairFeed{
 			Timeframe: "1d",
 			Pair:      "BTCUSDT",
@@ -45,6 +45,7 @@ func TestNewCSVFeed(t *testing.T) {
 		require.Equal(t, 48753.44, candle.Low)
 		require.Equal(t, 54356.62, candle.High)
 		require.Equal(t, 86310.8, candle.Volume)
+		require.Equal(t, 1.1, candle.Metadata["lsr"])
 	})
 }
 
