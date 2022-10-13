@@ -141,6 +141,9 @@ func (c *Chart) OnCandle(candle model.Candle) {
 		c.dataframe[candle.Pair].Volume = append(c.dataframe[candle.Pair].Volume, candle.Volume)
 		c.dataframe[candle.Pair].Time = append(c.dataframe[candle.Pair].Time, candle.Time)
 		c.dataframe[candle.Pair].LastUpdate = candle.Time
+		for k, v := range candle.Metadata {
+			c.dataframe[candle.Pair].Metadata[k] = append(c.dataframe[candle.Pair].Metadata[k], v)
+		}
 	}
 }
 
@@ -202,6 +205,10 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 			}
 
 			for _, metric := range i.Metrics {
+				if len(metric.Values) < warmup {
+					continue
+				}
+
 				indicator.Metrics = append(indicator.Metrics, indicatorMetric{
 					Time:   i.Time[warmup:],
 					Values: metric.Values[warmup:],

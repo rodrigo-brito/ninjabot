@@ -24,7 +24,6 @@ func TestChart_CandleAndOrder(t *testing.T) {
 		Low:      3011.00,
 		High:     3115.51,
 		Volume:   87666.8,
-		Trades:   205069,
 		Complete: true,
 	}
 	c.OnCandle(candle)
@@ -57,7 +56,6 @@ func TestChart_CandleAndOrder(t *testing.T) {
 		Low:      2876.12,
 		High:     2940.74,
 		Volume:   88470.1,
-		Trades:   161354,
 		Complete: true,
 	}
 	c.OnCandle(candle2)

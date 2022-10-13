@@ -64,7 +64,6 @@ type Candle struct {
 	Low       float64
 	High      float64
 	Volume    float64
-	Trades    int64
 	Complete  bool
 
 	// Aditional collums from CSV inputs
@@ -91,7 +90,6 @@ func (c Candle) ToSlice(precision int) []string {
 		strconv.FormatFloat(c.Low, 'f', precision, 64),
 		strconv.FormatFloat(c.High, 'f', precision, 64),
 		fmt.Sprintf("%.1f", c.Volume),
-		fmt.Sprintf("%d", c.Trades),
 	}
 }
 
@@ -108,7 +106,6 @@ func (c Candle) ToHeikinAshi(ha *HeikinAshi) Candle {
 		Complete:  c.Complete,
 		Time:      c.Time,
 		UpdatedAt: c.UpdatedAt,
-		Trades:    c.Trades,
 	}
 }
 

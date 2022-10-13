@@ -19,6 +19,8 @@ type UserInfo struct {
 	TakerCommission float64
 }
 
+type MetadataFetchers func(pair string, t time.Time) (string, float64)
+
 type Binance struct {
 	ctx        context.Context
 	client     *binance.Client
@@ -29,6 +31,8 @@ type Binance struct {
 
 	APIKey    string
 	APISecret string
+
+	MetadataFetchers []MetadataFetchers
 }
 
 type BinanceOption func(*Binance)
@@ -43,6 +47,14 @@ func WithBinanceCredentials(key, secret string) BinanceOption {
 func WithBinanceHeikinAshiCandle() BinanceOption {
 	return func(b *Binance) {
 		b.HeikinAshi = true
+	}
+}
+
+// WithMetadataFetcher will execute a function after receive a new candle and include additional
+// information to candle's metadata
+func WithMetadataFetcher(fetcher MetadataFetchers) BinanceOption {
+	return func(b *Binance) {
+		b.MetadataFetchers = append(b.MetadataFetchers, fetcher)
 	}
 }
 
@@ -487,6 +499,14 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 					candle = candle.ToHeikinAshi(ha)
 				}
 
+				if candle.Complete {
+					// fetch aditional data if needed
+					for _, fetcher := range b.MetadataFetchers {
+						key, value := fetcher(pair, candle.Time)
+						candle.Metadata[key] = value
+					}
+				}
+
 				ccandle <- candle
 
 			}, func(err error) {
@@ -579,8 +599,8 @@ func CandleFromKline(pair string, k binance.Kline) model.Candle {
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
 	candle.Low, _ = strconv.ParseFloat(k.Low, 64)
 	candle.Volume, _ = strconv.ParseFloat(k.Volume, 64)
-	candle.Trades = k.TradeNum
 	candle.Complete = true
+	candle.Metadata = make(map[string]float64)
 	return candle
 }
 
@@ -592,7 +612,7 @@ func CandleFromWsKline(pair string, k binance.WsKline) model.Candle {
 	candle.High, _ = strconv.ParseFloat(k.High, 64)
 	candle.Low, _ = strconv.ParseFloat(k.Low, 64)
 	candle.Volume, _ = strconv.ParseFloat(k.Volume, 64)
-	candle.Trades = k.TradeNum
 	candle.Complete = k.IsFinal
+	candle.Metadata = make(map[string]float64)
 	return candle
 }

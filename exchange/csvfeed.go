@@ -46,7 +46,7 @@ func (c CSVFeed) AssetsInfo(pair string) model.AssetInfo {
 
 func parseHeaders(headers []string) (index map[string]int, additional []string, ok bool) {
 	headerMap := map[string]int{
-		"time": 0, "open": 1, "close": 2, "low": 3, "high": 4, "volume": 5, "trades": 6,
+		"time": 0, "open": 1, "close": 2, "low": 3, "high": 4, "volume": 5,
 	}
 
 	_, err := strconv.Atoi(headers[0])
@@ -127,11 +127,6 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 			}
 
 			candle.Volume, err = strconv.ParseFloat(line[headerMap["volume"]], 64)
-			if err != nil {
-				return nil, err
-			}
-
-			candle.Trades, err = strconv.ParseInt(line[headerMap["trades"]], 10, 64)
 			if err != nil {
 				return nil, err
 			}
@@ -265,7 +260,6 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 			candle.High = math.Max(candles[lastIndex].High, candle.High)
 			candle.Low = math.Min(candles[lastIndex].Low, candle.Low)
 			candle.Volume += candles[lastIndex].Volume
-			candle.Trades += candles[lastIndex].Trades
 		}
 		candles = append(candles, candle)
 	}
