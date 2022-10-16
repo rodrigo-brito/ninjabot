@@ -11,7 +11,7 @@ func TestFromFile(t *testing.T) {
 	file, err := os.CreateTemp(os.TempDir(), "*.db")
 	require.NoError(t, err)
 	defer func() {
-		os.Remove(file.Name())
+		os.RemoveAll(file.Name())
 	}()
 	db, err := FromFile(file.Name())
 	require.NoError(t, err)

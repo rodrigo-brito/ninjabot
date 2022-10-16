@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/plot"
 	"github.com/rodrigo-brito/ninjabot/plot/indicator"
 	"github.com/rodrigo-brito/ninjabot/storage"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -83,6 +83,7 @@ func main() {
 		// connect bot feed (candle and orders) to the chart
 		ninjabot.WithCandleSubscription(chart),
 		ninjabot.WithOrderSubscription(chart),
+		ninjabot.WithLogLevel(log.WarnLevel),
 	)
 	if err != nil {
 		log.Fatal(err)

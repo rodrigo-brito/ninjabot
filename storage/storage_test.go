@@ -9,6 +9,7 @@ import (
 )
 
 func storageUseCase(repo Storage, t *testing.T) {
+	t.Helper()
 	now := time.Now()
 
 	firstOrder := &model.Order{

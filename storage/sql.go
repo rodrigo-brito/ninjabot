@@ -3,16 +3,25 @@ package storage
 import (
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
+
+	"github.com/rodrigo-brito/ninjabot/model"
 )
 
 type SQL struct {
 	db *gorm.DB
 }
 
-func FromSQL(dialector gorm.Dialector, opts ...gorm.Option) (Storage, error) {
-	db, err := gorm.Open(dialector, opts...)
+// FromSQL creates a new SQL connections for orders storage. Example of usage:
+//
+//	import "github.com/glebarez/sqlite"
+//	storage, err := storage.FromSQL(sqlite.Open("sqlite.db"), &gorm.Config{})
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+func FromSQL(dialect gorm.Dialector, opts ...gorm.Option) (Storage, error) {
+	db, err := gorm.Open(dialect, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -21,6 +30,7 @@ func FromSQL(dialector gorm.Dialector, opts ...gorm.Option) (Storage, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(time.Hour)
@@ -35,11 +45,13 @@ func FromSQL(dialector gorm.Dialector, opts ...gorm.Option) (Storage, error) {
 	}, nil
 }
 
+// CreateOrder creates a new order in a SQL database
 func (s *SQL) CreateOrder(order *model.Order) error {
 	result := s.db.Create(order) // pass pointer of data to Create
 	return result.Error
 }
 
+// UpdateOrder updates a given order
 func (s *SQL) UpdateOrder(order *model.Order) error {
 	o := model.Order{ID: order.ID}
 	s.db.First(&o)
@@ -48,28 +60,21 @@ func (s *SQL) UpdateOrder(order *model.Order) error {
 	return result.Error
 }
 
+// Orders filter a list of orders given a filter
 func (s *SQL) Orders(filters ...OrderFilter) ([]*model.Order, error) {
 	orders := make([]*model.Order, 0)
-	var os []model.Order
 
-	result := s.db.Find(&os)
+	result := s.db.Find(&orders)
 	if result.Error != nil && result.Error != gorm.ErrRecordNotFound {
 		return orders, nil
 	}
 
-	for i := range os {
-		isFiltered := true
+	return lo.Filter(orders, func(order *model.Order, _ int) bool {
 		for _, filter := range filters {
-			if ok := filter(os[i]); !ok {
-				isFiltered = false
-				break
-			} else {
-				isFiltered = true
+			if !filter(*order) {
+				return false
 			}
 		}
-		if isFiltered {
-			orders = append(orders, &os[i])
-		}
-	}
-	return orders, nil
+		return true
+	}), nil
 }
