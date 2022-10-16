@@ -31,7 +31,7 @@ var (
 )
 
 type Order struct {
-	ID         int64           `db:"id" json:"id"`
+	ID         int64           `db:"id" json:"id" gorm:"primaryKey,autoIncrement"`
 	ExchangeID int64           `db:"exchange_id" json:"exchange_id"`
 	Pair       string          `db:"pair" json:"pair"`
 	Side       SideType        `db:"side" json:"side"`
@@ -48,9 +48,9 @@ type Order struct {
 	GroupID *int64   `db:"group_id" json:"group_id"`
 
 	// Internal use (Plot)
-	RefPrice float64 `json:"ref_price"`
-	Profit   float64 `json:"profit"`
-	Candle   Candle  `json:"-"`
+	RefPrice float64 `json:"ref_price" gorm:"-"`
+	Profit   float64 `json:"profit" gorm:"-"`
+	Candle   Candle  `json:"-" gorm:"-"`
 }
 
 func (o Order) String() string {

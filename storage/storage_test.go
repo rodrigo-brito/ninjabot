@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -10,21 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFromFile(t *testing.T) {
-	file, err := ioutil.TempFile(os.TempDir(), "*.db")
-	require.NoError(t, err)
-	defer func() {
-		os.Remove(file.Name())
-	}()
-	db, err := FromFile(file.Name())
-	require.NoError(t, err)
-	require.NotNil(t, db)
-}
-
-func TestNewBunt(t *testing.T) {
+func storageUseCase(repo Storage, t *testing.T) {
 	now := time.Now()
-	repo, err := FromMemory()
-	require.NoError(t, err)
 
 	firstOrder := &model.Order{
 		ExchangeID: 1,
@@ -37,7 +22,7 @@ func TestNewBunt(t *testing.T) {
 		CreatedAt:  now.Add(-time.Minute),
 		UpdatedAt:  now.Add(-time.Minute),
 	}
-	err = repo.CreateOrder(firstOrder)
+	err := repo.CreateOrder(firstOrder)
 	require.NoError(t, err)
 
 	secondOrder := &model.Order{
