@@ -62,10 +62,12 @@ With SQL Storage you can use relational databases like MySQL, Postgress, SQLite 
 import (
     "gorm.io/driver/mysql"
     "gorm.io/gorm"
+
+    "github.com/rodrigo-brito/ninjabot/storage"
 )
 
 dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-storage, err := storage.FromFile(mysql.Open(dsn), &gorm.Config{})
+storage, err := storage.FromSQL(mysql.Open(dsn), &gorm.Config{})
 if err != nil {
     log.Fatal(err)
 }
