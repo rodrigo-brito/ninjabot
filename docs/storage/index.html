@@ -162,10 +162,12 @@
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>import</span> (
     <span style=color:#e6db74>&#34;gorm.io/driver/mysql&#34;</span>
     <span style=color:#e6db74>&#34;gorm.io/gorm&#34;</span>
+
+    <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/storage&#34;</span>
 )
 
 <span style=color:#a6e22e>dsn</span> <span style=color:#f92672>:=</span> <span style=color:#e6db74>&#34;user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&amp;parseTime=True&amp;loc=Local&#34;</span>
-<span style=color:#a6e22e>storage</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>storage</span>.<span style=color:#a6e22e>FromFile</span>(<span style=color:#a6e22e>mysql</span>.<span style=color:#a6e22e>Open</span>(<span style=color:#a6e22e>dsn</span>), <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>gorm</span>.<span style=color:#a6e22e>Config</span>{})
+<span style=color:#a6e22e>storage</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>storage</span>.<span style=color:#a6e22e>FromSQL</span>(<span style=color:#a6e22e>mysql</span>.<span style=color:#a6e22e>Open</span>(<span style=color:#a6e22e>dsn</span>), <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>gorm</span>.<span style=color:#a6e22e>Config</span>{})
 <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
     <span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
 }
