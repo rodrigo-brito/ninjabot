@@ -1,6 +1,6 @@
 ---
 title: "Streategy"
-linkTitle: "Strategy"
+linkTitle: "Custom Strategy"
 categories: ["Reference"]
 weight: 2
 description: >
@@ -43,7 +43,7 @@ import (
 type CrossEMA struct{}
 
 func (e CrossEMA) Timeframe() string {
-	return "1d"
+	return "1d" // examples: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w
 }
 
 func (e CrossEMA) WarmupPeriod() int {
@@ -55,7 +55,7 @@ func (e CrossEMA) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
 	df.Metadata["ema9"] = talib.Ema(df.Close, 9)
 
 
-	// you can return a list of indicators to include in the final chart
+	// (Optional) you can return a list of indicators to include in the final chart
 	return []strategy.ChartIndicator{
 		{
 			Overlay:   true,
