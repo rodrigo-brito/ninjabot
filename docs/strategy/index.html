@@ -66,14 +66,16 @@
 <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
 <a href=/ninjabot/docs/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span>Documentation</span></a>
 <ul class=ul-1>
-<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocsstrategy-li>
+<a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span class=td-sidebar-nav-active-item>Custom Strategy</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
 <a href=/ninjabot/docs/getting-started/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span>Getting Started</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
 <a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsploting-li>
 <a href=/ninjabot/docs/ploting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsploting><span>Plotting</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocsstrategy-li>
-<a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span class=td-sidebar-nav-active-item>Strategy</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
+<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstelegram-li>
 <a href=/ninjabot/docs/telegram/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstelegram><span>Telegram</span></a>
 </li>
@@ -101,7 +103,7 @@
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
 <li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>1</span></a></li>
-<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>4</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>5</span></a></li>
 </ul>
 </div>
 </aside>
@@ -112,7 +114,7 @@
 <a href=https://rodrigo-brito.github.io/ninjabot/docs/>Documentation</a>
 </li>
 <li class="breadcrumb-item active" aria-current=page>
-<a href=https://rodrigo-brito.github.io/ninjabot/docs/strategy/>Strategy</a>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/strategy/>Custom Strategy</a>
 </li>
 </ol>
 </nav>
@@ -156,8 +158,8 @@
 <span style=color:#66d9ef>type</span> <span style=color:#a6e22e>CrossEMA</span> <span style=color:#66d9ef>struct</span>{}
 
 <span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>Timeframe</span>() <span style=color:#66d9ef>string</span> {
-	<span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;1d&#34;</span>
-}
+	<span style=color:#66d9ef>return</span> <span style=color:#e6db74>&#34;1d&#34;</span> <span style=color:#75715e>// examples: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w
+</span><span style=color:#75715e></span>}
 
 <span style=color:#66d9ef>func</span> (<span style=color:#a6e22e>e</span> <span style=color:#a6e22e>CrossEMA</span>) <span style=color:#a6e22e>WarmupPeriod</span>() <span style=color:#66d9ef>int</span> {
 	<span style=color:#66d9ef>return</span> <span style=color:#ae81ff>9</span> <span style=color:#75715e>// warmup period, to preload indicators
@@ -168,7 +170,7 @@
 </span><span style=color:#75715e></span>	<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Metadata</span>[<span style=color:#e6db74>&#34;ema9&#34;</span>] = <span style=color:#a6e22e>talib</span>.<span style=color:#a6e22e>Ema</span>(<span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>, <span style=color:#ae81ff>9</span>)
 
 
-	<span style=color:#75715e>// you can return a list of indicators to include in the final chart
+	<span style=color:#75715e>// (Optional) you can return a list of indicators to include in the final chart
 </span><span style=color:#75715e></span>	<span style=color:#66d9ef>return</span> []<span style=color:#a6e22e>strategy</span>.<span style=color:#a6e22e>ChartIndicator</span>{
 		{
 			<span style=color:#a6e22e>Overlay</span>:   <span style=color:#66d9ef>true</span>,

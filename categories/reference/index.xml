@@ -1,4 +1,100 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ninjabot – Reference</title><link>https://rodrigo-brito.github.io/ninjabot/categories/reference/</link><description>Recent content in Reference on Ninjabot</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://rodrigo-brito.github.io/ninjabot/categories/reference/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Ninjabot CLI</title><link>https://rodrigo-brito.github.io/ninjabot/docs/cli/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/cli/</guid><description>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ninjabot – Reference</title><link>https://rodrigo-brito.github.io/ninjabot/categories/reference/</link><description>Recent content in Reference on Ninjabot</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://rodrigo-brito.github.io/ninjabot/categories/reference/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Streategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
+&lt;h2 id="strategy-functions">Strategy Functions&lt;/h2>
+&lt;p>To create a custom strategy, you need to create a &lt;code>Struct&lt;/code> that implements the following methods:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Strategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span>
+&lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span>
+&lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>
+&lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>)
+&lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) &lt;span style="color:#75715e">// Optional
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
+&lt;li>&lt;code>Timeframe&lt;/code>: specifies the strategy timeframe, eg: &amp;ldquo;15m&amp;rdquo;, &amp;ldquo;1h&amp;rdquo;, &amp;ldquo;1d&amp;rdquo;, &amp;ldquo;1w&amp;rdquo;.&lt;/li>
+&lt;li>&lt;code>WarmupPeriod&lt;/code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the &lt;code>WarmupPeriod&lt;/code> should be 9.&lt;/li>
+&lt;li>&lt;code>Indicators&lt;/code>: this function creates custom indicators, it is called for each new candle received. You can also return a list of indicators to display in the chart.&lt;/li>
+&lt;li>&lt;code>OnCandle&lt;/code>: this function is also called for each new &lt;strong>closed candle&lt;/strong>, after &lt;code>Indicators&lt;/code> execution. This function should contain your buy and sell rules. &lt;code>Dataframe&lt;/code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the &lt;code>Broker&lt;/code> operator.&lt;/li>
+&lt;li>&lt;code>OnPartialCandle&lt;/code>: this functions is optional, it will be called with high frequency, usually called every 2 seconds with partial data of current candle.&lt;/li>
+&lt;/ul>
+&lt;h2 id="example">Example&lt;/h2>
+&lt;p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/service&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/markcheno/go-talib&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">log&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/sirupsen/logrus&amp;#34;&lt;/span>
+)
+&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span>{}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span> &lt;span style="color:#75715e">// examples: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#ae81ff">9&lt;/span> &lt;span style="color:#75715e">// warmup period, to preload indicators
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">ChartIndicator&lt;/span> {
+&lt;span style="color:#75715e">// define a custom indicator, Exponential Moving Average of 9 periods
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">talib&lt;/span>.&lt;span style="color:#a6e22e">Ema&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>, &lt;span style="color:#ae81ff">9&lt;/span>)
+&lt;span style="color:#75715e">// (Optional) you can return a list of indicators to include in the final chart
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">return&lt;/span> []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>{
+{
+&lt;span style="color:#a6e22e">Overlay&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
+&lt;span style="color:#a6e22e">Time&lt;/span>: &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>,
+&lt;span style="color:#a6e22e">GroupName&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;EMA&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Metrics&lt;/span>: []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span>{
+{
+&lt;span style="color:#a6e22e">Values&lt;/span>: &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>],
+&lt;span style="color:#a6e22e">Name&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;EMA 9&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Style&lt;/span>: &lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">StyleLine&lt;/span>,
+},
+},
+},
+}
+}
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
+&lt;span style="color:#75715e">// Get the quote and assets information
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">assetPosition&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">Position&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;span style="color:#75715e">// Check if we have more than 10 USDT available in the wallet and the buy signal is triggered
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">quotePosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">10&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossover&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
+&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarketQuote&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeBuy&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#ae81ff">0.99&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+}
+&lt;span style="color:#75715e">// Check if we have position in the pair and the sell signal is triggered
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">assetPosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span>
+&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossunder&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
+&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarket&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeSell&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">assetPosition&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+}
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="heikin-ashi-candle-type-support">Heikin Ashi candle type support&lt;/h3>
+&lt;p>&lt;!-- raw HTML omitted -->&lt;/p>
+&lt;ul>
+&lt;li>CSV Feed exchange
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">csvFeed&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewCSVFeed&lt;/span>(
+&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">Timeframe&lt;/span>(),
+&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">PairFeed&lt;/span>{
+&lt;span style="color:#a6e22e">Pair&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;FTMUSDT&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">File&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;testdata/ftm-1d.csv&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Timeframe&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">HeikinAshi&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
+},
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;li>Binance
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinance&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceHeikinAshiCandle&lt;/span>())
+&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
+&lt;/ul>
+&lt;h3 id="high-frequency-trading-hft">High Frequency Trading (HFT)&lt;/h3>
+&lt;p>You also have access to partial candle updates through the function &lt;code>OnPartialCandle&lt;/code>. This can be useful for handling high frequency logic, such as using trailing stop or scalping techniques. See an example of usage below. This function is usually called every 2 seconds and may have small time variations.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
+&lt;span style="color:#75715e">// my logic here...
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Ninjabot CLI</title><link>https://rodrigo-brito.github.io/ninjabot/docs/cli/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/cli/</guid><description>
 &lt;p>Ninjabot CLI provides utilities commands to support backtesting and bot development.&lt;/p>
 &lt;h2 id="installation">Installation&lt;/h2>
 &lt;p>You can install CLI with the following command&lt;/p>
@@ -147,102 +243,44 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 },
 }
 }
-&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Streategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
-&lt;h2 id="strategy-functions">Strategy Functions&lt;/h2>
-&lt;p>To create a custom strategy, you need to create a &lt;code>Struct&lt;/code> that implements the following methods:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Strategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
-&lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span>
-&lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span>
-&lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>
-&lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>)
-&lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) &lt;span style="color:#75715e">// Optional
-&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
-&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
-&lt;li>&lt;code>Timeframe&lt;/code>: specifies the strategy timeframe, eg: &amp;ldquo;15m&amp;rdquo;, &amp;ldquo;1h&amp;rdquo;, &amp;ldquo;1d&amp;rdquo;, &amp;ldquo;1w&amp;rdquo;.&lt;/li>
-&lt;li>&lt;code>WarmupPeriod&lt;/code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the &lt;code>WarmupPeriod&lt;/code> should be 9.&lt;/li>
-&lt;li>&lt;code>Indicators&lt;/code>: this function creates custom indicators, it is called for each new candle received. You can also return a list of indicators to display in the chart.&lt;/li>
-&lt;li>&lt;code>OnCandle&lt;/code>: this function is also called for each new &lt;strong>closed candle&lt;/strong>, after &lt;code>Indicators&lt;/code> execution. This function should contain your buy and sell rules. &lt;code>Dataframe&lt;/code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the &lt;code>Broker&lt;/code> operator.&lt;/li>
-&lt;li>&lt;code>OnPartialCandle&lt;/code>: this functions is optional, it will be called with high frequency, usually called every 2 seconds with partial data of current candle.&lt;/li>
-&lt;/ul>
-&lt;h2 id="example">Example&lt;/h2>
-&lt;p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Storage</title><link>https://rodrigo-brito.github.io/ninjabot/docs/storage/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/storage/</guid><description>
+&lt;h2 id="support">Support&lt;/h2>
+&lt;p>Currently it is possible to use different types of storage, to be a valid storage just sign the following interface:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Storage&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;span style="color:#a6e22e">CreateOrder&lt;/span>(&lt;span style="color:#a6e22e">order&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
+&lt;span style="color:#a6e22e">UpdateOrder&lt;/span>(&lt;span style="color:#a6e22e">order&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
+&lt;span style="color:#a6e22e">Orders&lt;/span>(&lt;span style="color:#a6e22e">filters&lt;/span> &lt;span style="color:#f92672">...&lt;/span>&lt;span style="color:#a6e22e">OrderFilter&lt;/span>) ([]&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>A storage can be customized at bot startup time, with the option &lt;code>WithStorage(storage)&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
+&lt;span style="color:#75715e">// other options...
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="memory-storage">Memory Storage&lt;/h3>
+&lt;p>An in-memory storage is recommended for backtesting and for situations where you don&amp;rsquo;t want to keep the data in the long term, all data is erased after finishing the execution.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromMemory&lt;/span>()
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="file-storage">File Storage&lt;/h3>
+&lt;p>A simple file storage format that saves your history in JSON format via BuntDB&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromFile&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;orders.db&amp;#34;&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="sql-storage">SQL Storage&lt;/h3>
+&lt;p>With SQL Storage you can use relational databases like MySQL, Postgress, SQLite and others. It uses Gorm and the configuration options can be checked &lt;a href="https://gorm.io/docs/connecting_to_the_database.html">here&lt;/a>.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
-&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/service&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/markcheno/go-talib&amp;#34;&lt;/span>
-&lt;span style="color:#a6e22e">log&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/sirupsen/logrus&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;gorm.io/driver/mysql&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;gorm.io/gorm&amp;#34;&lt;/span>
 )
-&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span>{}
-&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Timeframe&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> {
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>
-}
-&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span> {
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#ae81ff">9&lt;/span> &lt;span style="color:#75715e">// warmup period, to preload indicators
-&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
-&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">ChartIndicator&lt;/span> {
-&lt;span style="color:#75715e">// define a custom indicator, Exponential Moving Average of 9 periods
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">talib&lt;/span>.&lt;span style="color:#a6e22e">Ema&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>, &lt;span style="color:#ae81ff">9&lt;/span>)
-&lt;span style="color:#75715e">// you can return a list of indicators to include in the final chart
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">return&lt;/span> []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>{
-{
-&lt;span style="color:#a6e22e">Overlay&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
-&lt;span style="color:#a6e22e">Time&lt;/span>: &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>,
-&lt;span style="color:#a6e22e">GroupName&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;EMA&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">Metrics&lt;/span>: []&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span>{
-{
-&lt;span style="color:#a6e22e">Values&lt;/span>: &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>],
-&lt;span style="color:#a6e22e">Name&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;EMA 9&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">Style&lt;/span>: &lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">StyleLine&lt;/span>,
-},
-},
-},
-}
-}
-&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
-&lt;span style="color:#75715e">// Get the quote and assets information
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">assetPosition&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">Position&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>)
+&lt;span style="color:#a6e22e">dsn&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&amp;amp;parseTime=True&amp;amp;loc=Local&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromFile&lt;/span>(&lt;span style="color:#a6e22e">mysql&lt;/span>.&lt;span style="color:#a6e22e">Open&lt;/span>(&lt;span style="color:#a6e22e">dsn&lt;/span>), &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">gorm&lt;/span>.&lt;span style="color:#a6e22e">Config&lt;/span>{})
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
 }
-&lt;span style="color:#75715e">// Check if we have more than 10 USDT available in the wallet and the buy signal is triggered
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">quotePosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">10&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossover&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
-&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarketQuote&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeBuy&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">quotePosition&lt;/span>&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#ae81ff">0.99&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
-}
-}
-&lt;span style="color:#75715e">// Check if we have position in the pair and the sell signal is triggered
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">assetPosition&lt;/span> &amp;gt; &lt;span style="color:#ae81ff">0&lt;/span> &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span>
-&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Crossunder&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Metadata&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;ema9&amp;#34;&lt;/span>]) {
-&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarket&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeSell&lt;/span>, &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Pair&lt;/span>, &lt;span style="color:#a6e22e">assetPosition&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
-}
-}
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="heikin-ashi-candle-type-support">Heikin Ashi candle type support&lt;/h3>
-&lt;p>&lt;!-- raw HTML omitted -->&lt;/p>
-&lt;ul>
-&lt;li>CSV Feed exchange
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">csvFeed&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewCSVFeed&lt;/span>(
-&lt;span style="color:#a6e22e">strategy&lt;/span>.&lt;span style="color:#a6e22e">Timeframe&lt;/span>(),
-&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">PairFeed&lt;/span>{
-&lt;span style="color:#a6e22e">Pair&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;FTMUSDT&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">File&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;testdata/ftm-1d.csv&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">Timeframe&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;1d&amp;#34;&lt;/span>,
-&lt;span style="color:#a6e22e">HeikinAshi&lt;/span>: &lt;span style="color:#66d9ef">true&lt;/span>,
-},
-&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
-&lt;li>Binance
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinance&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceHeikinAshiCandle&lt;/span>())
-&lt;/code>&lt;/pre>&lt;/div>&lt;/li>
-&lt;/ul>
-&lt;h3 id="high-frequency-trading-hft">High Frequency Trading (HFT)&lt;/h3>
-&lt;p>You also have access to partial candle updates through the function &lt;code>OnPartialCandle&lt;/code>. This can be useful for handling high frequency logic, such as using trailing stop or scalping techniques. See an example of usage below. This function is usually called every 2 seconds and may have small time variations.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
-&lt;span style="color:#75715e">// my logic here...
-&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
 &lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
 &lt;h2 id="installation">Installation&lt;/h2>
 &lt;p>To set up a Telegram bot, you should follow these steps:&lt;/p>
