@@ -97,7 +97,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 
 	// write headers
 	err = writer.Write([]string{
-		"time", "open", "close", "low", "high", "volume", "trades",
+		"time", "open", "close", "low", "high", "volume",
 	})
 	if err != nil {
 		return err
