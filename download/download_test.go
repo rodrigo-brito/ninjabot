@@ -8,6 +8,7 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/service"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
