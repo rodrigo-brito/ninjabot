@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/rodrigo-brito/ninjabot/service"
-	"github.com/schollz/progressbar/v3"
 
+	"github.com/schollz/progressbar/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/xhit/go-str2duration/v2"
 )
