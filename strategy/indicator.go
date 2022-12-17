@@ -27,4 +27,5 @@ type ChartIndicator struct {
 	Metrics   []IndicatorMetric
 	Overlay   bool
 	GroupName string
+	Warmup    int
 }

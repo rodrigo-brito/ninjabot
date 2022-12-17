@@ -24,6 +24,10 @@ type cci struct {
 	Time   []time.Time
 }
 
+func (c cci) Warmup() int {
+	return c.Period
+}
+
 func (c cci) Name() string {
 	return fmt.Sprintf("CCI(%d)", c.Period)
 }

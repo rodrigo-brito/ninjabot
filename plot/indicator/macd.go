@@ -34,6 +34,10 @@ type macd struct {
 	Time             []time.Time
 }
 
+func (e macd) Warmup() int {
+	return e.Slow + e.Signal
+}
+
 func (e macd) Name() string {
 	return fmt.Sprintf("MACD(%d, %d, %d)", e.Fast, e.Slow, e.Signal)
 }

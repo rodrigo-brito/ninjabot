@@ -30,6 +30,10 @@ type bollingerBands struct {
 	Time          []time.Time
 }
 
+func (bb bollingerBands) Warmup() int {
+	return bb.Period
+}
+
 func (bb bollingerBands) Name() string {
 	return fmt.Sprintf("BB(%d, %.2f)", bb.Period, bb.StdDeviation)
 }

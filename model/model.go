@@ -55,6 +55,24 @@ type Dataframe struct {
 	Metadata map[string]Series
 }
 
+func (df Dataframe) Sample(positions int) Dataframe {
+	sample := df
+	size := len(sample.Time)
+	start := size - positions
+	if size <= positions || start < 0 {
+		return df
+	}
+
+	sample.Close = sample.Close[start:]
+	sample.Open = sample.Open[start:]
+	sample.Low = sample.Low[start:]
+	sample.High = sample.High[start:]
+	sample.Volume = sample.Volume[start:]
+	sample.Time = sample.Time[start:]
+
+	return sample
+}
+
 type Candle struct {
 	Pair      string
 	Time      time.Time

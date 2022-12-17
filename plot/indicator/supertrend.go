@@ -31,6 +31,10 @@ type supertrend struct {
 	Time           []time.Time
 }
 
+func (s supertrend) Warmup() int {
+	return s.Period
+}
+
 func (s supertrend) Name() string {
 	return fmt.Sprintf("SuperTrend(%d,%.1f)", s.Period, s.Factor)
 }

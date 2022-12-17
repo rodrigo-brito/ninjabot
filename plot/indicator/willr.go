@@ -24,6 +24,10 @@ type willR struct {
 	Time   []time.Time
 }
 
+func (w willR) Warmup() int {
+	return w.Period
+}
+
 func (w willR) Name() string {
 	return fmt.Sprintf("%%R(%d)", w.Period)
 }

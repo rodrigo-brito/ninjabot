@@ -24,6 +24,10 @@ type sma struct {
 	Time   []time.Time
 }
 
+func (s sma) Warmup() int {
+	return s.Period
+}
+
 func (s sma) Name() string {
 	return fmt.Sprintf("SMA(%d)", s.Period)
 }
