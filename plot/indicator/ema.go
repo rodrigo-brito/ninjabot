@@ -24,6 +24,10 @@ type ema struct {
 	Time   []time.Time
 }
 
+func (e ema) Warmup() int {
+	return e.Period
+}
+
 func (e ema) Name() string {
 	return fmt.Sprintf("EMA(%d)", e.Period)
 }

@@ -21,6 +21,10 @@ type obv struct {
 	Time   []time.Time
 }
 
+func (e obv) Warmup() int {
+	return 0
+}
+
 func (e obv) Name() string {
 	return "OBV"
 }

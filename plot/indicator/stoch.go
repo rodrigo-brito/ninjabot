@@ -31,6 +31,10 @@ type stoch struct {
 	Time    []time.Time
 }
 
+func (e stoch) Warmup() int {
+	return e.SlowD + e.SlowK
+}
+
 func (e stoch) Name() string {
 	return fmt.Sprintf("STOCH(%d, %d, %d)", e.FastK, e.SlowK, e.SlowD)
 }

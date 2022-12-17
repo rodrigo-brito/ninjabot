@@ -24,6 +24,10 @@ type rsi struct {
 	Time   []time.Time
 }
 
+func (e rsi) Warmup() int {
+	return e.Period
+}
+
 func (e rsi) Name() string {
 	return fmt.Sprintf("RSI(%d)", e.Period)
 }

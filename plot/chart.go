@@ -40,6 +40,7 @@ type Chart struct {
 	scriptContent string
 	indexHTML     *template.Template
 	strategy      strategy.Strategy
+	lastUpdate    time.Time
 }
 
 type Candle struct {
@@ -77,6 +78,7 @@ type plotIndicator struct {
 	Name    string            `json:"name"`
 	Overlay bool              `json:"overlay"`
 	Metrics []indicatorMetric `json:"metrics"`
+	Warmup  int               `json:"-"`
 }
 
 type drawdown struct {
@@ -88,6 +90,7 @@ type drawdown struct {
 type Indicator interface {
 	Name() string
 	Overlay() bool
+	Warmup() int
 	Metrics() []IndicatorMetric
 	Load(dataframe *model.Dataframe)
 }
@@ -113,8 +116,9 @@ func (c *Chart) OnCandle(candle model.Candle) {
 	c.Lock()
 	defer c.Unlock()
 
+	lastIndex := len(c.candles[candle.Pair]) - 1
 	if candle.Complete && (len(c.candles[candle.Pair]) == 0 ||
-		candle.Time.After(c.candles[candle.Pair][len(c.candles[candle.Pair])-1].Time)) {
+		candle.Time.After(c.candles[candle.Pair][lastIndex].Time)) {
 
 		c.candles[candle.Pair] = append(c.candles[candle.Pair], Candle{
 			Time:   candle.Time,
@@ -144,6 +148,7 @@ func (c *Chart) OnCandle(candle model.Candle) {
 		for k, v := range candle.Metadata {
 			c.dataframe[candle.Pair].Metadata[k] = append(c.dataframe[candle.Pair].Metadata[k], v)
 		}
+		c.lastUpdate = candle.Time
 	}
 }
 
@@ -178,6 +183,7 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 		indicator := plotIndicator{
 			Name:    i.Name(),
 			Overlay: i.Overlay(),
+			Warmup:  i.Warmup(),
 			Metrics: make([]indicatorMetric, 0),
 		}
 
@@ -201,6 +207,7 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 			indicator := plotIndicator{
 				Name:    i.GroupName,
 				Overlay: i.Overlay,
+				Warmup:  i.Warmup,
 				Metrics: make([]indicatorMetric, 0),
 			}
 
@@ -210,8 +217,8 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 				}
 
 				indicator.Metrics = append(indicator.Metrics, indicatorMetric{
-					Time:   i.Time[warmup:],
-					Values: metric.Values[warmup:],
+					Time:   i.Time[i.Warmup:],
+					Values: metric.Values[i.Warmup:],
 					Name:   metric.Name,
 					Color:  metric.Color,
 					Style:  string(metric.Style),
@@ -281,6 +288,14 @@ func (c *Chart) orderStringByPair(pair string) [][]string {
 		orders = append(orders, order)
 	}
 	return orders
+}
+
+func (c *Chart) handleHealth(w http.ResponseWriter, r *http.Request) {
+	if time.Since(c.lastUpdate) > time.Hour {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -392,6 +407,7 @@ func (c *Chart) Start() error {
 		fmt.Fprint(w, c.scriptContent)
 	})
 
+	http.HandleFunc("/health", c.handleHealth)
 	http.HandleFunc("/history", c.handleTradingHistoryData)
 	http.HandleFunc("/data", c.handleData)
 	http.HandleFunc("/", c.handleIndex)
