@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/buntdb v1.2.10
-	github.com/urfave/cli/v2 v2.23.0
+	github.com/urfave/cli/v2 v2.24.2
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	gopkg.in/tucnak/telebot.v2 v2.5.0
 	gorm.io/gorm v1.24.2
