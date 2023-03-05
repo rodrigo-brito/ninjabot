@@ -1,8 +1,9 @@
 package strategy
 
 import (
-	"github.com/rodrigo-brito/ninjabot/model"
 	"time"
+
+	"github.com/rodrigo-brito/ninjabot/model"
 )
 
 type MetricStyle string
@@ -19,7 +20,7 @@ type IndicatorMetric struct {
 	Name   string
 	Color  string
 	Style  MetricStyle // default: line
-	Values model.Series
+	Values model.Series[float64]
 }
 
 type ChartIndicator struct {

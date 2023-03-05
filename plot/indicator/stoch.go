@@ -26,8 +26,8 @@ type stoch struct {
 	SlowD   int
 	ColorK  string
 	ColorD  string
-	ValuesK model.Series
-	ValuesD model.Series
+	ValuesK model.Series[float64]
+	ValuesD model.Series[float64]
 	Time    []time.Time
 }
 

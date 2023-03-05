@@ -28,9 +28,9 @@ type macd struct {
 	ColorMACD        string
 	ColorMACDSignal  string
 	ColorMACDHist    string
-	ValuesMACD       model.Series
-	ValuesMACDSignal model.Series
-	ValuesMACDHist   model.Series
+	ValuesMACD       model.Series[float64]
+	ValuesMACDSignal model.Series[float64]
+	ValuesMACDHist   model.Series[float64]
 	Time             []time.Time
 }
 

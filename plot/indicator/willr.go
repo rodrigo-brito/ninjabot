@@ -20,7 +20,7 @@ func WillR(period int, color string) plot.Indicator {
 type willR struct {
 	Period int
 	Color  string
-	Values model.Series
+	Values model.Series[float64]
 	Time   []time.Time
 }
 

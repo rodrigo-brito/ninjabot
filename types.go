@@ -8,7 +8,7 @@ type (
 	Settings         = model.Settings
 	TelegramSettings = model.TelegramSettings
 	Dataframe        = model.Dataframe
-	Series           = model.Series
+	Series           = model.Series[float64]
 	SideType         = model.SideType
 	OrderType        = model.OrderType
 	OrderStatusType  = model.OrderStatusType

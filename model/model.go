@@ -42,17 +42,17 @@ type AssetInfo struct {
 type Dataframe struct {
 	Pair string
 
-	Close  Series
-	Open   Series
-	High   Series
-	Low    Series
-	Volume Series
+	Close  Series[float64]
+	Open   Series[float64]
+	High   Series[float64]
+	Low    Series[float64]
+	Volume Series[float64]
 
 	Time       []time.Time
 	LastUpdate time.Time
 
 	// Custom user metadata
-	Metadata map[string]Series
+	Metadata map[string]Series[float64]
 }
 
 func (df Dataframe) Sample(positions int) Dataframe {

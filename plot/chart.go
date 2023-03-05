@@ -99,7 +99,7 @@ type IndicatorMetric struct {
 	Name   string
 	Color  string
 	Style  string
-	Values model.Series
+	Values model.Series[float64]
 	Time   []time.Time
 }
 
@@ -133,7 +133,7 @@ func (c *Chart) OnCandle(candle model.Candle) {
 		if c.dataframe[candle.Pair] == nil {
 			c.dataframe[candle.Pair] = &model.Dataframe{
 				Pair:     candle.Pair,
-				Metadata: make(map[string]model.Series),
+				Metadata: make(map[string]model.Series[float64]),
 			}
 			c.ordersByPair[candle.Pair] = set.NewLinkedHashSetINT64()
 		}
@@ -148,7 +148,7 @@ func (c *Chart) OnCandle(candle model.Candle) {
 		for k, v := range candle.Metadata {
 			c.dataframe[candle.Pair].Metadata[k] = append(c.dataframe[candle.Pair].Metadata[k], v)
 		}
-		c.lastUpdate = candle.Time
+		c.lastUpdate = time.Now()
 	}
 }
 
@@ -291,7 +291,8 @@ func (c *Chart) orderStringByPair(pair string) [][]string {
 }
 
 func (c *Chart) handleHealth(w http.ResponseWriter, r *http.Request) {
-	if time.Since(c.lastUpdate) > time.Hour {
+	if time.Since(c.lastUpdate) > time.Hour+10*time.Minute {
+		w.Write([]byte(c.lastUpdate.String()))
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
