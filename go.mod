@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/buntdb v1.2.10
-	github.com/urfave/cli/v2 v2.23.0
+	github.com/urfave/cli/v2 v2.25.0
 	github.com/vektra/mockery/v2 v2.15.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
