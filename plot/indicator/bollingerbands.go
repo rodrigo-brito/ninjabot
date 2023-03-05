@@ -24,9 +24,9 @@ type bollingerBands struct {
 	StdDeviation  float64
 	UpDnBandColor string
 	MidBandColor  string
-	UpperBand     model.Series
-	MiddleBand    model.Series
-	LowerBand     model.Series
+	UpperBand     model.Series[float64]
+	MiddleBand    model.Series[float64]
+	LowerBand     model.Series[float64]
 	Time          []time.Time
 }
 

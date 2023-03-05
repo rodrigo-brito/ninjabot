@@ -20,7 +20,7 @@ func RSI(period int, color string) plot.Indicator {
 type rsi struct {
 	Period int
 	Color  string
-	Values model.Series
+	Values model.Series[float64]
 	Time   []time.Time
 }
 

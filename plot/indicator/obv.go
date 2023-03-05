@@ -17,7 +17,7 @@ func OBV(color string) plot.Indicator {
 
 type obv struct {
 	Color  string
-	Values model.Series
+	Values model.Series[float64]
 	Time   []time.Time
 }
 
