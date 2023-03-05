@@ -2,9 +2,11 @@ package exchange
 
 import (
 	"fmt"
-	"github.com/rodrigo-brito/ninjabot/model"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/rodrigo-brito/ninjabot/model"
 )
 
 func TestFormatQuantity(t *testing.T) {
@@ -30,10 +32,16 @@ func TestFormatQuantity(t *testing.T) {
 	}{
 		{"BTCUSDT", 1.1, "1.1"},
 		{"BTCUSDT", 11, "11"},
+		{"BTCUSDT", 11, "11"},
 		{"BTCUSDT", 1.1111111111, "1.11111"},
+		{"BTCUSDT", 1.9999999999999, "1.99999"},
 		{"BTCUSDT", 1111111.1111111111, "1111111.11111"},
 		{"BATUSDT", 111.111, "111.11"},
-		{"BATUSDT", 9.99999, "9.99"},
+		{"BATUSDT", 9.9999999999, "9.99"},
+		{"BATUSDT", 9.9999999999, "9.99"},
+		{"BATUSDT", 10, "10"},
+		{"BATUSDT", 10.11111, "10.11"},
+		{"BATUSDT", 0.01, "0.01"},
 	}
 
 	for _, tc := range tt {

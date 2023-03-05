@@ -43,7 +43,8 @@ func (s Series[T]) Crossunder(ref Series[T]) bool {
 	return s.Last(0) <= ref.Last(0) && s.Last(1) > ref.Last(1)
 }
 
-// Cross returns true if the last value of the series is greater than the last value of the reference series or less than the last value of the reference series
+// Cross returns true if the last value of the series is greater than the last value of the
+// reference series or less than the last value of the reference series
 func (s Series[T]) Cross(ref Series[T]) bool {
 	return s.Crossover(ref) || s.Crossunder(ref)
 }

@@ -18,6 +18,7 @@ require (
 	github.com/urfave/cli/v2 v2.23.0
 	github.com/vektra/mockery/v2 v2.15.0
 	github.com/xhit/go-str2duration/v2 v2.0.0
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
 	gopkg.in/tucnak/telebot.v2 v2.5.0
 	gorm.io/gorm v1.24.2
 )
@@ -69,7 +70,6 @@ require (
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
