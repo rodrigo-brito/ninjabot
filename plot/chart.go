@@ -29,18 +29,18 @@ var (
 
 type Chart struct {
 	sync.Mutex
-	port          int
-	debug         bool
-	candles       map[string][]Candle
-	dataframe     map[string]*model.Dataframe
-	ordersByPair  map[string]*set.LinkedHashSetINT64
-	orderByID     map[int64]model.Order
-	indicators    []Indicator
-	paperWallet   *exchange.PaperWallet
-	scriptContent string
-	indexHTML     *template.Template
-	strategy      strategy.Strategy
-	lastUpdate    time.Time
+	port            int
+	debug           bool
+	candles         map[string][]Candle
+	dataframe       map[string]*model.Dataframe
+	ordersIDsByPair map[string]*set.LinkedHashSetINT64
+	orderByID       map[int64]model.Order
+	indicators      []Indicator
+	paperWallet     *exchange.PaperWallet
+	scriptContent   string
+	indexHTML       *template.Template
+	strategy        strategy.Strategy
+	lastUpdate      time.Time
 }
 
 type Candle struct {
@@ -107,9 +107,8 @@ func (c *Chart) OnOrder(order model.Order) {
 	c.Lock()
 	defer c.Unlock()
 
-	c.ordersByPair[order.Pair].Add(order.ID)
+	c.ordersIDsByPair[order.Pair].Add(order.ID)
 	c.orderByID[order.ID] = order
-
 }
 
 func (c *Chart) OnCandle(candle model.Candle) {
@@ -135,7 +134,7 @@ func (c *Chart) OnCandle(candle model.Candle) {
 				Pair:     candle.Pair,
 				Metadata: make(map[string]model.Series[float64]),
 			}
-			c.ordersByPair[candle.Pair] = set.NewLinkedHashSetINT64()
+			c.ordersIDsByPair[candle.Pair] = set.NewLinkedHashSetINT64()
 		}
 
 		c.dataframe[candle.Pair].Close = append(c.dataframe[candle.Pair].Close, candle.Close)
@@ -233,17 +232,31 @@ func (c *Chart) indicatorsByPair(pair string) []plotIndicator {
 
 func (c *Chart) candlesByPair(pair string) []Candle {
 	candles := make([]Candle, len(c.candles[pair]))
+	orderCheck := make(map[int64]bool)
+	for id := range c.ordersIDsByPair[pair].Iter() {
+		orderCheck[id] = true
+	}
+
 	for i := range c.candles[pair] {
 		candles[i] = c.candles[pair][i]
-		for id := range c.ordersByPair[pair].Iter() {
+		for id := range c.ordersIDsByPair[pair].Iter() {
 			order := c.orderByID[id]
 
 			if i < len(c.candles[pair])-1 &&
 				(order.UpdatedAt.After(c.candles[pair][i].Time) &&
 					order.UpdatedAt.Before(c.candles[pair][i+1].Time)) ||
 				order.UpdatedAt.Equal(c.candles[pair][i].Time) {
+
+				delete(orderCheck, id)
 				candles[i].Orders = append(candles[i].Orders, order)
 			}
+		}
+	}
+
+	for id := range orderCheck {
+		order := c.orderByID[id]
+		if order.UpdatedAt.After(c.candles[pair][len(c.candles)-1].Time) {
+			c.candles[pair][len(c.candles)-1].Orders = append(c.candles[pair][len(c.candles)-1].Orders, order)
 		}
 	}
 
@@ -252,7 +265,7 @@ func (c *Chart) candlesByPair(pair string) []Candle {
 
 func (c *Chart) shapesByPair(pair string) []Shape {
 	shapes := make([]Shape, 0)
-	for id := range c.ordersByPair[pair].Iter() {
+	for id := range c.ordersIDsByPair[pair].Iter() {
 		order := c.orderByID[id]
 
 		if order.Type != model.OrderTypeStopLoss &&
@@ -280,7 +293,7 @@ func (c *Chart) shapesByPair(pair string) []Shape {
 
 func (c *Chart) orderStringByPair(pair string) [][]string {
 	orders := make([][]string, 0)
-	for id := range c.ordersByPair[pair].Iter() {
+	for id := range c.ordersIDsByPair[pair].Iter() {
 		o := c.orderByID[id]
 		orderString := fmt.Sprintf("%s,%s,%d,%s,%f,%f,%.2f,%s",
 			o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
@@ -455,11 +468,11 @@ func WithCustomIndicators(indicators ...Indicator) Option {
 
 func NewChart(options ...Option) (*Chart, error) {
 	chart := &Chart{
-		port:         8080,
-		candles:      make(map[string][]Candle),
-		dataframe:    make(map[string]*model.Dataframe),
-		ordersByPair: make(map[string]*set.LinkedHashSetINT64),
-		orderByID:    make(map[int64]model.Order),
+		port:            8080,
+		candles:         make(map[string][]Candle),
+		dataframe:       make(map[string]*model.Dataframe),
+		ordersIDsByPair: make(map[string]*set.LinkedHashSetINT64),
+		orderByID:       make(map[int64]model.Order),
 	}
 
 	for _, option := range options {

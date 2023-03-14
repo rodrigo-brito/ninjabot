@@ -6,19 +6,20 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/adshao/go-binance/v2/futures"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/common"
 	"github.com/jpillora/backoff"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/rodrigo-brito/ninjabot/model"
+	log2 "github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
-type MetadataFetchers func(pair string, t time.Time) (string, float64)
-
-type Binance struct {
+type BinanceFuture struct {
 	ctx        context.Context
-	client     *binance.Client
+	client     *futures.Client
 	assetsInfo map[string]model.AssetInfo
 	HeikinAshi bool
 	Testnet    bool
@@ -29,44 +30,31 @@ type Binance struct {
 	MetadataFetchers []MetadataFetchers
 }
 
-type BinanceOption func(*Binance)
+type BinanceFutureOption func(*BinanceFuture)
 
-func WithBinanceCredentials(key, secret string) BinanceOption {
-	return func(b *Binance) {
+// WithBinanceFuturesHeikinAshiCandle will use Heikin Ashi candle instead of regular candle
+func WithBinanceFuturesHeikinAshiCandle() BinanceFutureOption {
+	return func(b *BinanceFuture) {
+		b.HeikinAshi = true
+	}
+}
+
+func WithBinanceFutureCredentials(key, secret string) BinanceFutureOption {
+	return func(b *BinanceFuture) {
 		b.APIKey = key
 		b.APISecret = secret
 	}
 }
 
-func WithBinanceHeikinAshiCandle() BinanceOption {
-	return func(b *Binance) {
-		b.HeikinAshi = true
-	}
-}
-
-// WithMetadataFetcher will execute a function after receive a new candle and include additional
-// information to candle's metadata
-func WithMetadataFetcher(fetcher MetadataFetchers) BinanceOption {
-	return func(b *Binance) {
-		b.MetadataFetchers = append(b.MetadataFetchers, fetcher)
-	}
-}
-
-// WithTestNet activate Bianance testnet
-func WithTestNet() BinanceOption {
-	return func(b *Binance) {
-		binance.UseTestnet = true
-	}
-}
-
-func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error) {
+// NewBinanceFuture will create a new BinanceFuture instance
+func NewBinanceFuture(ctx context.Context, options ...BinanceFutureOption) (*BinanceFuture, error) {
 	binance.WebsocketKeepalive = true
-	exchange := &Binance{ctx: ctx}
+	exchange := &BinanceFuture{ctx: ctx}
 	for _, option := range options {
 		option(exchange)
 	}
 
-	exchange.client = binance.NewClient(exchange.APIKey, exchange.APISecret)
+	exchange.client = futures.NewClient(exchange.APIKey, exchange.APISecret)
 	err := exchange.client.NewPingService().Do(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("binance ping fail: %w", err)
@@ -109,7 +97,7 @@ func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error)
 	return exchange, nil
 }
 
-func (b *Binance) LastQuote(ctx context.Context, pair string) (float64, error) {
+func (b *BinanceFuture) LastQuote(ctx context.Context, pair string) (float64, error) {
 	candles, err := b.CandlesByLimit(ctx, pair, "1m", 1)
 	if err != nil || len(candles) < 1 {
 		return 0, err
@@ -117,11 +105,11 @@ func (b *Binance) LastQuote(ctx context.Context, pair string) (float64, error) {
 	return candles[0].Close, nil
 }
 
-func (b *Binance) AssetsInfo(pair string) model.AssetInfo {
+func (b *BinanceFuture) AssetsInfo(pair string) model.AssetInfo {
 	return b.assetsInfo[pair]
 }
 
-func (b *Binance) validate(pair string, quantity float64) error {
+func (b *BinanceFuture) validate(pair string, quantity float64) error {
 	info, ok := b.assetsInfo[pair]
 	if !ok {
 		return ErrInvalidAsset
@@ -138,65 +126,21 @@ func (b *Binance) validate(pair string, quantity float64) error {
 	return nil
 }
 
-func (b *Binance) CreateOrderOCO(side model.SideType, pair string,
+func (b *BinanceFuture) CreateOrderOCO(side model.SideType, pair string,
 	quantity, price, stop, stopLimit float64) ([]model.Order, error) {
-
-	// validate stop
-	err := b.validate(pair, quantity)
-	if err != nil {
-		return nil, err
-	}
-
-	ocoOrder, err := b.client.NewCreateOCOService().
-		Side(binance.SideType(side)).
-		Quantity(b.formatQuantity(pair, quantity)).
-		Price(b.formatPrice(pair, price)).
-		StopPrice(b.formatPrice(pair, stop)).
-		StopLimitPrice(b.formatPrice(pair, stopLimit)).
-		StopLimitTimeInForce(binance.TimeInForceTypeGTC).
-		Symbol(pair).
-		Do(b.ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	orders := make([]model.Order, 0, len(ocoOrder.Orders))
-	for _, order := range ocoOrder.OrderReports {
-		price, _ := strconv.ParseFloat(order.Price, 64)
-		quantity, _ := strconv.ParseFloat(order.OrigQuantity, 64)
-		item := model.Order{
-			ExchangeID: order.OrderID,
-			CreatedAt:  time.Unix(0, ocoOrder.TransactionTime*int64(time.Millisecond)),
-			UpdatedAt:  time.Unix(0, ocoOrder.TransactionTime*int64(time.Millisecond)),
-			Pair:       pair,
-			Side:       model.SideType(order.Side),
-			Type:       model.OrderType(order.Type),
-			Status:     model.OrderStatusType(order.Status),
-			Price:      price,
-			Quantity:   quantity,
-			GroupID:    &order.OrderListID,
-		}
-
-		if item.Type == model.OrderTypeStopLossLimit || item.Type == model.OrderTypeStopLoss {
-			item.Stop = &stop
-		}
-
-		orders = append(orders, item)
-	}
-
-	return orders, nil
+	panic("not implemented")
 }
 
-func (b *Binance) CreateOrderStop(pair string, quantity float64, limit float64) (model.Order, error) {
+func (b *BinanceFuture) CreateOrderStop(pair string, quantity float64, limit float64) (model.Order, error) {
 	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
 	}
 
 	order, err := b.client.NewCreateOrderService().Symbol(pair).
-		Type(binance.OrderTypeStopLoss).
-		TimeInForce(binance.TimeInForceTypeGTC).
-		Side(binance.SideTypeSell).
+		Type(futures.OrderTypeStopMarket).
+		TimeInForce(futures.TimeInForceTypeGTC).
+		Side(futures.SideTypeSell).
 		Quantity(b.formatQuantity(pair, quantity)).
 		Price(b.formatPrice(pair, limit)).
 		Do(b.ctx)
@@ -209,8 +153,8 @@ func (b *Binance) CreateOrderStop(pair string, quantity float64, limit float64) 
 
 	return model.Order{
 		ExchangeID: order.OrderID,
-		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
-		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
 		Pair:       pair,
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
@@ -220,21 +164,21 @@ func (b *Binance) CreateOrderStop(pair string, quantity float64, limit float64) 
 	}, nil
 }
 
-func (b *Binance) formatPrice(pair string, value float64) string {
+func (b *BinanceFuture) formatPrice(pair string, value float64) string {
 	if info, ok := b.assetsInfo[pair]; ok {
 		value = common.AmountToLotSize(info.TickSize, info.QuotePrecision, value)
 	}
 	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
-func (b *Binance) formatQuantity(pair string, value float64) string {
+func (b *BinanceFuture) formatQuantity(pair string, value float64) string {
 	if info, ok := b.assetsInfo[pair]; ok {
 		value = common.AmountToLotSize(info.StepSize, info.BaseAssetPrecision, value)
 	}
 	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
-func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
+func (b *BinanceFuture) CreateOrderLimit(side model.SideType, pair string,
 	quantity float64, limit float64) (model.Order, error) {
 
 	err := b.validate(pair, quantity)
@@ -244,9 +188,9 @@ func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
 
 	order, err := b.client.NewCreateOrderService().
 		Symbol(pair).
-		Type(binance.OrderTypeLimit).
-		TimeInForce(binance.TimeInForceTypeGTC).
-		Side(binance.SideType(side)).
+		Type(futures.OrderTypeLimit).
+		TimeInForce(futures.TimeInForceTypeGTC).
+		Side(futures.SideType(side)).
 		Quantity(b.formatQuantity(pair, quantity)).
 		Price(b.formatPrice(pair, limit)).
 		Do(b.ctx)
@@ -266,8 +210,8 @@ func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
 
 	return model.Order{
 		ExchangeID: order.OrderID,
-		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
-		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
 		Pair:       pair,
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
@@ -277,7 +221,7 @@ func (b *Binance) CreateOrderLimit(side model.SideType, pair string,
 	}, nil
 }
 
-func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity float64) (model.Order, error) {
+func (b *BinanceFuture) CreateOrderMarket(side model.SideType, pair string, quantity float64) (model.Order, error) {
 	err := b.validate(pair, quantity)
 	if err != nil {
 		return model.Order{}, err
@@ -285,16 +229,16 @@ func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity f
 
 	order, err := b.client.NewCreateOrderService().
 		Symbol(pair).
-		Type(binance.OrderTypeMarket).
-		Side(binance.SideType(side)).
+		Type(futures.OrderTypeMarket).
+		Side(futures.SideType(side)).
 		Quantity(b.formatQuantity(pair, quantity)).
-		NewOrderRespType(binance.NewOrderRespTypeFULL).
+		NewOrderResponseType(futures.NewOrderRespTypeRESULT).
 		Do(b.ctx)
 	if err != nil {
 		return model.Order{}, err
 	}
 
-	cost, err := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+	cost, err := strconv.ParseFloat(order.CumQuote, 64)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -306,8 +250,8 @@ func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity f
 
 	return model.Order{
 		ExchangeID: order.OrderID,
-		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
-		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
+		CreatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
+		UpdatedAt:  time.Unix(0, order.UpdateTime*int64(time.Millisecond)),
 		Pair:       order.Symbol,
 		Side:       model.SideType(order.Side),
 		Type:       model.OrderType(order.Type),
@@ -317,47 +261,11 @@ func (b *Binance) CreateOrderMarket(side model.SideType, pair string, quantity f
 	}, nil
 }
 
-func (b *Binance) CreateOrderMarketQuote(side model.SideType, pair string, quantity float64) (model.Order, error) {
-	err := b.validate(pair, quantity)
-	if err != nil {
-		return model.Order{}, err
-	}
-
-	order, err := b.client.NewCreateOrderService().
-		Symbol(pair).
-		Type(binance.OrderTypeMarket).
-		Side(binance.SideType(side)).
-		QuoteOrderQty(b.formatQuantity(pair, quantity)).
-		NewOrderRespType(binance.NewOrderRespTypeFULL).
-		Do(b.ctx)
-	if err != nil {
-		return model.Order{}, err
-	}
-
-	cost, err := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
-	if err != nil {
-		return model.Order{}, err
-	}
-
-	quantity, err = strconv.ParseFloat(order.ExecutedQuantity, 64)
-	if err != nil {
-		return model.Order{}, err
-	}
-
-	return model.Order{
-		ExchangeID: order.OrderID,
-		CreatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
-		UpdatedAt:  time.Unix(0, order.TransactTime*int64(time.Millisecond)),
-		Pair:       order.Symbol,
-		Side:       model.SideType(order.Side),
-		Type:       model.OrderType(order.Type),
-		Status:     model.OrderStatusType(order.Status),
-		Price:      cost / quantity,
-		Quantity:   quantity,
-	}, nil
+func (b *BinanceFuture) CreateOrderMarketQuote(side model.SideType, pair string, quantity float64) (model.Order, error) {
+	panic("not implemented")
 }
 
-func (b *Binance) Cancel(order model.Order) error {
+func (b *BinanceFuture) Cancel(order model.Order) error {
 	_, err := b.client.NewCancelOrderService().
 		Symbol(order.Pair).
 		OrderID(order.ExchangeID).
@@ -365,7 +273,7 @@ func (b *Binance) Cancel(order model.Order) error {
 	return err
 }
 
-func (b *Binance) Orders(pair string, limit int) ([]model.Order, error) {
+func (b *BinanceFuture) Orders(pair string, limit int) ([]model.Order, error) {
 	result, err := b.client.NewListOrdersService().
 		Symbol(pair).
 		Limit(limit).
@@ -377,12 +285,12 @@ func (b *Binance) Orders(pair string, limit int) ([]model.Order, error) {
 
 	orders := make([]model.Order, 0)
 	for _, order := range result {
-		orders = append(orders, newOrder(order))
+		orders = append(orders, newFutureOrder(order))
 	}
 	return orders, nil
 }
 
-func (b *Binance) Order(pair string, id int64) (model.Order, error) {
+func (b *BinanceFuture) Order(pair string, id int64) (model.Order, error) {
 	order, err := b.client.NewGetOrderService().
 		Symbol(pair).
 		OrderID(id).
@@ -392,18 +300,23 @@ func (b *Binance) Order(pair string, id int64) (model.Order, error) {
 		return model.Order{}, err
 	}
 
-	return newOrder(order), nil
+	return newFutureOrder(order), nil
 }
 
-func newOrder(order *binance.Order) model.Order {
-	var price float64
-	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
+func newFutureOrder(order *futures.Order) model.Order {
+	var (
+		price float64
+		err   error
+	)
+	cost, _ := strconv.ParseFloat(order.CumQuote, 64)
 	quantity, _ := strconv.ParseFloat(order.ExecutedQuantity, 64)
 	if cost > 0 && quantity > 0 {
 		price = cost / quantity
 	} else {
-		price, _ = strconv.ParseFloat(order.Price, 64)
-		quantity, _ = strconv.ParseFloat(order.OrigQuantity, 64)
+		price, err = strconv.ParseFloat(order.Price, 64)
+		log2.CheckErr(log.WarnLevel, err)
+		quantity, err = strconv.ParseFloat(order.OrigQuantity, 64)
+		log2.CheckErr(log.WarnLevel, err)
 	}
 
 	return model.Order{
@@ -419,26 +332,28 @@ func newOrder(order *binance.Order) model.Order {
 	}
 }
 
-func (b *Binance) Account() (model.Account, error) {
+func (b *BinanceFuture) Account() (model.Account, error) {
 	acc, err := b.client.NewGetAccountService().Do(b.ctx)
 	if err != nil {
 		return model.Account{}, err
 	}
 
 	balances := make([]model.Balance, 0)
-	for _, balance := range acc.Balances {
-		free, err := strconv.ParseFloat(balance.Free, 64)
+	for _, position := range acc.Positions {
+		free, err := strconv.ParseFloat(position.PositionAmt, 64)
 		if err != nil {
 			return model.Account{}, err
 		}
-		locked, err := strconv.ParseFloat(balance.Locked, 64)
+
+		leverage, err := strconv.ParseFloat(position.Leverage, 64)
 		if err != nil {
 			return model.Account{}, err
 		}
+
 		balances = append(balances, model.Balance{
-			Pair: balance.Asset,
-			Free: free,
-			Lock: locked,
+			Pair:     position.Symbol,
+			Free:     free,
+			Leverage: leverage,
 		})
 	}
 
@@ -447,7 +362,7 @@ func (b *Binance) Account() (model.Account, error) {
 	}, nil
 }
 
-func (b *Binance) Position(pair string) (asset, quote float64, err error) {
+func (b *BinanceFuture) Position(pair string) (asset, quote float64, err error) {
 	assetTick, quoteTick := SplitAssetQuote(pair)
 	acc, err := b.Account()
 	if err != nil {
@@ -459,7 +374,7 @@ func (b *Binance) Position(pair string) (asset, quote float64, err error) {
 	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
 }
 
-func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
+func (b *BinanceFuture) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
 	ha := model.NewHeikinAshi()
@@ -513,7 +428,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 	return ccandle, cerr
 }
 
-func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {
+func (b *BinanceFuture) CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {
 	candles := make([]model.Candle, 0)
 	klineService := b.client.NewKlinesService()
 	ha := model.NewHeikinAshi()
@@ -528,7 +443,7 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 	}
 
 	for _, d := range data {
-		candle := CandleFromKline(pair, *d)
+		candle := FutureCandleFromKline(pair, *d)
 
 		if b.HeikinAshi {
 			candle = candle.ToHeikinAshi(ha)
@@ -541,7 +456,7 @@ func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit
 	return candles[:len(candles)-1], nil
 }
 
-func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
+func (b *BinanceFuture) CandlesByPeriod(ctx context.Context, pair, period string,
 	start, end time.Time) ([]model.Candle, error) {
 
 	candles := make([]model.Candle, 0)
@@ -559,7 +474,7 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 	}
 
 	for _, d := range data {
-		candle := CandleFromKline(pair, *d)
+		candle := FutureCandleFromKline(pair, *d)
 
 		if b.HeikinAshi {
 			candle = candle.ToHeikinAshi(ha)
@@ -571,27 +486,39 @@ func (b *Binance) CandlesByPeriod(ctx context.Context, pair, period string,
 	return candles, nil
 }
 
-func CandleFromKline(pair string, k binance.Kline) model.Candle {
+func FutureCandleFromKline(pair string, k futures.Kline) model.Candle {
+	var err error
 	t := time.Unix(0, k.OpenTime*int64(time.Millisecond))
 	candle := model.Candle{Pair: pair, Time: t, UpdatedAt: t}
-	candle.Open, _ = strconv.ParseFloat(k.Open, 64)
-	candle.Close, _ = strconv.ParseFloat(k.Close, 64)
-	candle.High, _ = strconv.ParseFloat(k.High, 64)
-	candle.Low, _ = strconv.ParseFloat(k.Low, 64)
-	candle.Volume, _ = strconv.ParseFloat(k.Volume, 64)
+	candle.Open, err = strconv.ParseFloat(k.Open, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.Close, err = strconv.ParseFloat(k.Close, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.High, err = strconv.ParseFloat(k.High, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.Low, err = strconv.ParseFloat(k.Low, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.Volume, err = strconv.ParseFloat(k.Volume, 64)
+	log2.CheckErr(log.WarnLevel, err)
 	candle.Complete = true
 	candle.Metadata = make(map[string]float64)
 	return candle
 }
 
-func CandleFromWsKline(pair string, k binance.WsKline) model.Candle {
+func FutureCandleFromWsKline(pair string, k futures.WsKline) model.Candle {
+	var err error
 	t := time.Unix(0, k.StartTime*int64(time.Millisecond))
 	candle := model.Candle{Pair: pair, Time: t, UpdatedAt: t}
-	candle.Open, _ = strconv.ParseFloat(k.Open, 64)
-	candle.Close, _ = strconv.ParseFloat(k.Close, 64)
-	candle.High, _ = strconv.ParseFloat(k.High, 64)
-	candle.Low, _ = strconv.ParseFloat(k.Low, 64)
-	candle.Volume, _ = strconv.ParseFloat(k.Volume, 64)
+	candle.Open, err = strconv.ParseFloat(k.Open, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.Close, err = strconv.ParseFloat(k.Close, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.High, err = strconv.ParseFloat(k.High, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.Low, err = strconv.ParseFloat(k.Low, 64)
+	log2.CheckErr(log.WarnLevel, err)
+	candle.Volume, err = strconv.ParseFloat(k.Volume, 64)
+	log2.CheckErr(log.WarnLevel, err)
 	candle.Complete = k.IsFinal
 	candle.Metadata = make(map[string]float64)
 	return candle

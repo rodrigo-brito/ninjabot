@@ -31,7 +31,7 @@ func main() {
 			"LTCUSDT",
 		},
 		Telegram: ninjabot.TelegramSettings{
-			Enabled: true,
+			Enabled: telegramToken != "" && telegramUser != 0,
 			Token:   telegramToken,
 			Users:   []int{telegramUser},
 		},

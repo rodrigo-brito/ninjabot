@@ -84,15 +84,20 @@ Chart available at http://localhost:8080
 
 ```
 
-### Plot result:
+### Plot result
 
 <img width="100%"  src="https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png" />
 
-### Features:
+### Features
 
-- [x] Live Trading
-  - [x] Custom Strategy
-  - [x] Order Limit, Market, Stop Limit, OCO
+|                    	| Binance Spot 	| Binance Futures 	|
+|--------------------	|--------------	|----------------	    |
+| Order Market       	|       :ok:      	|        :ok:       |
+| Order Market Quote 	|       :ok:      	|                 	|
+| Order Limit        	|       :ok:      	|        :ok:       |
+| Order Stop         	|       :ok:      	|        :ok:       |
+| Order OCO          	|       :ok:     	|                 	|
+| Backtesting        	|       :ok:     	|        :construction:         	|
 
 - [x] Backtesting
   - [x] Paper Wallet (Live Trading with fake wallet)

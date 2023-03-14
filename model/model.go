@@ -19,9 +19,10 @@ type Settings struct {
 }
 
 type Balance struct {
-	Tick string
-	Free float64
-	Lock float64
+	Pair     string
+	Free     float64
+	Lock     float64
+	Leverage float64
 }
 
 type AssetInfo struct {
@@ -156,7 +157,7 @@ func (a Account) Balance(assetTick, quoteTick string) (Balance, Balance) {
 	var isSetAsset, isSetQuote bool
 
 	for _, balance := range a.Balances {
-		switch balance.Tick {
+		switch balance.Pair {
 		case assetTick:
 			assetBalance = balance
 			isSetAsset = true

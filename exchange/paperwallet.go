@@ -332,7 +332,7 @@ func (p *PaperWallet) Account() (model.Account, error) {
 	balances := make([]model.Balance, 0)
 	for pair, info := range p.assets {
 		balances = append(balances, model.Balance{
-			Tick: pair,
+			Pair: pair,
 			Free: info.Free,
 			Lock: info.Lock,
 		})

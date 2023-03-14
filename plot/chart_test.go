@@ -208,15 +208,15 @@ func TestChart_OrderStringByPair(t *testing.T) {
 		Quantity:  12.08324,
 		CreatedAt: time.Date(2021, 10, 13, 20, 0, 0, 0, time.UTC),
 	}
-	c.ordersByPair[pair1] = set.NewLinkedHashSetINT64()
-	c.ordersByPair[pair1].Add(order1.ID)
+	c.ordersIDsByPair[pair1] = set.NewLinkedHashSetINT64()
+	c.ordersIDsByPair[pair1].Add(order1.ID)
 	c.orderByID[order1.ID] = order1
 
-	c.ordersByPair[pair1].Add(order2.ID)
+	c.ordersIDsByPair[pair1].Add(order2.ID)
 	c.orderByID[order2.ID] = order2
 
-	c.ordersByPair[pair2] = set.NewLinkedHashSetINT64()
-	c.ordersByPair[pair2].Add(order3.ID)
+	c.ordersIDsByPair[pair2] = set.NewLinkedHashSetINT64()
+	c.ordersIDsByPair[pair2].Add(order3.ID)
 	c.orderByID[order3.ID] = order3
 
 	expectPair1 := [][]string{
