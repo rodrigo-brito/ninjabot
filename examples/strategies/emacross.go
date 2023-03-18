@@ -5,8 +5,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/indicator"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/strategy"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 type CrossEMA struct{}
@@ -55,32 +54,47 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 		return
 	}
 
-	if quotePosition > 10 && df.Metadata["ema8"].Crossover(df.Metadata["sma21"]) {
-		_, err := broker.CreateOrderMarketQuote(ninjabot.SideTypeBuy, df.Pair, quotePosition)
+	if (quotePosition > 10 || assetPosition*closePrice < -10) && df.Metadata["ema8"].Crossover(df.Metadata["sma21"]) {
+		if assetPosition < 0 {
+			// close previous short position
+			_, err := broker.CreateOrderMarket(ninjabot.SideTypeBuy, df.Pair, -assetPosition)
+			if err != nil {
+				log.Error(err)
+			}
+
+			assetPosition, quotePosition, err = broker.Position(df.Pair)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
+
+		_, err = broker.CreateOrderMarket(ninjabot.SideTypeBuy, df.Pair, quotePosition/closePrice*0.99)
 		if err != nil {
-			log.WithFields(map[string]interface{}{
-				"pair":  df.Pair,
-				"side":  ninjabot.SideTypeBuy,
-				"close": closePrice,
-				"asset": assetPosition,
-				"quote": quotePosition,
-			}).Error(err)
+			log.Error(err)
 		}
 		return
 	}
 
-	if assetPosition > 0 &&
+	if (assetPosition*closePrice > 10 || quotePosition > 10) &&
 		df.Metadata["ema8"].Crossunder(df.Metadata["sma21"]) {
-		_, err := broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
+		if assetPosition > 0 {
+			// close previous long position
+			_, err := broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
+			if err != nil {
+				log.Error(err)
+			}
+
+			assetPosition, quotePosition, err = broker.Position(df.Pair)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
+
+		_, err = broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, quotePosition/closePrice*0.99)
 		if err != nil {
-			log.WithFields(map[string]interface{}{
-				"pair":  df.Pair,
-				"side":  ninjabot.SideTypeSell,
-				"close": closePrice,
-				"asset": assetPosition,
-				"quote": quotePosition,
-				"size":  assetPosition,
-			}).Error(err)
+			log.Error(err)
 		}
 	}
 }

@@ -7,8 +7,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/strategy"
 	"github.com/rodrigo-brito/ninjabot/tools"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 type trailing struct {

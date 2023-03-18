@@ -12,8 +12,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/storage"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 func main() {
@@ -83,7 +82,7 @@ func main() {
 		ninjabot.WithOrderSubscription(chart),
 	)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	go func() {
@@ -95,6 +94,6 @@ func main() {
 
 	err = bot.Run(ctx)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 }

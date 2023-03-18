@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rodrigo-brito/ninjabot/model"
 )
 
 func TestPaperWallet_OrderLimit(t *testing.T) {
@@ -30,15 +31,16 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-		require.Equal(t, 100.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 100.0, wallet.avgLongPrice["BTCUSDT"])
 
 		// try to buy again without funds
 		order, err = wallet.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 100)
 		require.Empty(t, order)
 		require.Equal(t, &OrderError{
 			Err:      ErrInsufficientFunds,
-			Pair:     "USDT",
-			Quantity: 100}, err)
+			Pair:     "BTCUSDT",
+			Quantity: 1,
+		}, err)
 
 		// try to sell and profit 100 USDT
 		order, err = wallet.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 1, 200)
@@ -91,7 +93,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 10.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 2.0, wallet.assets["BTC"].Free)
-		require.Equal(t, 35.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 35.0, wallet.avgLongPrice["BTCUSDT"])
 		require.Equal(t, model.OrderStatusTypeNew, wallet.orders[0].Status)
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[1].Status)
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[2].Status)
@@ -118,7 +120,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-		require.Equal(t, 10.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 10.0, wallet.avgLongPrice["BTCUSDT"])
 	})
 }
 
@@ -137,7 +139,7 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 	assert.Equal(t, 1.0, wallet.assets["BTC"].Free)
 	assert.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-	assert.Equal(t, 50.0, wallet.avgPrice["BTCUSDT"])
+	assert.Equal(t, 50.0, wallet.avgLongPrice["BTCUSDT"])
 
 	// insufficient funds
 	order, err = wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 100)
@@ -157,7 +159,7 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 	assert.Equal(t, 0.0, wallet.assets["BTC"].Free)
 	assert.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-	assert.Equal(t, 50.0, wallet.avgPrice["BTCUSDT"])
+	assert.Equal(t, 50.0, wallet.avgLongPrice["BTCUSDT"])
 }
 
 func TestPaperWallet_OrderOCO(t *testing.T) {
@@ -322,6 +324,10 @@ func TestPaperWallet_CreateOrderStop(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-		require.Equal(t, 100.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 100.0, wallet.avgLongPrice["BTCUSDT"])
 	})
+}
+
+func TestUpdateAveragePrice(t *testing.T) {
+
 }

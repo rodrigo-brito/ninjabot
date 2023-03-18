@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/service"
-
 	"github.com/schollz/progressbar/v3"
-	log "github.com/sirupsen/logrus"
 	"github.com/xhit/go-str2duration/v2"
+
+	"github.com/rodrigo-brito/ninjabot/service"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 const batchSize = 500
@@ -130,16 +130,16 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 		}
 
 		if err = progressBar.Add(countCandles); err != nil {
-			log.Warningf("update progresbar fail: %s", err.Error())
+			log.Warnf("update progresbar fail: %s", err.Error())
 		}
 	}
 
 	if err = progressBar.Close(); err != nil {
-		log.Warningf("close progresbar fail: %s", err.Error())
+		log.Warnf("close progresbar fail: %s", err.Error())
 	}
 
 	if lostData > 0 {
-		log.Warningf("%d missing candles", lostData)
+		log.Warnf("%d missing candles", lostData)
 	}
 
 	writer.Flush()

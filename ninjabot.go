@@ -13,10 +13,10 @@ import (
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/storage"
 	"github.com/rodrigo-brito/ninjabot/strategy"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/schollz/progressbar/v3"
-	log "github.com/sirupsen/logrus"
 )
 
 const defaultDatabase = "ninjabot.db"
@@ -274,7 +274,7 @@ func (n *NinjaBot) backtestCandles() {
 		}
 
 		if err := progressBar.Add(1); err != nil {
-			log.Warningf("update progresbar fail: %v", err)
+			log.Warnf("update progressbar fail: %v", err)
 		}
 	}
 }

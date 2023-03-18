@@ -7,11 +7,11 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/StudioSol/set"
+
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
-
-	"github.com/StudioSol/set"
-	log "github.com/sirupsen/logrus"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 var (
