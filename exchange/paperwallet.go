@@ -448,7 +448,14 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 		for asset, info := range p.assets {
 			amount := info.Free + info.Lock
 			pair := strings.ToUpper(asset + p.baseCoin)
-			total += amount * p.lastCandle[pair].Close
+			if amount < 0 {
+				v := math.Abs(amount)
+				liquid := 2*v*p.avgShortPrice[pair] - v*p.lastCandle[pair].Close
+				total += liquid
+			} else {
+				total += amount * p.lastCandle[pair].Close
+			}
+
 			p.assetValues[asset] = append(p.assetValues[asset], AssetValue{
 				Time:  candle.Time,
 				Value: amount * p.lastCandle[pair].Close,
