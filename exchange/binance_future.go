@@ -124,8 +124,8 @@ func (b *BinanceFuture) validate(pair string, quantity float64) error {
 	return nil
 }
 
-func (b *BinanceFuture) CreateOrderOCO(side model.SideType, pair string,
-	quantity, price, stop, stopLimit float64) ([]model.Order, error) {
+func (b *BinanceFuture) CreateOrderOCO(_ model.SideType, _ string,
+	_, _, _, _ float64) ([]model.Order, error) {
 	panic("not implemented")
 }
 
@@ -259,7 +259,7 @@ func (b *BinanceFuture) CreateOrderMarket(side model.SideType, pair string, quan
 	}, nil
 }
 
-func (b *BinanceFuture) CreateOrderMarketQuote(side model.SideType, pair string, quantity float64) (model.Order, error) {
+func (b *BinanceFuture) CreateOrderMarketQuote(_ model.SideType, _ string, _ float64) (model.Order, error) {
 	panic("not implemented")
 }
 

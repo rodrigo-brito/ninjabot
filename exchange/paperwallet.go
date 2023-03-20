@@ -182,7 +182,7 @@ func (p *PaperWallet) Summary() {
 	)
 
 	fmt.Println("-- FINAL WALLET --")
-	for pair, _ := range p.lastCandle {
+	for pair := range p.lastCandle {
 		asset, quote := SplitAssetQuote(pair)
 		quantity := p.assets[asset].Free + p.assets[asset].Lock
 		value := quantity * p.lastCandle[pair].Close
@@ -382,7 +382,6 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			p.volume[candle.Pair] = 0
 		}
 
-		var orderPrice float64
 		asset, quote := SplitAssetQuote(order.Pair)
 		if order.Side == model.SideTypeBuy && order.Price >= candle.Close {
 			if _, ok := p.assets[asset]; !ok {
@@ -397,10 +396,10 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			p.updateAveragePrice(order.Side, order.Pair, order.Quantity, order.Price)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
 			p.assets[quote].Lock = p.assets[quote].Lock - order.Price*order.Quantity
-			orderPrice = order.Price
 		}
 
 		if order.Side == model.SideTypeSell {
+			var orderPrice float64
 			if (order.Type == model.OrderTypeLimit ||
 				order.Type == model.OrderTypeLimitMaker ||
 				order.Type == model.OrderTypeTakeProfit ||
@@ -646,7 +645,7 @@ func (p *PaperWallet) Cancel(order model.Order) error {
 	return nil
 }
 
-func (p *PaperWallet) Order(pair string, id int64) (model.Order, error) {
+func (p *PaperWallet) Order(_ string, id int64) (model.Order, error) {
 	for _, order := range p.orders {
 		if order.ExchangeID == id {
 			return order, nil

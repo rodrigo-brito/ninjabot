@@ -303,7 +303,7 @@ func (c *Chart) orderStringByPair(pair string) [][]string {
 	return orders
 }
 
-func (c *Chart) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (c *Chart) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	if time.Since(c.lastUpdate) > time.Hour+10*time.Minute {
 		_, err := w.Write([]byte(c.lastUpdate.String()))
 		if err != nil {
