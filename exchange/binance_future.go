@@ -6,15 +6,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/adshao/go-binance/v2/futures"
-
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/common"
+	"github.com/adshao/go-binance/v2/futures"
 	"github.com/jpillora/backoff"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/model"
-	log2 "github.com/rodrigo-brito/ninjabot/tools/log"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 type BinanceFuture struct {
@@ -126,8 +124,8 @@ func (b *BinanceFuture) validate(pair string, quantity float64) error {
 	return nil
 }
 
-func (b *BinanceFuture) CreateOrderOCO(side model.SideType, pair string,
-	quantity, price, stop, stopLimit float64) ([]model.Order, error) {
+func (b *BinanceFuture) CreateOrderOCO(_ model.SideType, _ string,
+	_, _, _, _ float64) ([]model.Order, error) {
 	panic("not implemented")
 }
 
@@ -261,7 +259,7 @@ func (b *BinanceFuture) CreateOrderMarket(side model.SideType, pair string, quan
 	}, nil
 }
 
-func (b *BinanceFuture) CreateOrderMarketQuote(side model.SideType, pair string, quantity float64) (model.Order, error) {
+func (b *BinanceFuture) CreateOrderMarketQuote(_ model.SideType, _ string, _ float64) (model.Order, error) {
 	panic("not implemented")
 }
 
@@ -314,9 +312,9 @@ func newFutureOrder(order *futures.Order) model.Order {
 		price = cost / quantity
 	} else {
 		price, err = strconv.ParseFloat(order.Price, 64)
-		log2.CheckErr(log.WarnLevel, err)
+		log.CheckErr(log.WarnLevel, err)
 		quantity, err = strconv.ParseFloat(order.OrigQuantity, 64)
-		log2.CheckErr(log.WarnLevel, err)
+		log.CheckErr(log.WarnLevel, err)
 	}
 
 	return model.Order{
@@ -345,9 +343,17 @@ func (b *BinanceFuture) Account() (model.Account, error) {
 			return model.Account{}, err
 		}
 
+		if free == 0 {
+			continue
+		}
+
 		leverage, err := strconv.ParseFloat(position.Leverage, 64)
 		if err != nil {
 			return model.Account{}, err
+		}
+
+		if position.PositionSide == futures.PositionSideTypeShort {
+			free = -free
 		}
 
 		balances = append(balances, model.Balance{
@@ -386,9 +392,9 @@ func (b *BinanceFuture) CandlesSubscription(ctx context.Context, pair, period st
 		}
 
 		for {
-			done, _, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
+			done, _, err := futures.WsKlineServe(pair, period, func(event *futures.WsKlineEvent) {
 				ba.Reset()
-				candle := CandleFromWsKline(pair, event.Kline)
+				candle := FutureCandleFromWsKline(pair, event.Kline)
 
 				if candle.Complete && b.HeikinAshi {
 					candle = candle.ToHeikinAshi(ha)
@@ -491,15 +497,15 @@ func FutureCandleFromKline(pair string, k futures.Kline) model.Candle {
 	t := time.Unix(0, k.OpenTime*int64(time.Millisecond))
 	candle := model.Candle{Pair: pair, Time: t, UpdatedAt: t}
 	candle.Open, err = strconv.ParseFloat(k.Open, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Close, err = strconv.ParseFloat(k.Close, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.High, err = strconv.ParseFloat(k.High, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Low, err = strconv.ParseFloat(k.Low, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Volume, err = strconv.ParseFloat(k.Volume, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Complete = true
 	candle.Metadata = make(map[string]float64)
 	return candle
@@ -510,15 +516,15 @@ func FutureCandleFromWsKline(pair string, k futures.WsKline) model.Candle {
 	t := time.Unix(0, k.StartTime*int64(time.Millisecond))
 	candle := model.Candle{Pair: pair, Time: t, UpdatedAt: t}
 	candle.Open, err = strconv.ParseFloat(k.Open, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Close, err = strconv.ParseFloat(k.Close, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.High, err = strconv.ParseFloat(k.High, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Low, err = strconv.ParseFloat(k.Low, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Volume, err = strconv.ParseFloat(k.Volume, 64)
-	log2.CheckErr(log.WarnLevel, err)
+	log.CheckErr(log.WarnLevel, err)
 	candle.Complete = k.IsFinal
 	candle.Metadata = make(map[string]float64)
 	return candle

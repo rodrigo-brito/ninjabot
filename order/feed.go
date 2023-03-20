@@ -42,7 +42,7 @@ func (d *Feed) Subscribe(pair string, consumer FeedConsumer, onlyNewOrder bool) 
 	})
 }
 
-func (d *Feed) Publish(order model.Order, newOrder bool) {
+func (d *Feed) Publish(order model.Order, _ bool) {
 	if _, ok := d.OrderFeeds[order.Pair]; ok {
 		d.OrderFeeds[order.Pair].Data <- order
 	}

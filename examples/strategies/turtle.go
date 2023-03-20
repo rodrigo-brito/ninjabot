@@ -5,8 +5,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/indicator"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/strategy"
-
-	log "github.com/sirupsen/logrus"
+	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
 // https://www.investopedia.com/articles/trading/08/turtle-trading.asp

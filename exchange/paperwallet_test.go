@@ -5,10 +5,78 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rodrigo-brito/ninjabot/model"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rodrigo-brito/ninjabot/model"
 )
+
+func TestPaperWallet_ValidateFunds(t *testing.T) {
+	t.Run("simple lock limit", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 1, 100, false)
+		require.NoError(t, err)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+
+	t.Run("simple buy market", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		wallet.lastCandle["BTCUSDT"] = model.Candle{Pair: "BTCUSDT", Close: 100}
+		err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 1, 100, true)
+		require.NoError(t, err)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+
+	t.Run("simple short market", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		wallet.lastCandle["BTCUSDT"] = model.Candle{Pair: "BTCUSDT", Close: 100}
+		err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 1, 100, true)
+		require.NoError(t, err)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, -1.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+
+	t.Run("simple short limit", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 1, 100, false)
+		require.NoError(t, err)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+
+	t.Run("invert position long to short", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("BTC", 1), WithPaperAsset("USDT", 100))
+		wallet.avgLongPrice["BTCUSDT"] = 100
+
+		err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 2, 100, true)
+		require.NoError(t, err)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, -2.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+
+	t.Run("invert position short to long", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("BTC", -1), WithPaperAsset("USDT", 100))
+		wallet.avgShortPrice["BTCUSDT"] = 100
+
+		err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 2, 150, true)
+		require.NoError(t, err)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+}
 
 func TestPaperWallet_OrderLimit(t *testing.T) {
 	t.Run("normal order", func(t *testing.T) {
@@ -30,15 +98,16 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-		require.Equal(t, 100.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 100.0, wallet.avgLongPrice["BTCUSDT"])
 
 		// try to buy again without funds
 		order, err = wallet.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 100)
 		require.Empty(t, order)
 		require.Equal(t, &OrderError{
 			Err:      ErrInsufficientFunds,
-			Pair:     "USDT",
-			Quantity: 100}, err)
+			Pair:     "BTCUSDT",
+			Quantity: 1,
+		}, err)
 
 		// try to sell and profit 100 USDT
 		order, err = wallet.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 1, 200)
@@ -91,7 +160,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 10.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 2.0, wallet.assets["BTC"].Free)
-		require.Equal(t, 35.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 35.0, wallet.avgLongPrice["BTCUSDT"])
 		require.Equal(t, model.OrderStatusTypeNew, wallet.orders[0].Status)
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[1].Status)
 		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[2].Status)
@@ -118,7 +187,7 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-		require.Equal(t, 10.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 10.0, wallet.avgLongPrice["BTCUSDT"])
 	})
 }
 
@@ -130,14 +199,14 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 
 	// create buy order
 	require.Len(t, wallet.orders, 1)
-	assert.Equal(t, model.OrderStatusTypeFilled, order.Status)
-	assert.Equal(t, 1.0, order.Quantity)
-	assert.Equal(t, 50.0, order.Price)
-	assert.Equal(t, 50.0, wallet.assets["USDT"].Free)
-	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-	assert.Equal(t, 1.0, wallet.assets["BTC"].Free)
-	assert.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-	assert.Equal(t, 50.0, wallet.avgPrice["BTCUSDT"])
+	require.Equal(t, model.OrderStatusTypeFilled, order.Status)
+	require.Equal(t, 1.0, order.Quantity)
+	require.Equal(t, 50.0, order.Price)
+	require.Equal(t, 50.0, wallet.assets["USDT"].Free)
+	require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+	require.Equal(t, 1.0, wallet.assets["BTC"].Free)
+	require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	require.Equal(t, 50.0, wallet.avgLongPrice["BTCUSDT"])
 
 	// insufficient funds
 	order, err = wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 100)
@@ -151,13 +220,13 @@ func TestPaperWallet_OrderMarket(t *testing.T) {
 	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
 	order, err = wallet.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
 	require.NoError(t, err)
-	assert.Equal(t, 1.0, order.Quantity)
-	assert.Equal(t, 100.0, order.Price)
-	assert.Equal(t, 150.0, wallet.assets["USDT"].Free)
-	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-	assert.Equal(t, 0.0, wallet.assets["BTC"].Free)
-	assert.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-	assert.Equal(t, 50.0, wallet.avgPrice["BTCUSDT"])
+	require.Equal(t, 1.0, order.Quantity)
+	require.Equal(t, 100.0, order.Price)
+	require.Equal(t, 150.0, wallet.assets["USDT"].Free)
+	require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+	require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+	require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	require.Equal(t, 50.0, wallet.avgLongPrice["BTCUSDT"])
 }
 
 func TestPaperWallet_OrderOCO(t *testing.T) {
@@ -171,32 +240,32 @@ func TestPaperWallet_OrderOCO(t *testing.T) {
 
 	// create buy order
 	require.Len(t, wallet.orders, 3)
-	assert.Equal(t, model.OrderStatusTypeNew, orders[0].Status)
-	assert.Equal(t, model.OrderStatusTypeNew, orders[1].Status)
-	assert.Equal(t, 1.0, orders[0].Quantity)
-	assert.Equal(t, 1.0, orders[1].Quantity)
+	require.Equal(t, model.OrderStatusTypeNew, orders[0].Status)
+	require.Equal(t, model.OrderStatusTypeNew, orders[1].Status)
+	require.Equal(t, 1.0, orders[0].Quantity)
+	require.Equal(t, 1.0, orders[1].Quantity)
 
-	assert.Equal(t, 0.0, wallet.assets["USDT"].Free)
-	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-	assert.Equal(t, 0.0, wallet.assets["BTC"].Free)
-	assert.Equal(t, 1.0, wallet.assets["BTC"].Lock)
+	require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+	require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+	require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+	require.Equal(t, 1.0, wallet.assets["BTC"].Lock)
 
 	// insufficient funds
 	orders, err = wallet.CreateOrderOCO(model.SideTypeSell, "BTCUSDT", 1, 100, 40, 39)
 	require.Equal(t, &OrderError{
 		Err:      ErrInsufficientFunds,
-		Pair:     "BTC",
+		Pair:     "BTCUSDT",
 		Quantity: 1}, err)
 	require.Nil(t, orders)
 
 	// execute stop and cancel target
 	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 30})
-	assert.Equal(t, 40.0, wallet.assets["USDT"].Free)
-	assert.Equal(t, 0.0, wallet.assets["USDT"].Lock)
-	assert.Equal(t, 0.0, wallet.assets["BTC"].Free)
-	assert.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-	assert.Equal(t, wallet.orders[1].Status, model.OrderStatusTypeCanceled)
-	assert.Equal(t, wallet.orders[2].Status, model.OrderStatusTypeFilled)
+	require.Equal(t, 40.0, wallet.assets["USDT"].Free)
+	require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+	require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+	require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	require.Equal(t, wallet.orders[1].Status, model.OrderStatusTypeCanceled)
+	require.Equal(t, wallet.orders[2].Status, model.OrderStatusTypeFilled)
 }
 
 func TestPaperWallet_Order(t *testing.T) {
@@ -282,9 +351,9 @@ func TestPaperWallet_MaxDrawndown(t *testing.T) {
 			}
 
 			max, start, end := wallet.MaxDrawdown()
-			assert.Equal(t, tc.result, max)
-			assert.Equal(t, tc.start, start)
-			assert.Equal(t, tc.end, end)
+			require.Equal(t, tc.result, max)
+			require.Equal(t, tc.start, start)
+			require.Equal(t, tc.end, end)
 		})
 	}
 }
@@ -322,6 +391,164 @@ func TestPaperWallet_CreateOrderStop(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
 		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
-		require.Equal(t, 100.0, wallet.avgPrice["BTCUSDT"])
+		require.Equal(t, 100.0, wallet.avgLongPrice["BTCUSDT"])
 	})
+}
+
+func TestUpdateAveragePrice(t *testing.T) {
+	t.Run("long", func(t *testing.T) {
+		wallet := NewPaperWallet(
+			context.Background(),
+			"USDT",
+			WithPaperAsset("BTC", 0),
+			WithPaperAsset("USDT", 100),
+		)
+
+		tt := []struct {
+			name     string
+			quantity float64
+			price    float64
+			avgPrice float64
+		}{
+			{
+				name:     "first order",
+				quantity: 1,
+				price:    100,
+				avgPrice: 100,
+			},
+			{
+				name:     "second order",
+				quantity: 1,
+				price:    50,
+				avgPrice: 75,
+			},
+			{
+				name:     "third order",
+				quantity: 2,
+				price:    101,
+				avgPrice: 88,
+			},
+		}
+
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				wallet.updateAveragePrice(model.SideTypeBuy, "BTCUSDT", tc.quantity, tc.price)
+				require.Equal(t, tc.avgPrice, wallet.avgLongPrice["BTCUSDT"])
+				wallet.assets["BTC"].Free += tc.quantity
+			})
+		}
+	})
+
+	t.Run("short", func(t *testing.T) {
+		wallet := NewPaperWallet(
+			context.Background(),
+			"USDT",
+			WithPaperAsset("BTC", 0),
+			WithPaperAsset("USDT", 100),
+		)
+
+		tt := []struct {
+			name     string
+			quantity float64
+			price    float64
+			avgPrice float64
+		}{
+			{
+				name:     "first order",
+				quantity: 1,
+				price:    100,
+				avgPrice: 100,
+			},
+			{
+				name:     "second order",
+				quantity: 1,
+				price:    50,
+				avgPrice: 75,
+			},
+			{
+				name:     "third order",
+				quantity: 2,
+				price:    101,
+				avgPrice: 88,
+			},
+		}
+
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				wallet.updateAveragePrice(model.SideTypeSell, "BTCUSDT", tc.quantity, tc.price)
+				require.Equal(t, tc.avgPrice, wallet.avgShortPrice["BTCUSDT"])
+				wallet.assets["BTC"].Free -= tc.quantity
+			})
+		}
+	})
+
+	t.Run("mixed order", func(t *testing.T) {
+		wallet := NewPaperWallet(
+			context.Background(),
+			"USDT",
+			WithPaperAsset("BTC", 0),
+			WithPaperAsset("USDT", 100),
+		)
+
+		tt := []struct {
+			name          string
+			side          model.SideType
+			quantity      float64
+			price         float64
+			avgLongPrice  float64
+			avgShortPrice float64
+		}{
+			{
+				name:         "first buy order",
+				side:         model.SideTypeBuy,
+				quantity:     1,
+				price:        100,
+				avgLongPrice: 100,
+			},
+			{
+				name:         "second buy order",
+				side:         model.SideTypeBuy,
+				quantity:     1,
+				price:        50,
+				avgLongPrice: 75,
+			},
+			{
+				name:         "sell half",
+				side:         model.SideTypeSell,
+				quantity:     1,
+				price:        50,
+				avgLongPrice: 75,
+			},
+			{
+				name:          "long to short",
+				side:          model.SideTypeSell,
+				quantity:      2,
+				price:         100,
+				avgLongPrice:  75,
+				avgShortPrice: 100,
+			},
+			{
+				name:          "back to long",
+				side:          model.SideTypeBuy,
+				quantity:      2,
+				price:         50,
+				avgLongPrice:  50,
+				avgShortPrice: 100,
+			},
+		}
+
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				wallet.updateAveragePrice(tc.side, "BTCUSDT", tc.quantity, tc.price)
+				require.Equal(t, tc.avgLongPrice, wallet.avgLongPrice["BTCUSDT"])
+				require.Equal(t, tc.avgShortPrice, wallet.avgShortPrice["BTCUSDT"])
+				if tc.side == model.SideTypeBuy {
+					wallet.assets["BTC"].Free += tc.quantity
+				} else {
+					wallet.assets["BTC"].Free -= tc.quantity
+				}
+			})
+		}
+	})
+
 }
