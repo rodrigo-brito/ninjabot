@@ -19,25 +19,35 @@ import (
 )
 
 type summary struct {
-	Pair   string
-	Win    []float64
-	Lose   []float64
-	Volume float64
+	Pair      string
+	WinLong   []float64
+	WinShort  []float64
+	LoseLong  []float64
+	LoseShort []float64
+	Volume    float64
+}
+
+func (s summary) Win() []float64 {
+	return append(s.WinLong, s.WinShort...)
+}
+
+func (s summary) Lose() []float64 {
+	return append(s.LoseLong, s.LoseShort...)
 }
 
 func (s summary) Profit() float64 {
 	profit := 0.0
-	for _, value := range append(s.Win, s.Lose...) {
+	for _, value := range append(s.Win(), s.Lose()...) {
 		profit += value
 	}
 	return profit
 }
 
 func (s summary) SQN() float64 {
-	total := float64(len(s.Win) + len(s.Lose))
+	total := float64(len(s.Win()) + len(s.Lose()))
 	avgProfit := s.Profit() / total
 	stdDev := 0.0
-	for _, profit := range append(s.Win, s.Lose...) {
+	for _, profit := range append(s.Win(), s.Lose()...) {
 		stdDev += math.Pow(profit-avgProfit, 2)
 	}
 	stdDev = math.Sqrt(stdDev / total)
@@ -48,27 +58,27 @@ func (s summary) Payoff() float64 {
 	avgWin := 0.0
 	avgLose := 0.0
 
-	for _, value := range s.Win {
+	for _, value := range s.Win() {
 		avgWin += value
 	}
 
-	for _, value := range s.Lose {
+	for _, value := range s.Lose() {
 		avgLose += value
 	}
 
-	if len(s.Win) == 0 || len(s.Lose) == 0 || avgLose == 0 {
+	if len(s.Win()) == 0 || len(s.Lose()) == 0 || avgLose == 0 {
 		return 0
 	}
 
-	return (avgWin / float64(len(s.Win))) / math.Abs(avgLose/float64(len(s.Lose)))
+	return (avgWin / float64(len(s.Win()))) / math.Abs(avgLose/float64(len(s.Lose())))
 }
 
 func (s summary) WinPercentage() float64 {
-	if len(s.Win)+len(s.Lose) == 0 {
+	if len(s.Win())+len(s.Lose()) == 0 {
 		return 0
 	}
 
-	return float64(len(s.Win)) / float64(len(s.Win)+len(s.Lose)) * 100
+	return float64(len(s.Win())) / float64(len(s.Win())+len(s.Lose())) * 100
 }
 
 func (s summary) String() string {
@@ -77,9 +87,9 @@ func (s summary) String() string {
 	_, quote := exchange.SplitAssetQuote(s.Pair)
 	data := [][]string{
 		{"Coin", s.Pair},
-		{"Trades", strconv.Itoa(len(s.Lose) + len(s.Win))},
-		{"Win", strconv.Itoa(len(s.Win))},
-		{"Loss", strconv.Itoa(len(s.Lose))},
+		{"Trades", strconv.Itoa(len(s.Lose()) + len(s.Win()))},
+		{"Win", strconv.Itoa(len(s.Win()))},
+		{"Loss", strconv.Itoa(len(s.Lose()))},
 		{"% Win", fmt.Sprintf("%.1f", s.WinPercentage())},
 		{"Payoff", fmt.Sprintf("%.1f", s.Payoff()*100)},
 		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
@@ -148,7 +158,8 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 	}
 
 	quantity := 0.0
-	avgPrice := 0.0
+	avgPriceLong := 0.0
+	avgPriceShort := 0.0
 
 	for _, order := range orders {
 		// skip current order
@@ -157,29 +168,55 @@ func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, er
 		}
 
 		// calculate avg price
+		price := order.Price
+		if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
+			price = *order.Stop
+		}
+
+		var diff = order.Quantity
+		if order.Side == model.SideTypeSell {
+			diff = -order.Quantity
+		}
+
+		if order.Side == model.SideTypeBuy && quantity+diff >= 0 {
+			avgPriceLong = (order.Quantity*price + avgPriceLong*math.Abs(quantity)) / (order.Quantity + math.Abs(quantity))
+		} else if order.Side == model.SideTypeSell && quantity+diff <= 0 {
+			avgPriceShort = (order.Quantity*price + avgPriceShort*math.Abs(quantity)) / (order.Quantity + math.Abs(quantity))
+		}
+
 		if order.Side == model.SideTypeBuy {
-			price := order.Price
-			if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
-				price = *order.Stop
-			}
-			avgPrice = (order.Quantity*price + avgPrice*quantity) / (order.Quantity + quantity)
 			quantity += order.Quantity
 		} else {
-			quantity = math.Max(quantity-order.Quantity, 0)
+			quantity -= order.Quantity
 		}
+
 	}
 
 	if quantity == 0 {
 		return 0, 0, nil
 	}
 
-	cost := o.Quantity * avgPrice
-	price := o.Price
-	if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {
-		price = *o.Stop
+	if o.Side == model.SideTypeBuy && quantity < 0 {
+		// profit short
+		price := o.Price
+		if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {
+			price = *o.Stop
+		}
+		profitValue := (avgPriceShort - price) * o.Quantity
+		return profitValue, profitValue / o.Quantity / avgPriceShort, nil
 	}
-	profitValue := o.Quantity*price - cost
-	return profitValue, profitValue / cost, nil
+
+	if o.Side == model.SideTypeSell && quantity > 0 {
+		// profit long
+		price := o.Price
+		if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {
+			price = *o.Stop
+		}
+		profitValue := (price - avgPriceLong) * o.Quantity
+		return profitValue, profitValue / o.Quantity / avgPriceLong, nil
+	}
+
+	return 0, 0, nil
 }
 
 func (c *Controller) notify(message string) {
@@ -222,9 +259,17 @@ func (c *Controller) processTrade(order *model.Order) {
 
 	order.Profit = profit
 	if profitValue >= 0 {
-		c.Results[order.Pair].Win = append(c.Results[order.Pair].Win, profitValue)
+		if order.Side == model.SideTypeBuy {
+			c.Results[order.Pair].WinLong = append(c.Results[order.Pair].WinLong, profitValue)
+		} else {
+			c.Results[order.Pair].WinShort = append(c.Results[order.Pair].WinShort, profitValue)
+		}
 	} else {
-		c.Results[order.Pair].Lose = append(c.Results[order.Pair].Lose, profitValue)
+		if order.Side == model.SideTypeBuy {
+			c.Results[order.Pair].LoseLong = append(c.Results[order.Pair].LoseLong, profitValue)
+		} else {
+			c.Results[order.Pair].LoseShort = append(c.Results[order.Pair].LoseShort, profitValue)
+		}
 	}
 
 	_, quote := exchange.SplitAssetQuote(order.Pair)

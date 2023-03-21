@@ -2,8 +2,9 @@ package ninjabot
 
 import (
 	"context"
-	"github.com/rodrigo-brito/ninjabot/strategy"
 	"testing"
+
+	"github.com/rodrigo-brito/ninjabot/strategy"
 
 	"github.com/markcheno/go-talib"
 	log "github.com/sirupsen/logrus"
@@ -103,13 +104,13 @@ func TestMarketOrder(t *testing.T) {
 
 	results := bot.orderController.Results["BTCUSDT"]
 	require.InDelta(t, 7424.3705, results.Profit(), 0.001)
-	require.Len(t, results.Win, 6)
-	require.Len(t, results.Lose, 11)
+	require.Len(t, results.Win(), 6)
+	require.Len(t, results.Lose(), 11)
 
 	results = bot.orderController.Results["ETHUSDT"]
 	require.InDelta(t, 9270.3036, results.Profit(), 0.001)
-	require.Len(t, results.Win, 9)
-	require.Len(t, results.Lose, 8)
+	require.Len(t, results.Win(), 9)
+	require.Len(t, results.Lose(), 8)
 
 	bot.Summary()
 }

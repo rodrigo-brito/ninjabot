@@ -193,13 +193,13 @@ func (n *NinjaBot) Summary() {
 	avgPayoff := 0.0
 
 	for _, summary := range n.orderController.Results {
-		avgPayoff += summary.Payoff() * float64(len(summary.Win)+len(summary.Lose))
+		avgPayoff += summary.Payoff() * float64(len(summary.Win())+len(summary.Lose()))
 		table.Append([]string{
 			summary.Pair,
-			strconv.Itoa(len(summary.Win) + len(summary.Lose)),
-			strconv.Itoa(len(summary.Win)),
-			strconv.Itoa(len(summary.Lose)),
-			fmt.Sprintf("%.1f %%", float64(len(summary.Win))/float64(len(summary.Win)+len(summary.Lose))*100),
+			strconv.Itoa(len(summary.Win()) + len(summary.Lose())),
+			strconv.Itoa(len(summary.Win())),
+			strconv.Itoa(len(summary.Lose())),
+			fmt.Sprintf("%.1f %%", float64(len(summary.Win()))/float64(len(summary.Win())+len(summary.Lose()))*100),
 			fmt.Sprintf("%.3f", summary.Payoff()),
 			fmt.Sprintf("%.1f", summary.SQN()),
 			fmt.Sprintf("%.2f", summary.Profit()),
@@ -207,8 +207,8 @@ func (n *NinjaBot) Summary() {
 		})
 		total += summary.Profit()
 		sqn += summary.SQN()
-		wins += len(summary.Win)
-		loses += len(summary.Lose)
+		wins += len(summary.Win())
+		loses += len(summary.Lose())
 		volume += summary.Volume
 	}
 
