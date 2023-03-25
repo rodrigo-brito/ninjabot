@@ -46,7 +46,6 @@ func (e CrossEMA) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
 }
 
 func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
-	positionSize := 5000.0 // 5.000 USDT per trade
 	closePrice := df.Close.Last(0)
 
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
@@ -55,10 +54,10 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 		return
 	}
 
-	if quotePosition >= positionSize && // sufficient funds
+	if quotePosition >= 10 && // minimum quote position to trade
 		df.Metadata["ema8"].Crossover(df.Metadata["sma21"]) { // trade signal (EMA8 > SMA21)
 
-		amount := positionSize / closePrice // calculate amount of asset to buy
+		amount := quotePosition / closePrice // calculate amount of asset to buy
 		_, err := broker.CreateOrderMarket(ninjabot.SideTypeBuy, df.Pair, amount)
 		if err != nil {
 			log.Error(err)

@@ -253,7 +253,9 @@ func (c *Controller) processTrade(order *model.Order) {
 	}
 
 	order.Profit = profit
-	if profitValue >= 0 {
+	if profitValue == 0 {
+		return
+	} else if profitValue > 0 {
 		if order.Side == model.SideTypeBuy {
 			c.Results[order.Pair].WinLong = append(c.Results[order.Pair].WinLong, profitValue)
 		} else {

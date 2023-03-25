@@ -6,7 +6,7 @@
 [![Discord](https://img.shields.io/discord/960156400376483840?color=5865F2&label=discord)](https://discord.gg/TGCrUH972E)
 [![Discord](https://img.shields.io/badge/donate-patreon-red)](https://www.patreon.com/ninjabot_github)
 
-A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot markets. 
+A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for sport and future markets. 
 
 Docs: https://rodrigo-brito.github.io/ninjabot/
 
@@ -49,38 +49,38 @@ go run examples/backtesting/main.go
 Output:
 
 ```
-INFO[2023-03-25 12:59] [SETUP] Using paper wallet                   
-INFO[2023-03-25 12:59] [SETUP] Initial Portfolio = 10000.000000 USDT 
- 100% |█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| (8626/8626, 85622 it/s)        
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
+INFO[2023-03-25 13:54] [SETUP] Using paper wallet                   
+INFO[2023-03-25 13:54] [SETUP] Initial Portfolio = 10000.000000 USDT 
+---------+--------+-----+------+--------+--------+-----+----------+-----------+
 |  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | SQN |  PROFIT  |  VOLUME   |
 +---------+--------+-----+------+--------+--------+-----+----------+-----------+
-| ETHUSDT |     40 |  33 |    7 | 82.5 % |  1.648 | 2.3 |  9061.96 | 209061.96 |
-| BTCUSDT |     42 |  30 |   12 | 71.4 % |  1.461 | 1.5 |  5377.25 | 215377.25 |
+| ETHUSDT |      9 |   6 |    3 | 66.7 % |  3.407 | 1.3 | 21748.41 | 407769.64 |
+| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.929 | 1.5 | 13511.66 | 448030.05 |
 +---------+--------+-----+------+--------+--------+-----+----------+-----------+
-|   TOTAL |     82 |  63 |   19 | 76.8 % |  1.553 | 1.9 | 14439.21 | 424439.21 |
+|   TOTAL |     23 |  12 |   11 | 52.2 % |  4.942 | 1.4 | 35260.07 | 855799.68 |
 +---------+--------+-----+------+--------+--------+-----+----------+-----------+
 
 -- FINAL WALLET --
 0.0000 BTC = 0.0000 USDT
 0.0000 ETH = 0.0000 USDT
-24439.2081 USDT
+45260.0735 USDT
 
 ----- RETURNS -----
 START PORTFOLIO     = 10000.00 USDT
-FINAL PORTFOLIO     = 24439.21 USDT
-GROSS PROFIT        =  14439.208081 USDT (144.39%)
+FINAL PORTFOLIO     = 45260.07 USDT
+GROSS PROFIT        =  35260.073493 USDT (352.60%)
 MARKET CHANGE (B&H) =  407.09%
 
 ------ RISK -------
-MAX DRAWDOWN = -12.30 %
+MAX DRAWDOWN = -11.76 %
 
 ------ VOLUME -----
-BTCUSDT         = 215377.25 USDT
-ETHUSDT         = 209061.96 USDT
-TOTAL           = 424439.21 USDT
+BTCUSDT         = 448030.05 USDT
+ETHUSDT         = 407769.64 USDT
+TOTAL           = 855799.68 USDT
 -------------------
 Chart available at http://localhost:8080
+
 ```
 
 ### Plot result
@@ -89,14 +89,14 @@ Chart available at http://localhost:8080
 
 ### Features
 
-|                    	| Binance Spot 	| Binance Futures 	|
-|--------------------	|--------------	|----------------	    |
-| Order Market       	|       :ok:      	|        :ok:       |
-| Order Market Quote 	|       :ok:      	|                 	|
-| Order Limit        	|       :ok:      	|        :ok:       |
-| Order Stop         	|       :ok:      	|        :ok:       |
-| Order OCO          	|       :ok:     	|                 	|
-| Backtesting        	|       :ok:     	|        :construction:         	|
+|                    	| Binance Spot 	| Binance Futures 	 |
+|--------------------	|--------------	|-------------------|
+| Order Market       	|       :ok:      	| :ok:              |
+| Order Market Quote 	|       :ok:      	| 	                 |
+| Order Limit        	|       :ok:      	| :ok:              |
+| Order Stop         	|       :ok:      	| :ok:              |
+| Order OCO          	|       :ok:     	| 	                 |
+| Backtesting        	|       :ok:     	| :ok:         	    |
 
 - [x] Backtesting
   - [x] Paper Wallet (Live Trading with fake wallet)
@@ -114,7 +114,6 @@ Chart available at http://localhost:8080
 # Roadmap
   - [ ] Include Web UI Controller
   - [ ] Include more chart indicators - [Details](https://github.com/rodrigo-brito/ninjabot/issues/110)
-  - [ ] Support future market - [Details](https://github.com/rodrigo-brito/ninjabot/issues/106)
 
 ### Exchanges
 
