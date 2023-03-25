@@ -246,11 +246,6 @@ func (c *Controller) processTrade(order *model.Order) {
 	// register order volume
 	c.Results[order.Pair].Volume += order.Price * order.Quantity
 
-	// calculate profit only to sell orders
-	if order.Side != model.SideTypeSell {
-		return
-	}
-
 	profitValue, profit, err := c.calculateProfit(order)
 	if err != nil {
 		c.notifyError(err)

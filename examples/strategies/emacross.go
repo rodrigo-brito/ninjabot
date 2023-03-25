@@ -46,6 +46,7 @@ func (e CrossEMA) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
 }
 
 func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
+	positionSize := 5000.0 // 5.000 USDT per trade
 	closePrice := df.Close.Last(0)
 
 	assetPosition, quotePosition, err := broker.Position(df.Pair)
@@ -54,45 +55,22 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 		return
 	}
 
-	if (quotePosition > 10 || assetPosition*closePrice < -10) && df.Metadata["ema8"].Crossover(df.Metadata["sma21"]) {
-		if assetPosition < 0 {
-			// close previous short position
-			_, err := broker.CreateOrderMarket(ninjabot.SideTypeBuy, df.Pair, -assetPosition)
-			if err != nil {
-				log.Error(err)
-			}
+	if quotePosition >= positionSize && // sufficient funds
+		df.Metadata["ema8"].Crossover(df.Metadata["sma21"]) { // trade signal (EMA8 > SMA21)
 
-			assetPosition, quotePosition, err = broker.Position(df.Pair)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-		}
-
-		_, err = broker.CreateOrderMarket(ninjabot.SideTypeBuy, df.Pair, quotePosition/closePrice*0.99)
+		amount := positionSize / closePrice // calculate amount of asset to buy
+		_, err := broker.CreateOrderMarket(ninjabot.SideTypeBuy, df.Pair, amount)
 		if err != nil {
 			log.Error(err)
 		}
+
 		return
 	}
 
-	if (assetPosition*closePrice > 10 || quotePosition > 10) &&
-		df.Metadata["ema8"].Crossunder(df.Metadata["sma21"]) {
-		if assetPosition > 0 {
-			// close previous long position
-			_, err := broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
-			if err != nil {
-				log.Error(err)
-			}
+	if assetPosition > 0 &&
+		df.Metadata["ema8"].Crossunder(df.Metadata["sma21"]) { // trade signal (EMA8 < SMA21)
 
-			assetPosition, quotePosition, err = broker.Position(df.Pair)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-		}
-
-		_, err = broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, quotePosition/closePrice*0.99)
+		_, err = broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
 		if err != nil {
 			log.Error(err)
 		}
