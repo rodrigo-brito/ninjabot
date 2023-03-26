@@ -12,6 +12,8 @@ import (
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
+// This example shows how to use backtesting with NinjaBot
+// Backtesting is a simulation of the strategy in historical data (from CSV)
 func main() {
 	ctx := context.Background()
 

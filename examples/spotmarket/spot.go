@@ -11,6 +11,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/exchange"
 )
 
+// This example shows how to use spot market with NinjaBot in Binance
 func main() {
 	var (
 		ctx             = context.Background()

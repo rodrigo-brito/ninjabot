@@ -6,3 +6,8 @@ coverage:
     patch:
       default:
         informational: true
+
+ignore:
+  - "examples"
+  - "cmd"
+  - "testdata"

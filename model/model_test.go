@@ -39,10 +39,10 @@ func TestCandle_Less(t *testing.T) {
 
 func TestAccount_Balance(t *testing.T) {
 	account := Account{}
-	account.Balances = []Balance{{Pair: "A", Free: 1.2, Lock: 1.0}, {Pair: "B", Free: 1.1, Lock: 1.3}}
+	account.Balances = []Balance{{Asset: "A", Free: 1.2, Lock: 1.0}, {Asset: "B", Free: 1.1, Lock: 1.3}}
 	assetBalance, quoteBalance := account.Balance("A", "B")
-	require.Equal(t, Balance{Pair: "A", Free: 1.2, Lock: 1.0}, assetBalance)
-	require.Equal(t, Balance{Pair: "B", Free: 1.1, Lock: 1.3}, quoteBalance)
+	require.Equal(t, Balance{Asset: "A", Free: 1.2, Lock: 1.0}, assetBalance)
+	require.Equal(t, Balance{Asset: "B", Free: 1.1, Lock: 1.3}, quoteBalance)
 }
 
 func TestHeikinAshi_CalculateHeikinAshi(t *testing.T) {

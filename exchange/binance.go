@@ -31,6 +31,7 @@ type Binance struct {
 
 type BinanceOption func(*Binance)
 
+// WithBinanceCredentials will set Binance credentials
 func WithBinanceCredentials(key, secret string) BinanceOption {
 	return func(b *Binance) {
 		b.APIKey = key
@@ -38,6 +39,7 @@ func WithBinanceCredentials(key, secret string) BinanceOption {
 	}
 }
 
+// WithBinanceHeikinAshiCandle will convert candle to Heikin Ashi
 func WithBinanceHeikinAshiCandle() BinanceOption {
 	return func(b *Binance) {
 		b.HeikinAshi = true
@@ -59,6 +61,7 @@ func WithTestNet() BinanceOption {
 	}
 }
 
+// NewBinance create a new Binance exchange instance
 func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error) {
 	binance.WebsocketKeepalive = true
 	exchange := &Binance{ctx: ctx}
@@ -436,9 +439,9 @@ func (b *Binance) Account() (model.Account, error) {
 			return model.Account{}, err
 		}
 		balances = append(balances, model.Balance{
-			Pair: balance.Asset,
-			Free: free,
-			Lock: locked,
+			Asset: balance.Asset,
+			Free:  free,
+			Lock:  locked,
 		})
 	}
 

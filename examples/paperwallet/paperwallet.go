@@ -15,6 +15,8 @@ import (
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
+// This example shows how to use NinjaBot with a simulation with a fake exchange
+// A peperwallet is a wallet that is not connected to any exchange, it is a simulation with live data (realtime)
 func main() {
 	var (
 		ctx             = context.Background()
@@ -49,6 +51,7 @@ func main() {
 	}
 
 	// creating a paper wallet to simulate an exchange waller for fake operataions
+	// paper wallet is simulation of a real exchange wallet
 	paperWallet := exchange.NewPaperWallet(
 		ctx,
 		"USDT",
