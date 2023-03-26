@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/adshao/go-binance/v2"
+	"github.com/adshao/go-binance/v2/futures"
 )
 
 type AssetQuote struct {
@@ -35,17 +36,32 @@ func SplitAssetQuote(pair string) (asset string, quote string) {
 
 func updateParisFile() error {
 	client := binance.NewClient("", "")
-	info, err := client.NewExchangeInfoService().Do(context.Background())
+	sportInfo, err := client.NewExchangeInfoService().Do(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get exchange info: %v", err)
 	}
 
-	for _, info := range info.Symbols {
+	futureClient := futures.NewClient("", "")
+	futureInfo, err := futureClient.NewExchangeInfoService().Do(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get exchange info: %v", err)
+	}
+
+	for _, info := range sportInfo.Symbols {
 		pairAssetQuoteMap[info.Symbol] = AssetQuote{
 			Quote: info.QuoteAsset,
 			Asset: info.BaseAsset,
 		}
 	}
+
+	for _, info := range futureInfo.Symbols {
+		pairAssetQuoteMap[info.Symbol] = AssetQuote{
+			Quote: info.QuoteAsset,
+			Asset: info.BaseAsset,
+		}
+	}
+
+	fmt.Printf("Total pairs: %d\n", len(pairAssetQuoteMap))
 
 	content, err := json.Marshal(pairAssetQuoteMap)
 	if err != nil {
