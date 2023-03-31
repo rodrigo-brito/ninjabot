@@ -60,7 +60,7 @@ func (df Dataframe) Sample(positions int) Dataframe {
 	sample := df
 	size := len(sample.Time)
 	start := size - positions
-	if size <= positions || start < 0 {
+	if start <= 0 {
 		return df
 	}
 
@@ -108,7 +108,7 @@ func (c Candle) ToSlice(precision int) []string {
 		strconv.FormatFloat(c.Close, 'f', precision, 64),
 		strconv.FormatFloat(c.Low, 'f', precision, 64),
 		strconv.FormatFloat(c.High, 'f', precision, 64),
-		fmt.Sprintf("%.1f", c.Volume),
+		strconv.FormatFloat(c.Volume, 'f', precision, 64),
 	}
 }
 
