@@ -108,7 +108,7 @@ func (c Candle) ToSlice(precision int) []string {
 		strconv.FormatFloat(c.Close, 'f', precision, 64),
 		strconv.FormatFloat(c.Low, 'f', precision, 64),
 		strconv.FormatFloat(c.High, 'f', precision, 64),
-		fmt.Sprintf("%.1f", c.Volume),
+		strconv.FormatFloat(c.Volume, 'f', precision, 64),
 	}
 }
 

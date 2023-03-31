@@ -11,14 +11,16 @@ func TestCandle_ToSlice(t *testing.T) {
 	candle := Candle{
 		Pair:     "BTCUSDT",
 		Time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-		Open:     10000.12,
+		Open:     10000.11,
 		Close:    10000.12,
-		Low:      10000.14,
+		Low:      10000.13,
 		High:     10000.14,
-		Volume:   10000.19,
+		Volume:   10000.15,
 		Complete: true,
 	}
-	require.Equal(t, []string{"1609459200", "10000.1", "10000.1", "10000.1", "10000.1", "10000.2"}, candle.ToSlice(1))
+
+	expectedOutput := []string{"1609459200", "10000.11", "10000.12", "10000.13", "10000.14", "10000.15"}
+	require.Equal(t, expectedOutput, candle.ToSlice(2))
 }
 
 func TestCandle_Less(t *testing.T) {
