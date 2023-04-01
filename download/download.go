@@ -16,10 +16,10 @@ import (
 const batchSize = 500
 
 type Downloader struct {
-	exchange service.Exchange
+	exchange service.Feeder
 }
 
-func NewDownloader(exchange service.Exchange) Downloader {
+func NewDownloader(exchange service.Feeder) Downloader {
 	return Downloader{
 		exchange: exchange,
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/download"
 	"github.com/rodrigo-brito/ninjabot/exchange"
+	"github.com/rodrigo-brito/ninjabot/service"
 
 	"github.com/urfave/cli/v2"
 )
@@ -59,11 +60,32 @@ func main() {
 						Usage:    "eg. ./btc.csv",
 						Required: true,
 					},
+					&cli.BoolFlag{
+						Name:     "futures",
+						Aliases:  []string{"f"},
+						Usage:    "true or false",
+						Value:    false,
+						Required: false,
+					},
 				},
 				Action: func(c *cli.Context) error {
-					exc, err := exchange.NewBinance(c.Context)
-					if err != nil {
-						return err
+					var (
+						exc service.Feeder
+						err error
+					)
+
+					if c.Bool("futures") {
+						// fetch data from binance futures
+						exc, err = exchange.NewBinanceFuture(c.Context)
+						if err != nil {
+							return err
+						}
+					} else {
+						// fetch data from binance spot
+						exc, err = exchange.NewBinance(c.Context)
+						if err != nil {
+							return err
+						}
 					}
 
 					var options []download.Option

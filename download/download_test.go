@@ -76,7 +76,6 @@ func TestDownloader_download(t *testing.T) {
 	require.NoError(t, err)
 
 	fakeExchange := struct {
-		service.Broker
 		service.Feeder
 	}{
 		Feeder: csvFeed,
