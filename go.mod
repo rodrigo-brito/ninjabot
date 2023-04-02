@@ -3,7 +3,7 @@ module github.com/rodrigo-brito/ninjabot
 go 1.18
 
 require (
-	github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf
+	github.com/StudioSol/set v1.0.0
 	github.com/adshao/go-binance/v2 v2.3.10
 	github.com/evanw/esbuild v0.17.11
 	github.com/glebarez/sqlite v1.7.0

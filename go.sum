@@ -38,8 +38,8 @@ cloud.google.com/go/storage v1.14.0/go.mod h1:GrKmX003DSIwi9o29oFT7YDnHYwZoctc3f
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf h1:J0UFkeov8c7HXBx/9LT0k5NZgUMXQWnl9o3B15Qja5w=
-github.com/StudioSol/set v0.0.0-20211001132805-52fe71d0afcf/go.mod h1:gHtdo3acqCLmt09I95lUZsaYbD5EkgaXXb/+IRbU3jg=
+github.com/StudioSol/set v1.0.0 h1:G27J71la+Da08WidabBkoRrvPLTa4cdCn0RjvyJ5WKQ=
+github.com/StudioSol/set v1.0.0/go.mod h1:hIUNZPo6rEGF43RlPXHq7Fjmf+HkVJBqAjtK7Z9LoIU=
 github.com/adshao/go-binance/v2 v2.3.10 h1:iWtHD/sQ8GK6r+cSMMdOynpGI/4Q6P5LZtiEHdWOjag=
 github.com/adshao/go-binance/v2 v2.3.10/go.mod h1:Z3MCnWI0gHC4Rea8TWiF3aN1t4nV9z3CaU/TeHcKsLM=
 github.com/bitly/go-simplejson v0.5.0 h1:6IH+V8/tVMab511d5bn4M7EwGXZf9Hj6i2xSwkNEM+Y=
@@ -249,7 +249,6 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
-github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
