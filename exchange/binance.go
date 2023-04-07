@@ -3,7 +3,6 @@ package exchange
 import (
 	"context"
 	"fmt"
-	"github.com/rodrigo-brito/ninjabot/service"
 	"strconv"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/jpillora/backoff"
 
 	"github.com/rodrigo-brito/ninjabot/model"
+	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
 
