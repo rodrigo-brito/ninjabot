@@ -3,6 +3,7 @@ package exchange
 import (
 	"context"
 	"fmt"
+	"github.com/rodrigo-brito/ninjabot/service"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,8 @@ import (
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
+
+var _ service.Feeder = &BinanceFuture{}
 
 type MarginType = futures.MarginType
 
@@ -442,56 +445,23 @@ func (b *BinanceFuture) Position(pair string) (asset, quote float64, err error) 
 	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
 }
 
+func (b *BinanceFuture) CandlesSubscriptionCombined(ctx context.Context,
+	pairs map[string]string) (chan model.Candle, chan error) {
+	ccandle := make(chan model.Candle)
+	cerr := make(chan error)
+	ha := model.NewHeikinAshi()
+
+	go b.candleSubscription(ctx, ha, ccandle, cerr, "", "", pairs, true)
+
+	return ccandle, cerr
+}
+
 func (b *BinanceFuture) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)
 	cerr := make(chan error)
 	ha := model.NewHeikinAshi()
 
-	go func() {
-		ba := &backoff.Backoff{
-			Min: 100 * time.Millisecond,
-			Max: 1 * time.Second,
-		}
-
-		for {
-			done, _, err := futures.WsKlineServe(pair, period, func(event *futures.WsKlineEvent) {
-				ba.Reset()
-				candle := FutureCandleFromWsKline(pair, event.Kline)
-
-				if candle.Complete && b.HeikinAshi {
-					candle = candle.ToHeikinAshi(ha)
-				}
-
-				if candle.Complete {
-					// fetch aditional data if needed
-					for _, fetcher := range b.MetadataFetchers {
-						key, value := fetcher(pair, candle.Time)
-						candle.Metadata[key] = value
-					}
-				}
-
-				ccandle <- candle
-
-			}, func(err error) {
-				cerr <- err
-			})
-			if err != nil {
-				cerr <- err
-				close(cerr)
-				close(ccandle)
-				return
-			}
-
-			select {
-			case <-ctx.Done():
-				close(cerr)
-				close(ccandle)
-				return
-			case <-done:
-				time.Sleep(ba.Duration())
-			}
-		}
-	}()
+	go b.candleSubscription(ctx, ha, ccandle, cerr, pair, period, nil, false)
 
 	return ccandle, cerr
 }
@@ -552,6 +522,68 @@ func (b *BinanceFuture) CandlesByPeriod(ctx context.Context, pair, period string
 	}
 
 	return candles, nil
+}
+
+func (b *BinanceFuture) candleHandler(ba *backoff.Backoff, ha *model.HeikinAshi,
+	ccandle chan<- model.Candle) futures.WsKlineHandler {
+	return func(event *futures.WsKlineEvent) {
+		ba.Reset()
+		candle := FutureCandleFromWsKline(event.Symbol, event.Kline)
+
+		if candle.Complete && b.HeikinAshi {
+			candle = candle.ToHeikinAshi(ha)
+		}
+
+		if candle.Complete {
+			// fetch aditional data if needed
+			for _, fetcher := range b.MetadataFetchers {
+				key, value := fetcher(event.Symbol, candle.Time)
+				candle.Metadata[key] = value
+			}
+		}
+
+		ccandle <- candle
+	}
+}
+
+func (b *BinanceFuture) candleSubscription(ctx context.Context, ha *model.HeikinAshi,
+	ccandle chan<- model.Candle, cerr chan<- error, pair, period string, pairs map[string]string, combined bool) {
+	ba := &backoff.Backoff{
+		Min: 100 * time.Millisecond,
+		Max: 1 * time.Second,
+	}
+
+	for {
+		handler := b.candleHandler(ba, ha, ccandle)
+
+		var done chan struct{}
+		var err error
+
+		if combined {
+			done, _, err = futures.WsCombinedKlineServe(pairs, handler, func(err error) {
+				cerr <- err
+			})
+		} else {
+			done, _, err = futures.WsKlineServe(pair, period, handler, func(err error) {
+				cerr <- err
+			})
+		}
+		if err != nil {
+			cerr <- err
+			close(cerr)
+			close(ccandle)
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			close(cerr)
+			close(ccandle)
+			return
+		case <-done:
+			time.Sleep(ba.Duration())
+		}
+	}
 }
 
 func FutureCandleFromKline(pair string, k futures.Kline) model.Candle {

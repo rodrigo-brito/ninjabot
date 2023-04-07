@@ -3,6 +3,7 @@ package exchange
 import (
 	"context"
 	"fmt"
+	"github.com/rodrigo-brito/ninjabot/service"
 	"strconv"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 )
+
+var _ service.Feeder = &Binance{}
 
 type MetadataFetchers func(pair string, t time.Time) (string, float64)
 
@@ -514,6 +517,10 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 	}()
 
 	return ccandle, cerr
+}
+
+func (b *Binance) CandlesSubscriptionCombined(_ context.Context, _ map[string]string) (chan model.Candle, chan error) {
+	panic("not implemented")
 }
 
 func (b *Binance) CandlesByLimit(ctx context.Context, pair, period string, limit int) ([]model.Candle, error) {

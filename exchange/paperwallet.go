@@ -26,6 +26,8 @@ type AssetValue struct {
 	Value float64
 }
 
+var _ service.Feeder = &PaperWallet{}
+
 type PaperWallet struct {
 	sync.Mutex
 	ctx           context.Context
@@ -688,4 +690,9 @@ func (p *PaperWallet) CandlesByLimit(ctx context.Context, pair, period string, l
 
 func (p *PaperWallet) CandlesSubscription(ctx context.Context, pair, timeframe string) (chan model.Candle, chan error) {
 	return p.feeder.CandlesSubscription(ctx, pair, timeframe)
+}
+
+func (p *PaperWallet) CandlesSubscriptionCombined(ctx context.Context,
+	pairs map[string]string) (chan model.Candle, chan error) {
+	return p.feeder.CandlesSubscriptionCombined(ctx, pairs)
 }
