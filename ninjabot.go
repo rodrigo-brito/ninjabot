@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strconv"
+
+	"github.com/aybabtme/uniplot/histogram"
 
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -192,6 +195,7 @@ func (n *NinjaBot) Summary() {
 	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
 	avgPayoff := 0.0
 
+	returns := make([]float64, 0)
 	for _, summary := range n.orderController.Results {
 		avgPayoff += summary.Payoff() * float64(len(summary.Win())+len(summary.Lose()))
 		table.Append([]string{
@@ -210,6 +214,9 @@ func (n *NinjaBot) Summary() {
 		wins += len(summary.Win())
 		loses += len(summary.Lose())
 		volume += summary.Volume
+
+		returns = append(returns, summary.WinPercent()...)
+		returns = append(returns, summary.LosePercent()...)
 	}
 
 	table.SetFooter([]string{
@@ -226,9 +233,22 @@ func (n *NinjaBot) Summary() {
 	table.Render()
 
 	fmt.Println(buffer.String())
+	fmt.Println("------ RETURN -------")
+	totalReturn := 0.0
+	returnsPercent := make([]float64, len(returns))
+	for _, p := range returns {
+		returnsPercent = append(returnsPercent, p*100)
+		totalReturn += p
+	}
+	fmt.Printf("AVG Return: %.2f%%\n", totalReturn/float64(len(returns))*100)
+	hist := histogram.Hist(20, returnsPercent)
+	histogram.Fprint(os.Stdout, hist, histogram.Linear(10))
+	fmt.Println()
+
 	if n.paperWallet != nil {
 		n.paperWallet.Summary()
 	}
+
 }
 
 func (n *NinjaBot) onCandle(candle model.Candle) {
