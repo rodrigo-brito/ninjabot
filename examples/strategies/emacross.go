@@ -15,7 +15,7 @@ func (e CrossEMA) Timeframe() string {
 }
 
 func (e CrossEMA) WarmupPeriod() int {
-	return 21
+	return 22
 }
 
 func (e CrossEMA) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {

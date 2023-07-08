@@ -22,7 +22,7 @@ func (e fakeStrategy) Timeframe() string {
 }
 
 func (e fakeStrategy) WarmupPeriod() int {
-	return 9
+	return 10
 }
 
 func (e fakeStrategy) Indicators(df *Dataframe) []strategy.ChartIndicator {
@@ -100,17 +100,17 @@ func TestMarketOrder(t *testing.T) {
 	assets, quote, err := bot.paperWallet.Position("BTCUSDT")
 	require.NoError(t, err)
 	require.Equal(t, assets, 0.0)
-	require.InDelta(t, quote, 26694.6741, 0.001)
+	require.InDelta(t, quote, 22930.9622, 0.001)
 
 	results := bot.orderController.Results["BTCUSDT"]
-	require.InDelta(t, 7424.3705, results.Profit(), 0.001)
-	require.Len(t, results.Win(), 6)
-	require.Len(t, results.Lose(), 11)
+	require.InDelta(t, 5340.224, results.Profit(), 0.001)
+	require.Len(t, results.Win(), 5)
+	require.Len(t, results.Lose(), 3)
 
 	results = bot.orderController.Results["ETHUSDT"]
-	require.InDelta(t, 9270.3036, results.Profit(), 0.001)
-	require.Len(t, results.Win(), 9)
-	require.Len(t, results.Lose(), 8)
+	require.InDelta(t, 7590.7381, results.Profit(), 0.001)
+	require.Len(t, results.Win(), 7)
+	require.Len(t, results.Lose(), 9)
 
 	bot.Summary()
 }

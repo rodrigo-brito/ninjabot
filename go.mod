@@ -24,6 +24,7 @@ require (
 )
 
 require (
+	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/chigopher/pathlib v0.15.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect

@@ -19,20 +19,32 @@ import (
 )
 
 type summary struct {
-	Pair      string
-	WinLong   []float64
-	WinShort  []float64
-	LoseLong  []float64
-	LoseShort []float64
-	Volume    float64
+	Pair             string
+	WinLong          []float64
+	WinLongPercent   []float64
+	WinShort         []float64
+	WinShortPercent  []float64
+	LoseLong         []float64
+	LoseLongPercent  []float64
+	LoseShort        []float64
+	LoseShortPercent []float64
+	Volume           float64
 }
 
 func (s summary) Win() []float64 {
 	return append(s.WinLong, s.WinShort...)
 }
 
+func (s summary) WinPercent() []float64 {
+	return append(s.WinLongPercent, s.WinShortPercent...)
+}
+
 func (s summary) Lose() []float64 {
 	return append(s.LoseLong, s.LoseShort...)
+}
+
+func (s summary) LosePercent() []float64 {
+	return append(s.LoseLongPercent, s.LoseShortPercent...)
 }
 
 func (s summary) Profit() float64 {
@@ -109,6 +121,62 @@ const (
 	StatusError   Status = "error"
 )
 
+type Result struct {
+	Pair          string
+	ProfitPercent float64
+	ProfitValue   float64
+	Side          model.SideType
+	Duration      time.Duration
+	CreatedAt     time.Time
+}
+
+type Position struct {
+	Side      model.SideType
+	AvgPrice  float64
+	Quantity  float64
+	CreatedAt time.Time
+}
+
+func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
+	price := order.Price
+	if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
+		price = *order.Stop
+	}
+
+	if p.Side == order.Side {
+		p.AvgPrice = (p.AvgPrice*p.Quantity + price*order.Quantity) / (p.Quantity + order.Quantity)
+		p.Quantity += order.Quantity
+	} else {
+		if p.Quantity == order.Quantity {
+			finished = true
+		} else if p.Quantity > order.Quantity {
+			p.Quantity -= order.Quantity
+		} else {
+			p.Quantity = order.Quantity - p.Quantity
+			p.Side = order.Side
+			p.CreatedAt = order.CreatedAt
+			p.AvgPrice = price
+		}
+
+		quantity := math.Min(p.Quantity, order.Quantity)
+		order.Profit = (price - p.AvgPrice) / p.AvgPrice
+		order.ProfitValue = (price - p.AvgPrice) * quantity
+
+		result = &Result{
+			CreatedAt:     order.CreatedAt,
+			Pair:          order.Pair,
+			Duration:      order.CreatedAt.Sub(p.CreatedAt),
+			ProfitPercent: order.Profit,
+			ProfitValue:   order.ProfitValue,
+			Side:          p.Side,
+		}
+
+		return result, finished
+	}
+
+	return nil, false
+}
+
 type Controller struct {
 	mtx            sync.Mutex
 	ctx            context.Context
@@ -121,6 +189,8 @@ type Controller struct {
 	tickerInterval time.Duration
 	finish         chan bool
 	status         Status
+
+	position map[string]*Position
 }
 
 func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage,
@@ -135,6 +205,7 @@ func NewController(ctx context.Context, exchange service.Exchange, storage stora
 		Results:        make(map[string]*summary),
 		tickerInterval: time.Second,
 		finish:         make(chan bool),
+		position:       make(map[string]*Position),
 	}
 }
 
@@ -146,77 +217,53 @@ func (c *Controller) OnCandle(candle model.Candle) {
 	c.lastPrice[candle.Pair] = candle.Close
 }
 
-func (c *Controller) calculateProfit(o *model.Order) (value, percent float64, err error) {
+func (c *Controller) updatePosition(o *model.Order) {
 	// get filled orders before the current order
-	orders, err := c.storage.Orders(
-		storage.WithUpdateAtBeforeOrEqual(o.UpdatedAt),
-		storage.WithStatus(model.OrderStatusTypeFilled),
-		storage.WithPair(o.Pair),
-	)
-	if err != nil {
-		return 0, 0, err
+	position, ok := c.position[o.Pair]
+	if !ok {
+		c.position[o.Pair] = &Position{
+			AvgPrice:  o.Price,
+			Quantity:  o.Quantity,
+			CreatedAt: o.CreatedAt,
+			Side:      o.Side,
+		}
+		return
 	}
 
-	quantity := 0.0
-	avgPriceLong := 0.0
-	avgPriceShort := 0.0
+	result, closed := position.Update(o)
+	if closed {
+		delete(c.position, o.Pair)
+	}
 
-	for _, order := range orders {
-		// skip current order
-		if o.ID == order.ID {
-			continue
-		}
-
-		// calculate avg price
-		price := order.Price
-		if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
-			price = *order.Stop
-		}
-
-		var diff = order.Quantity
-		if order.Side == model.SideTypeSell {
-			diff = -order.Quantity
-		}
-
-		if order.Side == model.SideTypeBuy && quantity+diff >= 0 {
-			avgPriceLong = (order.Quantity*price + avgPriceLong*math.Abs(quantity)) / (order.Quantity + math.Abs(quantity))
-		} else if order.Side == model.SideTypeSell && quantity+diff <= 0 {
-			avgPriceShort = (order.Quantity*price + avgPriceShort*math.Abs(quantity)) / (order.Quantity + math.Abs(quantity))
-		}
-
-		if order.Side == model.SideTypeBuy {
-			quantity += order.Quantity
+	if result != nil {
+		// TODO: replace by a slice of Result
+		if result.ProfitPercent > 0 {
+			if result.Side == model.SideTypeBuy {
+				c.Results[o.Pair].WinLong = append(c.Results[o.Pair].WinLong, result.ProfitValue)
+				c.Results[o.Pair].WinLongPercent = append(c.Results[o.Pair].WinLongPercent, result.ProfitPercent)
+			} else {
+				c.Results[o.Pair].WinShort = append(c.Results[o.Pair].WinShort, result.ProfitValue)
+				c.Results[o.Pair].WinShortPercent = append(c.Results[o.Pair].WinShortPercent, result.ProfitPercent)
+			}
 		} else {
-			quantity -= order.Quantity
+			if result.Side == model.SideTypeBuy {
+				c.Results[o.Pair].LoseLong = append(c.Results[o.Pair].LoseLong, result.ProfitValue)
+				c.Results[o.Pair].LoseLongPercent = append(c.Results[o.Pair].LoseLongPercent, result.ProfitPercent)
+			} else {
+				c.Results[o.Pair].LoseShort = append(c.Results[o.Pair].LoseShort, result.ProfitValue)
+				c.Results[o.Pair].LoseShortPercent = append(c.Results[o.Pair].LoseShortPercent, result.ProfitPercent)
+			}
 		}
 
+		_, quote := exchange.SplitAssetQuote(o.Pair)
+		c.notify(fmt.Sprintf(
+			"[PROFIT] %f %s (%f %%)\n`%s`",
+			result.ProfitValue,
+			quote,
+			result.ProfitPercent*100,
+			c.Results[o.Pair].String(),
+		))
 	}
-
-	if quantity == 0 {
-		return 0, 0, nil
-	}
-
-	if o.Side == model.SideTypeBuy && quantity < 0 {
-		// profit short
-		price := o.Price
-		if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {
-			price = *o.Stop
-		}
-		profitValue := (avgPriceShort - price) * o.Quantity
-		return profitValue, profitValue / o.Quantity / avgPriceShort, nil
-	}
-
-	if o.Side == model.SideTypeSell && quantity > 0 {
-		// profit long
-		price := o.Price
-		if o.Type == model.OrderTypeStopLoss || o.Type == model.OrderTypeStopLossLimit {
-			price = *o.Stop
-		}
-		profitValue := (price - avgPriceLong) * o.Quantity
-		return profitValue, profitValue / o.Quantity / avgPriceLong, nil
-	}
-
-	return 0, 0, nil
 }
 
 func (c *Controller) notify(message string) {
@@ -246,38 +293,15 @@ func (c *Controller) processTrade(order *model.Order) {
 	// register order volume
 	c.Results[order.Pair].Volume += order.Price * order.Quantity
 
-	profitValue, profit, err := c.calculateProfit(order)
-	if err != nil {
-		c.notifyError(err)
-		return
-	}
-
-	order.Profit = profit
-	if profitValue == 0 {
-		return
-	} else if profitValue > 0 {
-		if order.Side == model.SideTypeBuy {
-			c.Results[order.Pair].WinLong = append(c.Results[order.Pair].WinLong, profitValue)
-		} else {
-			c.Results[order.Pair].WinShort = append(c.Results[order.Pair].WinShort, profitValue)
-		}
-	} else {
-		if order.Side == model.SideTypeBuy {
-			c.Results[order.Pair].LoseLong = append(c.Results[order.Pair].LoseLong, profitValue)
-		} else {
-			c.Results[order.Pair].LoseShort = append(c.Results[order.Pair].LoseShort, profitValue)
-		}
-	}
-
-	_, quote := exchange.SplitAssetQuote(order.Pair)
-	c.notify(fmt.Sprintf("[PROFIT] %f %s (%f %%)\n`%s`", profitValue, quote, profit*100, c.Results[order.Pair].String()))
+	// update position size / avg price
+	c.updatePosition(order)
 }
 
 func (c *Controller) updateOrders() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
-	// pending orders
+	//pending orders
 	orders, err := c.storage.Orders(storage.WithStatusIn(
 		model.OrderStatusTypeNew,
 		model.OrderStatusTypePartiallyFilled,
