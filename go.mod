@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/StudioSol/set v1.0.0
 	github.com/adshao/go-binance/v2 v2.4.2
+	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e
 	github.com/evanw/esbuild v0.17.11
 	github.com/glebarez/sqlite v1.8.0
 	github.com/jpillora/backoff v1.0.0
@@ -20,11 +21,10 @@ require (
 	github.com/xhit/go-str2duration/v2 v2.1.0
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
 	gopkg.in/tucnak/telebot.v2 v2.5.0
-	gorm.io/gorm v1.24.6
+	gorm.io/gorm v1.25.2
 )
 
 require (
-	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/chigopher/pathlib v0.15.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
