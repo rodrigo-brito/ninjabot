@@ -21,7 +21,7 @@ require (
 	github.com/xhit/go-str2duration/v2 v2.1.0
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
 	gopkg.in/tucnak/telebot.v2 v2.5.0
-	gorm.io/gorm v1.25.4
+	gorm.io/gorm v1.25.5
 )
 
 require (
