@@ -181,7 +181,7 @@ func (p *PaperWallet) Summary() {
 		volume       float64
 	)
 
-	fmt.Println("-- FINAL WALLET --")
+	fmt.Println("----- FINAL WALLET -----")
 	for pair := range p.lastCandle {
 		asset, quote := SplitAssetQuote(pair)
 		assetInfo, ok := p.assets[asset]
