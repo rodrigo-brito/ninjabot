@@ -257,9 +257,12 @@ func (n *NinjaBot) Summary() {
 		payoffInterval := metrics.Bootstrap(returns, metrics.Payoff, 10000, 0.95)
 		profitFactorInterval := metrics.Bootstrap(returns, metrics.ProfitFactor, 10000, 0.95)
 
-		fmt.Printf("RETURN:      %.2f%% (%.2f%% ~ %.2f%%)\n", returnsInterval.Mean*100, returnsInterval.Lower*100, returnsInterval.Upper*100)
-		fmt.Printf("PAYOFF:      %.2f (%.2f ~ %.2f)\n", payoffInterval.Mean, payoffInterval.Lower, payoffInterval.Upper)
-		fmt.Printf("PROF.FACTOR: %.2f (%.2f ~ %.2f)\n", profitFactorInterval.Mean, profitFactorInterval.Lower, profitFactorInterval.Upper)
+		fmt.Printf("RETURN:      %.2f%% (%.2f%% ~ %.2f%%)\n",
+			returnsInterval.Mean*100, returnsInterval.Lower*100, returnsInterval.Upper*100)
+		fmt.Printf("PAYOFF:      %.2f (%.2f ~ %.2f)\n",
+			payoffInterval.Mean, payoffInterval.Lower, payoffInterval.Upper)
+		fmt.Printf("PROF.FACTOR: %.2f (%.2f ~ %.2f)\n",
+			profitFactorInterval.Mean, profitFactorInterval.Lower, profitFactorInterval.Upper)
 	}
 
 	fmt.Println()

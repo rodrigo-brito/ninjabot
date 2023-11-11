@@ -15,7 +15,9 @@ type BootstrapInterval struct {
 }
 
 // Bootstrap calculates the confidence interval of a sample using the bootstrap method.
-func Bootstrap(values []float64, measure func([]float64) float64, sampleSize int, confidence float64) BootstrapInterval {
+func Bootstrap(values []float64, measure func([]float64) float64, sampleSize int,
+	confidence float64) BootstrapInterval {
+
 	var data []float64
 	for i := 0; i < sampleSize; i++ {
 		samples := make([]float64, len(values))

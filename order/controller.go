@@ -139,11 +139,17 @@ func (s summary) SaveReturns(filename string) error {
 	defer file.Close()
 
 	for _, value := range s.WinPercent() {
-		file.WriteString(fmt.Sprintf("%.4f\n", value))
+		_, err = file.WriteString(fmt.Sprintf("%.4f\n", value))
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, value := range s.LosePercent() {
-		file.WriteString(fmt.Sprintf("%.4f\n", value))
+		_, err = file.WriteString(fmt.Sprintf("%.4f\n", value))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
