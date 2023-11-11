@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -70,11 +71,11 @@ func (s summary) Payoff() float64 {
 	avgWin := 0.0
 	avgLose := 0.0
 
-	for _, value := range s.Win() {
+	for _, value := range s.WinPercent() {
 		avgWin += value
 	}
 
-	for _, value := range s.Lose() {
+	for _, value := range s.LosePercent() {
 		avgLose += value
 	}
 
@@ -83,6 +84,22 @@ func (s summary) Payoff() float64 {
 	}
 
 	return (avgWin / float64(len(s.Win()))) / math.Abs(avgLose/float64(len(s.Lose())))
+}
+
+func (s summary) ProfitFactor() float64 {
+	if len(s.Lose()) == 0 {
+		return 0
+	}
+	profit := 0.0
+	for _, value := range s.WinPercent() {
+		profit += value
+	}
+
+	loss := 0.0
+	for _, value := range s.LosePercent() {
+		loss += value
+	}
+	return profit / math.Abs(loss)
 }
 
 func (s summary) WinPercentage() float64 {
@@ -104,6 +121,7 @@ func (s summary) String() string {
 		{"Loss", strconv.Itoa(len(s.Lose()))},
 		{"% Win", fmt.Sprintf("%.1f", s.WinPercentage())},
 		{"Payoff", fmt.Sprintf("%.1f", s.Payoff()*100)},
+		{"Pr.Fact", fmt.Sprintf("%.1f", s.Payoff()*100)},
 		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
 		{"Volume", fmt.Sprintf("%.4f %s", s.Volume, quote)},
 	}
@@ -111,6 +129,23 @@ func (s summary) String() string {
 	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT})
 	table.Render()
 	return tableString.String()
+}
+
+func (s summary) SaveReturns(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	for _, value := range s.WinPercent() {
+		file.WriteString(fmt.Sprintf("%.4f\n", value))
+	}
+
+	for _, value := range s.LosePercent() {
+		file.WriteString(fmt.Sprintf("%.4f\n", value))
+	}
+	return nil
 }
 
 type Status string
@@ -237,7 +272,7 @@ func (c *Controller) updatePosition(o *model.Order) {
 
 	if result != nil {
 		// TODO: replace by a slice of Result
-		if result.ProfitPercent > 0 {
+		if result.ProfitPercent >= 0 {
 			if result.Side == model.SideTypeBuy {
 				c.Results[o.Pair].WinLong = append(c.Results[o.Pair].WinLong, result.ProfitValue)
 				c.Results[o.Pair].WinLongPercent = append(c.Results[o.Pair].WinLongPercent, result.ProfitPercent)
