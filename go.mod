@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tidwall/buntdb v1.3.0
 	github.com/urfave/cli/v2 v2.25.7
-	github.com/vektra/mockery/v2 v2.33.1
+	github.com/vektra/mockery/v2 v2.36.0
 	github.com/xhit/go-str2duration/v2 v2.1.0
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
 	gopkg.in/tucnak/telebot.v2 v2.5.0
@@ -35,6 +35,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
