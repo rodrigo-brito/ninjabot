@@ -20,36 +20,28 @@ func (e Turtle) WarmupPeriod() int {
 }
 
 func (e Turtle) Indicators(df *ninjabot.Dataframe) []strategy.ChartIndicator {
-	df.Metadata["max40"] = indicator.Max(df.Close, 40)
-	df.Metadata["low20"] = indicator.Min(df.Close, 20)
+	df.Metadata["ema8"] = indicator.EMA(df.Close, 8)
+	df.Metadata["sma21"] = indicator.SMA(df.Close, 21)
 
 	return nil
 }
 
 func (e *Turtle) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
-	closePrice := df.Close.Last(0)
-	highest := df.Metadata["max40"].Last(0)
-	lowest := df.Metadata["low20"].Last(0)
+	position, ok := broker.Position(df.Pair)
+	balances, _ := broker.Account()
+	funds := balances.Equity()
 
-	assetPosition, quotePosition, err := broker.Position(df.Pair)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	position.CurrentCandle = df.CurrentCandle()
 
-	// If position already open wait till it will be closed
-	if assetPosition == 0 && closePrice >= highest {
-		_, err := broker.CreateOrderMarketQuote(ninjabot.SideTypeBuy, df.Pair, quotePosition/2)
+	if !ok && df.Metadata["ema8"].Crossover(df.Metadata["sma21"]) {
+		err := broker.OpenPosition(ninjabot.SideTypeBuy, df.Pair, 0.5*funds, 10)
 		if err != nil {
 			log.Error(err)
 		}
 		return
 	}
 
-	if assetPosition > 0 && closePrice <= lowest {
-		_, err := broker.CreateOrderMarket(ninjabot.SideTypeSell, df.Pair, assetPosition)
-		if err != nil {
-			log.Error(err)
-		}
+	if ok && df.Metadata["ema8"].Crossunder(df.Metadata["sma21"]) {
+		_ = broker.ClosePosition(position)
 	}
 }

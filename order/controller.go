@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -162,68 +163,13 @@ const (
 	StatusError   Status = "error"
 )
 
-type Result struct {
-	Pair          string
-	ProfitPercent float64
-	ProfitValue   float64
-	Side          model.SideType
-	Duration      time.Duration
-	CreatedAt     time.Time
-}
-
-type Position struct {
-	Side      model.SideType
-	AvgPrice  float64
-	Quantity  float64
-	CreatedAt time.Time
-}
-
-func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
-	price := order.Price
-	if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
-		price = *order.Stop
-	}
-
-	if p.Side == order.Side {
-		p.AvgPrice = (p.AvgPrice*p.Quantity + price*order.Quantity) / (p.Quantity + order.Quantity)
-		p.Quantity += order.Quantity
-	} else {
-		if p.Quantity == order.Quantity {
-			finished = true
-		} else if p.Quantity > order.Quantity {
-			p.Quantity -= order.Quantity
-		} else {
-			p.Quantity = order.Quantity - p.Quantity
-			p.Side = order.Side
-			p.CreatedAt = order.CreatedAt
-			p.AvgPrice = price
-		}
-
-		quantity := math.Min(p.Quantity, order.Quantity)
-		order.Profit = (price - p.AvgPrice) / p.AvgPrice
-		order.ProfitValue = (price - p.AvgPrice) * quantity
-
-		result = &Result{
-			CreatedAt:     order.CreatedAt,
-			Pair:          order.Pair,
-			Duration:      order.CreatedAt.Sub(p.CreatedAt),
-			ProfitPercent: order.Profit,
-			ProfitValue:   order.ProfitValue,
-			Side:          p.Side,
-		}
-
-		return result, finished
-	}
-
-	return nil, false
-}
-
 type Controller struct {
 	mtx            sync.Mutex
 	ctx            context.Context
 	exchange       service.Exchange
 	storage        storage.Storage
 	orderFeed      *Feed
+	mockTrading    bool
 	notifier       service.Notifier
 	Results        map[string]*summary
 	lastPrice      map[string]float64
@@ -231,22 +177,23 @@ type Controller struct {
 	finish         chan bool
 	status         Status
 
-	position map[string]*Position
+	positions map[string]*model.Position
 }
 
 func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage,
-	orderFeed *Feed) *Controller {
+	orderFeed *Feed, mockTrading bool) *Controller {
 
 	return &Controller{
 		ctx:            ctx,
 		storage:        storage,
 		exchange:       exchange,
 		orderFeed:      orderFeed,
+		mockTrading:    mockTrading,
+		positions:      make(map[string]*model.Position),
 		lastPrice:      make(map[string]float64),
 		Results:        make(map[string]*summary),
 		tickerInterval: time.Second,
 		finish:         make(chan bool),
-		position:       make(map[string]*Position),
 	}
 }
 
@@ -255,25 +202,38 @@ func (c *Controller) SetNotifier(notifier service.Notifier) {
 }
 
 func (c *Controller) OnCandle(candle model.Candle) {
+	// Called only if the method is not overwritten in the exchange
 	c.lastPrice[candle.Pair] = candle.Close
+	c.positions[candle.Pair].CurrentCandle = &candle
 }
 
 func (c *Controller) updatePosition(o *model.Order) {
 	// get filled orders before the current order
-	position, ok := c.position[o.Pair]
-	if !ok {
-		c.position[o.Pair] = &Position{
-			AvgPrice:  o.Price,
-			Quantity:  o.Quantity,
-			CreatedAt: o.CreatedAt,
-			Side:      o.Side,
+	//position, ok := c.exchange.Position(o.Pair)
+	position := c.positions[o.Pair]
+
+	if position == nil {
+		position := model.Position{
+			Pair:     o.Pair,
+			Side:     o.Side,
+			Quantity: o.Quantity,
+			// last price not available
+			EntryPrice: o.Price,
+			Leverage:   o.Leverage,
+			Size:       o.Quantity * o.Price,
+			CurrentCandle: &model.Candle{
+				Close: c.lastPrice[o.Pair],
+			},
 		}
+
+		c.positions[o.Pair] = &position
+
 		return
 	}
 
 	result, closed := position.Update(o)
 	if closed {
-		delete(c.position, o.Pair)
+		delete(c.positions, o.Pair)
 	}
 
 	if result != nil {
@@ -338,6 +298,22 @@ func (c *Controller) processTrade(order *model.Order) {
 	c.updatePosition(order)
 }
 
+func (c *Controller) updatePositions() {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
+	// Check active positions for liquidation
+	for _, pos := range c.positions {
+		if c.mockTrading && pos.CurrentCandle != nil && pos.Liquidated() {
+			// Create an opposite market order if the position is liquidated (only for backtesting and paper wallet?)
+			// If we're in the real market, the position will automatically be liquidated (futures)
+			// Thus, isn't necessary to create an order, but we still need to remove the position from the map[string]*model.Position
+			// Also, we can have a watcher that keep in sync the map with the info from the exchange
+			c.CreateOrderMarket(pos.OppositeSide(), pos.Pair, pos.Quantity)
+		}
+	}
+}
+
 func (c *Controller) updateOrders() {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
@@ -398,6 +374,7 @@ func (c *Controller) Start() {
 				select {
 				case <-ticker.C:
 					c.updateOrders()
+					c.updatePositions()
 				case <-c.finish:
 					ticker.Stop()
 					return
@@ -412,6 +389,7 @@ func (c *Controller) Stop() {
 	if c.status == StatusRunning {
 		c.status = StatusStopped
 		c.updateOrders()
+		c.updatePositions()
 		c.finish <- true
 		log.Info("Bot stopped.")
 	}
@@ -421,20 +399,67 @@ func (c *Controller) Account() (model.Account, error) {
 	return c.exchange.Account()
 }
 
-func (c *Controller) Position(pair string) (asset, quote float64, err error) {
-	return c.exchange.Position(pair)
+func (c *Controller) Position(pair string) (*model.Position, bool) {
+	//return c.exchange.Position(pair)
+
+	if !c.mockTrading {
+		// TODO: Update the positions using the exchange data
+	}
+
+	for _, pos := range c.positions {
+		if pos.Pair == pair {
+			pos.CurrentCandle = &model.Candle{Close: c.lastPrice[pair]}
+			return pos, true
+		}
+	}
+
+	return &model.Position{}, false
+}
+
+func (c *Controller) Positions() map[string]*model.Position {
+	return c.exchange.Positions()
+}
+
+func (c *Controller) OpenPosition(side model.SideType, pair string, size float64, leverage int) error {
+	for _, pos := range c.positions {
+		if pos.Pair == pair && pos.Side == side {
+			return errors.New("position already exists")
+		}
+	}
+
+	_, err := c.CreateOrderMarketQuote(side, pair, size, leverage)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Controller) ClosePosition(position *model.Position) error {
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+
+	log.Infof("[Position] Close Position %s", position.Pair)
+	order, err := c.exchange.CreateOrderMarket(position.OppositeSide(), position.Pair, position.Quantity)
+	if err != nil {
+		c.notifyError(err)
+		return err
+	}
+
+	err = c.storage.CreateOrder(&order)
+	if err != nil {
+		c.notifyError(err)
+		return err
+	}
+
+	// calculate profit
+	c.processTrade(&order)
+	go c.orderFeed.Publish(order, true)
+	return nil
 }
 
 func (c *Controller) LastQuote(pair string) (float64, error) {
 	return c.exchange.LastQuote(c.ctx, pair)
-}
-
-func (c *Controller) PositionValue(pair string) (float64, error) {
-	asset, _, err := c.exchange.Position(pair)
-	if err != nil {
-		return 0, err
-	}
-	return asset * c.lastPrice[pair], nil
 }
 
 func (c *Controller) Order(pair string, id int64) (model.Order, error) {
@@ -486,12 +511,12 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 	return order, nil
 }
 
-func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, amount float64) (model.Order, error) {
+func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, amount float64, leverage int) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
-	order, err := c.exchange.CreateOrderMarketQuote(side, pair, amount)
+	order, err := c.exchange.CreateOrderMarketQuote(side, pair, amount, leverage)
 	if err != nil {
 		c.notifyError(err)
 		return model.Order{}, err

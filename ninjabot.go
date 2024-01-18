@@ -92,7 +92,12 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		}
 	}
 
-	bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed)
+	// We need to know if the controller will run into a real trading environment or not
+	// Based on this attribute we will decide the logic of the position
+	// For example, when we're not in a real trading environment, we should simulate the liquidation of the future positions
+	mockTrading := bot.backtest || bot.paperWallet != nil
+
+	bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed, mockTrading)
 
 	if settings.Telegram.Enabled {
 		bot.telegram, err = notification.NewTelegram(bot.orderController, settings)

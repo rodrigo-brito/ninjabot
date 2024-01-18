@@ -82,6 +82,19 @@ func (df Dataframe) Sample(positions int) Dataframe {
 	return sample
 }
 
+func (d Dataframe) CurrentCandle() *Candle {
+	return &Candle{
+		Pair:      d.Pair,
+		Open:      d.Open.Last(0),
+		Close:     d.Close.Last(0),
+		High:      d.High.Last(0),
+		Low:       d.Low.Last(0),
+		Volume:    d.Volume.Last(0),
+		Time:      d.Time[len(d.Time)-1],
+		UpdatedAt: d.LastUpdate,
+	}
+}
+
 type Candle struct {
 	Pair      string
 	Time      time.Time

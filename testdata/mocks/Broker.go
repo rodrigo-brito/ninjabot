@@ -427,8 +427,8 @@ func (_c *Broker_Position_Call) Run(run func(pair string)) *Broker_Position_Call
 	return _c
 }
 
-func (_c *Broker_Position_Call) Return(asset float64, quote float64, err error) *Broker_Position_Call {
-	_c.Call.Return(asset, quote, err)
+func (_c *Broker_Position_Call) Return(position model.Position, err error) *Broker_Position_Call {
+	_c.Call.Return(position, err)
 	return _c
 }
 

@@ -39,6 +39,8 @@ type Order struct {
 	Status     OrderStatusType `db:"status" json:"status"`
 	Price      float64         `db:"price" json:"price"`
 	Quantity   float64         `db:"quantity" json:"quantity"`
+	Leverage   int             `db:"leverage" json:"leverage"`
+	Reason     string          `db:"reason" json:"reason"`
 
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
@@ -57,4 +59,14 @@ type Order struct {
 func (o Order) String() string {
 	return fmt.Sprintf("[%s] %s %s | ID: %d, Type: %s, %f x $%f (~$%.f)",
 		o.Status, o.Side, o.Pair, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price)
+}
+
+func (o Order) ToPosition(leverage int) *Position {
+	return &Position{
+		Pair:       o.Pair,
+		Side:       o.Side,
+		Quantity:   o.Quantity,
+		EntryPrice: o.Price,
+		Leverage:   leverage,
+	}
 }

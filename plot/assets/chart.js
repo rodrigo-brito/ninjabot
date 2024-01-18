@@ -78,12 +78,13 @@ document.addEventListener("DOMContentLoaded", function () {
               hovertext: `${order.updated_at}
                         <br>ID: ${order.id}
                         <br>Price: ${order.price.toLocaleString()}
+                        <br>Reason: ${order.reason}
                         <br>Size: ${order.quantity
                           .toPrecision(4)
                           .toLocaleString()}<br>Type: ${order.type}<br>${
                 (order.profit &&
                   "Profit: " +
-                    +(order.profit * 100).toPrecision(2).toLocaleString() +
+                    +(order.profit).toPrecision(2).toLocaleString() +
                     "%") ||
                 ""
               }`,

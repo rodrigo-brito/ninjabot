@@ -46,6 +46,21 @@ type PaperWallet struct {
 	equityValues  []AssetValue
 }
 
+func (p *PaperWallet) Position(pair string) (*model.Position, bool) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PaperWallet) Positions() map[string]*model.Position {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PaperWallet) OpenPosition(side model.SideType, pair string, size float64, leverage int) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (p *PaperWallet) AssetsInfo(pair string) model.AssetInfo {
 	asset, quote := SplitAssetQuote(pair)
 	return model.AssetInfo{
@@ -86,9 +101,10 @@ func WithDataFeed(feeder service.Feeder) PaperWalletOption {
 
 func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWalletOption) *PaperWallet {
 	wallet := PaperWallet{
-		ctx:           ctx,
-		baseCoin:      baseCoin,
-		orders:        make([]model.Order, 0),
+		ctx:      ctx,
+		baseCoin: baseCoin,
+		orders:   make([]model.Order, 0),
+		//positions:     make(map[string]*model.Position),
 		assets:        make(map[string]*assetInfo),
 		fistCandle:    make(map[string]model.Candle),
 		lastCandle:    make(map[string]model.Candle),
@@ -181,6 +197,7 @@ func (p *PaperWallet) Summary() {
 		volume       float64
 	)
 
+	// TODO: Investigate the rules when we're in future market
 	fmt.Println("----- FINAL WALLET -----")
 	for pair := range p.lastCandle {
 		asset, quote := SplitAssetQuote(pair)
@@ -191,6 +208,7 @@ func (p *PaperWallet) Summary() {
 
 		quantity := assetInfo.Free + assetInfo.Lock
 		value := quantity * p.lastCandle[pair].Close
+		// TODO: What is this?
 		if quantity < 0 {
 			totalShort := 2.0*p.avgShortPrice[pair]*quantity - p.lastCandle[pair].Close*quantity
 			value = math.Abs(totalShort)
@@ -224,7 +242,9 @@ func (p *PaperWallet) Summary() {
 	fmt.Println("-------------------")
 }
 
-func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, value float64, fill bool) error {
+func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, value float64, fill bool, leverage int) error {
+	// TODO: Fix the funds to support both spot and futures positions
+	// TODO: Fix funds validation at the sell point (if the position was created with leverage)
 	asset, quote := SplitAssetQuote(pair)
 	if _, ok := p.assets[asset]; !ok {
 		p.assets[asset] = &assetInfo{}
@@ -255,11 +275,13 @@ func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, va
 		p.assets[quote].Free -= lockedQuote
 		if fill {
 			p.updateAveragePrice(side, pair, amount, value)
+
+			// TODO: Investigate this logic.
+			// If we need in a short position why we should decrease the p.asset value? (Future market)
 			if lockedQuote > 0 { // entering in short position
 				p.assets[asset].Free -= amount
 			} else { // liquidating long position
 				p.assets[quote].Free += amount * value
-
 			}
 		} else {
 			p.assets[asset].Lock += lockedAsset
@@ -490,20 +512,41 @@ func (p *PaperWallet) Account() (model.Account, error) {
 	}, nil
 }
 
-func (p *PaperWallet) Position(pair string) (asset, quote float64, err error) {
-	p.Lock()
-	defer p.Unlock()
+//func (p *PaperWallet) Position(pair string) (*model.Position, bool) {
+//	p.Lock()
+//	defer p.Unlock()
+//
+//	for _, pos := range p.positions {
+//		if pos.Pair == pair {
+//			return pos, true
+//		}
+//	}
+//
+//	return &model.Position{}, false
+//}
 
-	assetTick, quoteTick := SplitAssetQuote(pair)
-	acc, err := p.Account()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	assetBalance, quoteBalance := acc.Balance(assetTick, quoteTick)
-
-	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
-}
+//func (p *PaperWallet) OpenPosition(side model.SideType, pair string, size float64, leverage int) (*model.Position, error) {
+//	p.Lock()
+//	defer p.Unlock()
+//
+//	for _, pos := range p.positions {
+//		if pos.Pair == pair {
+//			return &model.Position{}, errors.New("position already exists")
+//		}
+//	}
+//
+//	position := model.Position{
+//		Pair:       pair,
+//		Side:       side,
+//		Quantity:   size / p.lastCandle[pair].Close,
+//		EntryPrice: p.lastCandle[pair].Close,
+//		Leverage:   leverage,
+//		Size:       size,
+//	}
+//
+//	p.positions[pair] = &position
+//	return &position, nil
+//}
 
 func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 	size, price, stop, stopLimit float64) ([]model.Order, error) {
@@ -514,7 +557,8 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 		return nil, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(side, pair, size, price, false)
+	// TODO: Check the leverage
+	err := p.validateFunds(side, pair, size, price, false, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +607,7 @@ func (p *PaperWallet) CreateOrderLimit(side model.SideType, pair string,
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(side, pair, size, limit, false)
+	err := p.validateFunds(side, pair, size, limit, false, 1)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -586,7 +630,21 @@ func (p *PaperWallet) CreateOrderMarket(side model.SideType, pair string, size f
 	p.Lock()
 	defer p.Unlock()
 
-	return p.createOrderMarket(side, pair, size)
+	// I assume that the CreateOrderMarket method is used only for SPOT market.
+	// The future market (with leverage) will use the quote method. Therefore, in the current case we'll call
+	// the createOrderMarket with leverage 1
+	return p.createOrderMarket(side, pair, size, p.GetPositionLeverage(pair, size))
+}
+
+func (p *PaperWallet) GetPositionLeverage(pair string, size float64) int {
+	// TODO: Find a better way to get the position leverage
+	for _, order := range p.orders {
+		if order.Pair == pair && order.Quantity == size {
+			return order.Leverage
+		}
+	}
+
+	return 1.0
 }
 
 func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) (model.Order, error) {
@@ -597,7 +655,7 @@ func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) 
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(model.SideTypeSell, pair, size, limit, false)
+	err := p.validateFunds(model.SideTypeSell, pair, size, limit, false, 1)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -618,12 +676,12 @@ func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) 
 	return order, nil
 }
 
-func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size float64) (model.Order, error) {
+func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size float64, leverage int) (model.Order, error) {
 	if size == 0 {
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(side, pair, size, p.lastCandle[pair].Close, true)
+	err := p.validateFunds(side, pair, size, p.lastCandle[pair].Close, true, leverage)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -632,7 +690,7 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 		p.volume[pair] = 0
 	}
 
-	p.volume[pair] += p.lastCandle[pair].Close * size
+	p.volume[pair] += p.lastCandle[pair].Close * size * float64(leverage)
 
 	order := model.Order{
 		ExchangeID: p.ID(),
@@ -644,6 +702,7 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 		Status:     model.OrderStatusTypeFilled,
 		Price:      p.lastCandle[pair].Close,
 		Quantity:   size,
+		Leverage:   leverage,
 	}
 
 	p.orders = append(p.orders, order)
@@ -651,14 +710,13 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 	return order, nil
 }
 
-func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string,
-	quoteQuantity float64) (model.Order, error) {
+func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string, quoteQuantity float64, leverage int) (model.Order, error) {
 	p.Lock()
 	defer p.Unlock()
 
 	info := p.AssetsInfo(pair)
 	quantity := common.AmountToLotSize(info.StepSize, info.BaseAssetPrecision, quoteQuantity/p.lastCandle[pair].Close)
-	return p.createOrderMarket(side, pair, quantity)
+	return p.createOrderMarket(side, pair, quantity, leverage)
 }
 
 func (p *PaperWallet) Cancel(order model.Order) error {
@@ -693,4 +751,13 @@ func (p *PaperWallet) CandlesByLimit(ctx context.Context, pair, period string, l
 
 func (p *PaperWallet) CandlesSubscription(ctx context.Context, pair, timeframe string) (chan model.Candle, chan error) {
 	return p.feeder.CandlesSubscription(ctx, pair, timeframe)
+}
+
+func (p *PaperWallet) ClosePosition(position *model.Position) error {
+	_, err := p.CreateOrderMarket(position.OppositeSide(), position.Pair, position.Quantity)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

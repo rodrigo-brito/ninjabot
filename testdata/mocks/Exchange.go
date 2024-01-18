@@ -662,8 +662,8 @@ func (_c *Exchange_Position_Call) Run(run func(pair string)) *Exchange_Position_
 	return _c
 }
 
-func (_c *Exchange_Position_Call) Return(asset float64, quote float64, err error) *Exchange_Position_Call {
-	_c.Call.Return(asset, quote, err)
+func (_c *Exchange_Position_Call) Return(position model.Position, err error) *Exchange_Position_Call {
+	_c.Call.Return(position, err)
 	return _c
 }
 

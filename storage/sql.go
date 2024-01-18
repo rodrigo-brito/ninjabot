@@ -13,6 +13,16 @@ type SQL struct {
 	db *gorm.DB
 }
 
+func (s *SQL) CreatePosition(position *model.Position) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *SQL) Positions(filters ...PositionFilter) ([]*model.Position, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 // FromSQL creates a new SQL connections for orders storage. Example of usage:
 //
 //	import "github.com/glebarez/sqlite"

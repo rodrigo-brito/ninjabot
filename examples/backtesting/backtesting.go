@@ -22,24 +22,33 @@ func main() {
 		Pairs: []string{
 			"BTCUSDT",
 			"ETHUSDT",
+			"SOLUSDT",
 		},
 	}
 
 	// initialize your strategy
-	strategy := new(strategies.CrossEMA)
+	strategy := new(strategies.Turtle)
 
 	// load historical data from CSV files
 	csvFeed, err := exchange.NewCSVFeed(
 		strategy.Timeframe(),
 		exchange.PairFeed{
-			Pair:      "BTCUSDT",
-			File:      "testdata/btc-1h.csv",
-			Timeframe: "1h",
+			Pair:       "BTCUSDT",
+			File:       "testdata/btc-1h.csv",
+			Timeframe:  "1h",
+			HeikinAshi: true,
 		},
 		exchange.PairFeed{
-			Pair:      "ETHUSDT",
-			File:      "testdata/eth-1h.csv",
-			Timeframe: "1h",
+			Pair:       "ETHUSDT",
+			File:       "testdata/eth-1h.csv",
+			Timeframe:  "1h",
+			HeikinAshi: true,
+		},
+		exchange.PairFeed{
+			Pair:       "SOLUSDT",
+			File:       "testdata/sol-1h.csv",
+			Timeframe:  "1h",
+			HeikinAshi: true,
 		},
 	)
 	if err != nil {

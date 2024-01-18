@@ -7,11 +7,14 @@ import (
 )
 
 type OrderFilter func(model.Order) bool
+type PositionFilter func(model.Position) bool
 
 type Storage interface {
 	CreateOrder(order *model.Order) error
 	UpdateOrder(order *model.Order) error
 	Orders(filters ...OrderFilter) ([]*model.Order, error)
+	CreatePosition(position *model.Position) error
+	Positions(filters ...PositionFilter) ([]*model.Position, error)
 }
 
 func WithStatusIn(status ...model.OrderStatusType) OrderFilter {

@@ -450,17 +450,17 @@ func (b *Binance) Account() (model.Account, error) {
 	}, nil
 }
 
-func (b *Binance) Position(pair string) (asset, quote float64, err error) {
-	assetTick, quoteTick := SplitAssetQuote(pair)
-	acc, err := b.Account()
-	if err != nil {
-		return 0, 0, err
-	}
-
-	assetBalance, quoteBalance := acc.Balance(assetTick, quoteTick)
-
-	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
-}
+//func (b *Binance) Position(pair string) (position float64, err error) {
+//	assetTick, quoteTick := SplitAssetQuote(pair)
+//	acc, err := b.Account()
+//	if err != nil {
+//		return 0, 0, err
+//	}
+//
+//	assetBalance, quoteBalance := acc.Balance(assetTick, quoteTick)
+//
+//	return assetBalance.Free + assetBalance.Lock, quoteBalance.Free + quoteBalance.Lock, nil
+//}
 
 func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) (chan model.Candle, chan error) {
 	ccandle := make(chan model.Candle)

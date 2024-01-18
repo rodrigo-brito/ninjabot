@@ -244,17 +244,18 @@ func (t telegram) BuyHandle(m *tb.Message) {
 	}
 
 	if command["percent"] != "" {
-		_, quote, err := t.orderController.Position(pair)
-		if err != nil {
+		pos, inactive := t.orderController.Position(pair)
+		if inactive {
 			log.Error(err)
 			t.OnError(err)
 			return
 		}
 
-		amount = amount * quote / 100.0
+		amount = pos.Quantity * pos.AvgPrice / 100.0
 	}
 
-	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeBuy, pair, amount)
+	// TODO: Set the leverage
+	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeBuy, pair, amount, 1)
 	if err != nil {
 		return
 	}
@@ -293,12 +294,12 @@ func (t telegram) SellHandle(m *tb.Message) {
 	}
 
 	if command["percent"] != "" {
-		asset, _, err := t.orderController.Position(pair)
-		if err != nil {
+		pos, inactive := t.orderController.Position(pair)
+		if inactive {
 			return
 		}
 
-		amount = amount * asset / 100.0
+		amount = pos.Quantity * pos.AvgPrice / 100.0
 		order, err := t.orderController.CreateOrderMarket(model.SideTypeSell, pair, amount)
 		if err != nil {
 			return
@@ -307,7 +308,8 @@ func (t telegram) SellHandle(m *tb.Message) {
 		return
 	}
 
-	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeSell, pair, amount)
+	// TODO: Set the leverage
+	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeSell, pair, amount, 1)
 	if err != nil {
 		return
 	}

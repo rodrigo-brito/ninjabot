@@ -12,6 +12,7 @@ import (
 
 type Bunt struct {
 	lastID int64
+	posID  int64
 	db     *buntdb.DB
 }
 
@@ -97,4 +98,50 @@ func (b Bunt) Orders(filters ...OrderFilter) ([]*model.Order, error) {
 		return nil, err
 	}
 	return orders, nil
+}
+
+func (b *Bunt) getPosID() int64 {
+	return atomic.AddInt64(&b.posID, 1)
+}
+
+func (b *Bunt) CreatePosition(position *model.Position) error {
+	return b.db.Update(func(tx *buntdb.Tx) error {
+		position.ID = b.getPosID()
+		content, err := json.Marshal(position)
+		if err != nil {
+			return err
+		}
+
+		_, _, err = tx.Set(strconv.FormatInt(position.ID, 10), string(content), nil)
+		return err
+	})
+}
+
+func (b Bunt) Positions(filters ...PositionFilter) ([]*model.Position, error) {
+	positions := make([]*model.Position, 0)
+	err := b.db.View(func(tx *buntdb.Tx) error {
+		err := tx.Ascend("update_index", func(key, value string) bool {
+			var position model.Position
+			err := json.Unmarshal([]byte(value), &position)
+			if err != nil {
+				log.Println(err)
+				return true
+			}
+
+			for _, filter := range filters {
+				if ok := filter(position); !ok {
+					return true
+				}
+			}
+
+			positions = append(positions, &position)
+
+			return true
+		})
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return positions, nil
 }
