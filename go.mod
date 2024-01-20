@@ -20,7 +20,7 @@ require (
 	github.com/vektra/mockery/v2 v2.38.0
 	github.com/xhit/go-str2duration/v2 v2.1.0
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
-	gonum.org/v1/gonum v0.13.0
+	gonum.org/v1/gonum v0.14.0
 	gopkg.in/tucnak/telebot.v2 v2.5.0
 	gorm.io/gorm v1.25.5
 )
