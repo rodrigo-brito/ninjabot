@@ -56,7 +56,7 @@ func WithMetadataFetcher(fetcher MetadataFetchers) BinanceOption {
 
 // WithTestNet activate Bianance testnet
 func WithTestNet() BinanceOption {
-	return func(b *Binance) {
+	return func(_ *Binance) {
 		binance.UseTestnet = true
 	}
 }

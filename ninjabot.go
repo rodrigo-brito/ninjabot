@@ -125,7 +125,7 @@ func WithStorage(storage storage.Storage) Option {
 
 // WithLogLevel sets the log level. eg: log.DebugLevel, log.InfoLevel, log.WarnLevel, log.ErrorLevel, log.FatalLevel
 func WithLogLevel(level log.Level) Option {
-	return func(bot *NinjaBot) {
+	return func(_ *NinjaBot) {
 		log.SetLevel(level)
 	}
 }
