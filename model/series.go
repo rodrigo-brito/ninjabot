@@ -15,8 +15,8 @@ func (s Series[T]) Values() []T {
 	return s
 }
 
-// Lenght returns the number of values in the series
-func (s Series[T]) Lenght() int {
+// Length returns the number of values in the series
+func (s Series[T]) Length() int {
 	return len(s)
 }
 
