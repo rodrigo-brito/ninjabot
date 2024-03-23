@@ -35,7 +35,7 @@ type Position struct {
 }
 
 func (p *Position) Closed() bool {
-	return p.ClosedAt.IsZero()
+	return !p.ClosedAt.IsZero()
 }
 
 func NewPosition(pair string, side SideType, size float64, leverage int, candle Candle) Position {
