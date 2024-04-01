@@ -22,7 +22,7 @@ require (
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	gonum.org/v1/gonum v0.14.0
 	gopkg.in/tucnak/telebot.v2 v2.5.0
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.25.9
 )
 
 require (
