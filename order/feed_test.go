@@ -16,7 +16,7 @@ func TestFeed_Subscribe(t *testing.T) {
 	feed, pair := NewOrderFeed(), "blaus"
 	called := make(chan bool, 1)
 
-	feed.Subscribe(pair, func(order model.Order) {
+	feed.Subscribe(pair, func(_ model.Order) {
 		called <- true
 	}, false)
 

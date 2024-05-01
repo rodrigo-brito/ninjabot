@@ -73,7 +73,7 @@ func (b Bunt) UpdateOrder(order *model.Order) error {
 func (b Bunt) Orders(filters ...OrderFilter) ([]*model.Order, error) {
 	orders := make([]*model.Order, 0)
 	err := b.db.View(func(tx *buntdb.Tx) error {
-		err := tx.Ascend("update_index", func(key, value string) bool {
+		err := tx.Ascend("update_index", func(_, value string) bool {
 			var order model.Order
 			err := json.Unmarshal([]byte(value), &order)
 			if err != nil {

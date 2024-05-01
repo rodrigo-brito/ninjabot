@@ -56,7 +56,7 @@ func WithMetadataFetcher(fetcher MetadataFetchers) BinanceOption {
 
 // WithTestNet activate Bianance testnet
 func WithTestNet() BinanceOption {
-	return func(b *Binance) {
+	return func(_ *Binance) {
 		binance.UseTestnet = true
 	}
 }
@@ -67,7 +67,7 @@ func WithCustomMainAPIEndpoint(apiURL, wsURL, combinedURL string) BinanceOption 
 		log.Fatal("missing url parameters for custom endpoint configuration")
 	}
 
-	return func(b *Binance) {
+	return func(_ *Binance) {
 		binance.BaseAPIMainURL = apiURL
 		binance.BaseWsMainURL = wsURL
 		binance.BaseCombinedMainURL = combinedURL
@@ -80,7 +80,7 @@ func WithCustomTestnetAPIEndpoint(apiURL, wsURL, combinedURL string) BinanceOpti
 		log.Fatal("missing url parameters for custom endpoint configuration")
 	}
 
-	return func(b *Binance) {
+	return func(_ *Binance) {
 		binance.BaseAPITestnetURL = apiURL
 		binance.BaseWsTestnetURL = wsURL
 		binance.BaseCombinedTestnetURL = combinedURL

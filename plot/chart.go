@@ -423,7 +423,7 @@ func (c *Chart) Start() error {
 		http.FileServer(http.FS(staticFiles)),
 	)
 
-	http.HandleFunc("/assets/chart.js", func(w http.ResponseWriter, req *http.Request) {
+	http.HandleFunc("/assets/chart.js", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-type", "application/javascript")
 		fmt.Fprint(w, c.scriptContent)
 	})
