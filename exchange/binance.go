@@ -61,6 +61,32 @@ func WithTestNet() BinanceOption {
 	}
 }
 
+// WithCustomMainAPIEndpoint will set custom endpoints for the Binance Main API
+func WithCustomMainAPIEndpoint(apiURL, wsURL, combinedURL string) BinanceOption {
+	if apiURL == "" || wsURL == "" || combinedURL == "" {
+		log.Fatal("missing url parameters for custom endpoint configuration")
+	}
+
+	return func(b *Binance) {
+		binance.BaseAPIMainURL = apiURL
+		binance.BaseWsMainURL = wsURL
+		binance.BaseCombinedMainURL = combinedURL
+	}
+}
+
+// WithCustomTestnetAPIEndpoint will set custom endpoints for the Binance Testnet API
+func WithCustomTestnetAPIEndpoint(apiURL, wsURL, combinedURL string) BinanceOption {
+	if apiURL == "" || wsURL == "" || combinedURL == "" {
+		log.Fatal("missing url parameters for custom endpoint configuration")
+	}
+
+	return func(b *Binance) {
+		binance.BaseAPITestnetURL = apiURL
+		binance.BaseWsTestnetURL = wsURL
+		binance.BaseCombinedTestnetURL = combinedURL
+	}
+}
+
 // NewBinance create a new Binance exchange instance
 func NewBinance(ctx context.Context, options ...BinanceOption) (*Binance, error) {
 	binance.WebsocketKeepalive = true
