@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"path/filepath"
 
 	"github.com/aybabtme/uniplot/histogram"
 
