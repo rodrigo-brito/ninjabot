@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"path/filepath"
+	"strconv"
 
 	"github.com/aybabtme/uniplot/histogram"
 
@@ -24,11 +24,11 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const defaultDatabase = func() string {
+var defaultDatabase = func() string {
 	rootPath := os.Getenv("NINJABOT_CONFIG_ROOT_PATH")
 	if rootPath == "" {
-	return "ninjabot.db"
-		}
+		return "ninjabot.db"
+	}
 	return filepath.Join(rootPath, "ninjabot.db")
 }()
 
