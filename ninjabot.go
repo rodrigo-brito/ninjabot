@@ -24,13 +24,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-var defaultDatabase = func() string {
-	rootPath := os.Getenv("NINJABOT_CONFIG_ROOT_PATH")
-	if rootPath == "" {
-		return "ninjabot.db"
-	}
-	return filepath.Join(rootPath, "ninjabot.db")
-}()
+const defaultDatabase = "ninjabot.db"
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
@@ -48,6 +42,7 @@ type CandleSubscriber interface {
 }
 
 type NinjaBot struct {
+	rootPath string
 	storage  storage.Storage
 	settings model.Settings
 	exchange service.Exchange
@@ -93,7 +88,7 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 
 	var err error
 	if bot.storage == nil {
-		bot.storage, err = storage.FromFile(defaultDatabase)
+		bot.storage, err = storage.FromFile(filepath.Join(bot.rootPath, defaultDatabase))
 		if err != nil {
 			return nil, err
 		}
@@ -111,6 +106,13 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 	}
 
 	return bot, nil
+}
+
+// WithRootPathForDefaultStoragePath sets a root path for the default storage path
+func WithRootPathForDefaultStoragePath(rootPath string) Option {
+	return func(bot *NinjaBot) {
+		bot.rootPath = rootPath
+	}
 }
 
 // WithBacktest sets the bot to run in backtest mode, it is required for backtesting environments
