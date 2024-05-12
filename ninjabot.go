@@ -23,7 +23,13 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-const defaultDatabase = "ninjabot.db"
+const defaultDatabase = func() string {
+	rootPath := os.Getenv("NINJABOT_CONFIG_ROOT_PATH")
+	if rootPath == "" {
+	return "ninjabot.db"
+		}
+	return filepath.Join(rootPath, "ninjabot.db")
+}()
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
