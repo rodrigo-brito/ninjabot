@@ -60,6 +60,7 @@ func (d Downloader) Download(ctx context.Context, pair, timeframe string, output
 	if err != nil {
 		return err
 	}
+	defer recordFile.Close()
 
 	now := time.Now()
 	parameters := &Parameters{
