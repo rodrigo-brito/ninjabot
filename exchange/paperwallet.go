@@ -183,10 +183,15 @@ func (p *PaperWallet) Summary() {
 		volume       float64
 	)
 
-	fmt.Println("-- FINAL WALLET --")
+	fmt.Println("----- FINAL WALLET -----")
 	for pair := range p.lastCandle {
 		asset, quote := SplitAssetQuote(pair)
-		quantity := p.assets[asset].Free + p.assets[asset].Lock
+		assetInfo, ok := p.assets[asset]
+		if !ok {
+			continue
+		}
+
+		quantity := assetInfo.Free + assetInfo.Lock
 		value := quantity * p.lastCandle[pair].Close
 		if quantity < 0 {
 			totalShort := 2.0*p.avgShortPrice[pair]*quantity - p.lastCandle[pair].Close*quantity

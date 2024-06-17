@@ -295,8 +295,12 @@ func (c *Chart) orderStringByPair(pair string) [][]string {
 	orders := make([][]string, 0)
 	for id := range c.ordersIDsByPair[pair].Iter() {
 		o := c.orderByID[id]
-		orderString := fmt.Sprintf("%s,%s,%d,%s,%f,%f,%.2f,%s",
-			o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, o.CreatedAt)
+		var profit string
+		if o.Profit != 0 {
+			profit = fmt.Sprintf("%.2f", o.Profit)
+		}
+		orderString := fmt.Sprintf("%s,%s,%s,%d,%s,%f,%f,%.2f,%s",
+			o.CreatedAt, o.Status, o.Side, o.ID, o.Type, o.Quantity, o.Price, o.Quantity*o.Price, profit)
 		order := strings.Split(orderString, ",")
 		orders = append(orders, order)
 	}
@@ -389,7 +393,7 @@ func (c *Chart) handleTradingHistoryData(w http.ResponseWriter, r *http.Request)
 
 	buffer := bytes.NewBuffer(nil)
 	csvWriter := csv.NewWriter(buffer)
-	err := csvWriter.Write([]string{"status", "side", "id", "type", "quantity", "price", "total", "created_at"})
+	err := csvWriter.Write([]string{"created_at", "status", "side", "id", "type", "quantity", "price", "total", "profit"})
 	if err != nil {
 		log.Errorf("failed writing header file: %s", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
@@ -419,7 +423,7 @@ func (c *Chart) Start() error {
 		http.FileServer(http.FS(staticFiles)),
 	)
 
-	http.HandleFunc("/assets/chart.js", func(w http.ResponseWriter, req *http.Request) {
+	http.HandleFunc("/assets/chart.js", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-type", "application/javascript")
 		fmt.Fprint(w, c.scriptContent)
 	})

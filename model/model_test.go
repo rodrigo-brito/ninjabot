@@ -107,3 +107,35 @@ func TestHeikinAshi_CalculateHeikinAshi(t *testing.T) {
 		require.Equal(t, expectedHaCandle.Low, results[index].Low)
 	}
 }
+
+func TestDataframe_Sample(t *testing.T) {
+	df := Dataframe{
+		Pair:   "BTCUSDT",
+		Close:  []float64{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		Open:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		High:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		Low:    []float64{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		Volume: []float64{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		Time: []time.Time{time.Now(), time.Now(), time.Now(), time.Now(), time.Now(), time.Now(), time.Now(),
+			time.Now(), time.Now()},
+		LastUpdate: time.Now(),
+		Metadata: map[string]Series[float64]{
+			"test": []float64{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
+	}
+
+	sample := df.Sample(5)
+	require.Equal(t, "BTCUSDT", sample.Pair)
+	require.Len(t, sample.Time, 5)
+	require.Equal(t, df.LastUpdate, sample.LastUpdate)
+	require.Equal(t, Series[float64]([]float64{5, 6, 7, 8, 9}), sample.Close)
+	require.Equal(t, Series[float64]([]float64{5, 6, 7, 8, 9}), sample.Open)
+	require.Equal(t, Series[float64]([]float64{5, 6, 7, 8, 9}), sample.High)
+	require.Equal(t, Series[float64]([]float64{5, 6, 7, 8, 9}), sample.Low)
+	require.Equal(t, Series[float64]([]float64{5, 6, 7, 8, 9}), sample.Volume)
+	require.Equal(t, Series[float64]([]float64{5, 6, 7, 8, 9}), sample.Metadata["test"])
+
+	// mutate the sample must not mutate the original dataframe
+	sample.Metadata["test"] = []float64{10, 11, 12, 13, 14}
+	require.Equal(t, df.Metadata["test"], Series[float64]([]float64{1, 2, 3, 4, 5, 6, 7, 8, 9}))
+}

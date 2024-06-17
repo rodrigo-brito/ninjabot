@@ -34,7 +34,7 @@ func SplitAssetQuote(pair string) (asset string, quote string) {
 	return data.Asset, data.Quote
 }
 
-func updateParisFile() error {
+func updatePairsFile() error {
 	client := binance.NewClient("", "")
 	sportInfo, err := client.NewExchangeInfoService().Do(context.Background())
 	if err != nil {

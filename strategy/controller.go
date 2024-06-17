@@ -76,9 +76,10 @@ func (s *Controller) OnCandle(candle model.Candle) {
 	s.updateDataFrame(candle)
 
 	if len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
-		s.strategy.Indicators(s.dataframe)
+		sample := s.dataframe.Sample(s.strategy.WarmupPeriod())
+		s.strategy.Indicators(&sample)
 		if s.started {
-			s.strategy.OnCandle(s.dataframe, s.broker)
+			s.strategy.OnCandle(&sample, s.broker)
 		}
 	}
 }

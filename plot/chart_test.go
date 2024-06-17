@@ -220,24 +220,15 @@ func TestChart_OrderStringByPair(t *testing.T) {
 	c.orderByID[order3.ID] = order3
 
 	expectPair1 := [][]string{
-		{
-			"FILLED", "SELL", "1", "MARKET", "4783.340000", "3059.370000",
-			"14634006.90", "2021-09-26 20:00:00 +0000 UTC",
-		},
-		{
-			"FILLED", "BUY", "2", "MARKET", "0.751520", "3607.420000",
-			"2711.05", "2021-10-13 20:00:00 +0000 UTC",
-		},
+		{"2021-09-26 20:00:00 +0000 UTC", "FILLED", "SELL", "1", "MARKET", "4783.340000", "3059.370000", "14634006.90", ""},
+		{"2021-10-13 20:00:00 +0000 UTC", "FILLED", "BUY", "2", "MARKET", "0.751520", "3607.420000", "2711.05", ""},
 	}
 
 	ordersPair1 := c.orderStringByPair(pair1)
 	require.Equal(t, expectPair1, ordersPair1)
 
 	expectPair2 := [][]string{
-		{
-			"FILLED", "BUY", "13", "MARKET", "12.083240", "470.000000",
-			"5679.12", "2021-10-13 20:00:00 +0000 UTC",
-		},
+		{"2021-10-13 20:00:00 +0000 UTC", "FILLED", "BUY", "13", "MARKET", "12.083240", "470.000000", "5679.12", ""},
 	}
 	ordersPair2 := c.orderStringByPair(pair2)
 	require.Equal(t, expectPair2, ordersPair2)
