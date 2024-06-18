@@ -26,7 +26,7 @@ type DataFeed struct {
 }
 
 type DataFeedSubscription struct {
-	exchange                service.Exchange
+	exchange                service.Feeder
 	Feeds                   *set.LinkedHashSetString
 	DataFeeds               map[string]*DataFeed
 	SubscriptionsByDataFeed map[string][]Subscription

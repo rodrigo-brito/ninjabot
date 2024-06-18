@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/rodrigo-brito/ninjabot/service"
 	"math"
 	"os"
 	"strconv"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/rodrigo-brito/ninjabot/model"
 )
+
+var _ service.Feeder = &CSVFeed{}
 
 var ErrInsufficientData = errors.New("insufficient data")
 
@@ -310,4 +313,8 @@ func (c CSVFeed) CandlesSubscription(_ context.Context, pair, timeframe string) 
 		close(cerr)
 	}()
 	return ccandle, cerr
+}
+
+func (c CSVFeed) CandlesSubscriptionCombined(_ context.Context, _ map[string]string) (chan model.Candle, chan error) {
+	panic("implement me")
 }
