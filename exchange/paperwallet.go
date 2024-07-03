@@ -668,6 +668,21 @@ func (p *PaperWallet) Cancel(order model.Order) error {
 	for i, o := range p.orders {
 		if o.ExchangeID == order.ExchangeID {
 			p.orders[i].Status = model.OrderStatusTypeCanceled
+
+			// unlock funds
+			assset, quote := SplitAssetQuote(o.Pair)
+			// we have open long position
+			if p.assets[assset].Lock > 0 && o.Side == model.SideTypeSell {
+				p.assets[assset].Free += o.Quantity
+				p.assets[assset].Lock -= o.Quantity
+			} else {
+				// we don't have open long position
+				if p.assets[assset].Lock == 0 {
+					amount := order.Price * order.Quantity
+					p.assets[quote].Free += amount
+					p.assets[quote].Lock -= amount
+				}
+			}
 		}
 	}
 	return nil
