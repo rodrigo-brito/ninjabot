@@ -189,6 +189,52 @@ func TestPaperWallet_OrderLimit(t *testing.T) {
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
 		require.Equal(t, 10.0, wallet.avgLongPrice["BTCUSDT"])
 	})
+
+	t.Run("cancel buy order before executing", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		order, err := wallet.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 100)
+		require.NoError(t, err)
+
+		// create order and lock values
+		require.Len(t, wallet.orders, 1)
+		require.Equal(t, 1.0, order.Quantity)
+		require.Equal(t, 100.0, order.Price)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
+
+		// cancel limit order and it should unlock funds
+		err = wallet.Cancel(order)
+		require.NoError(t, err)
+
+		require.Equal(t, model.OrderStatusTypeCanceled, wallet.orders[0].Status)
+		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
+
+	t.Run("cancel sell order before executing", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		order, err := wallet.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 1, 100)
+		require.NoError(t, err)
+
+		// create order and lock values
+		require.Len(t, wallet.orders, 1)
+		require.Equal(t, 1.0, order.Quantity)
+		require.Equal(t, 100.0, order.Price)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
+
+		// cancel limit order and it should unlock funds
+		err = wallet.Cancel(order)
+		require.NoError(t, err)
+
+		require.Equal(t, model.OrderStatusTypeCanceled, wallet.orders[0].Status)
+		require.Equal(t, 100.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Lock)
+	})
 }
 
 func TestPaperWallet_OrderMarket(t *testing.T) {
