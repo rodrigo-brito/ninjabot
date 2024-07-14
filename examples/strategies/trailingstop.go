@@ -60,7 +60,11 @@ func (t trailing) OnCandle(df *model.Dataframe, broker service.Broker) {
 			return
 		}
 
-		t.trailingStop[df.Pair].Start(df.Close.Last(0), df.Low.Last(0))
+		err = t.trailingStop[df.Pair].Start(model.SideTypeBuy, df.Close.Last(0), df.Low.Last(0))
+		if err != nil {
+			log.Error(err)
+			return
+		}
 
 		return
 	}
