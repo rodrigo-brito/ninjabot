@@ -40,8 +40,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/StudioSol/set v1.0.0 h1:G27J71la+Da08WidabBkoRrvPLTa4cdCn0RjvyJ5WKQ=
 github.com/StudioSol/set v1.0.0/go.mod h1:hIUNZPo6rEGF43RlPXHq7Fjmf+HkVJBqAjtK7Z9LoIU=
-github.com/adshao/go-binance/v2 v2.5.1 h1:3CV9iyzEpHFqZFVzjnxI3GtZdIWH9Z/ewR66+q+mCk0=
-github.com/adshao/go-binance/v2 v2.5.1/go.mod h1:41Up2dG4NfMXpCldrDPETEtiOq+pHoGsFZ73xGgaumo=
+github.com/adshao/go-binance/v2 v2.6.0 h1:sXPkfix+SgBojJmkt+sNJbJBQZOJK5GFP/WtAu+B5r0=
+github.com/adshao/go-binance/v2 v2.6.0/go.mod h1:41Up2dG4NfMXpCldrDPETEtiOq+pHoGsFZ73xGgaumo=
 github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e h1:dSeuFcs4WAJJnswS8vXy7YY1+fdlbVPuEVmDAfqvFOQ=
 github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e/go.mod h1:uh71c5Vc3VNIplXOFXsnDy21T1BepgT32c5X/YPrOyc=
 github.com/bitly/go-simplejson v0.5.0 h1:6IH+V8/tVMab511d5bn4M7EwGXZf9Hj6i2xSwkNEM+Y=
