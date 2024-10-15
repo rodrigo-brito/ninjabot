@@ -140,38 +140,27 @@ func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
 		return 0, time.Time{}, time.Time{}
 	}
 
-	localMin := math.MaxFloat64
-	localMinBase := p.equityValues[0].Value
-	localMinStart := p.equityValues[0].Time
-	localMinEnd := p.equityValues[0].Time
+	maxEquity := p.equityValues[0].Value
+	maxEquityTime := p.equityValues[0].Time
+	drawdown := 0.0
+	drawdownStart := time.Time{}
+	drawdownEnd := time.Time{}
 
-	globalMin := localMin
-	globalMinBase := localMinBase
-	globalMinStart := localMinStart
-	globalMinEnd := localMinEnd
-
-	for i := 1; i < len(p.equityValues); i++ {
-		diff := p.equityValues[i].Value - p.equityValues[i-1].Value
-
-		if localMin > 0 {
-			localMin = diff
-			localMinBase = p.equityValues[i-1].Value
-			localMinStart = p.equityValues[i-1].Time
-			localMinEnd = p.equityValues[i].Time
+	for _, equity := range p.equityValues {
+		if equity.Value > maxEquity {
+			maxEquity = equity.Value
+			maxEquityTime = equity.Time
 		} else {
-			localMin += diff
-			localMinEnd = p.equityValues[i].Time
-		}
-
-		if localMin < globalMin {
-			globalMin = localMin
-			globalMinBase = localMinBase
-			globalMinStart = localMinStart
-			globalMinEnd = localMinEnd
+			currentDrawdown := (equity.Value - maxEquity) / maxEquity
+			if currentDrawdown < drawdown {
+				drawdown = currentDrawdown
+				drawdownStart = maxEquityTime
+				drawdownEnd = equity.Time
+			}
 		}
 	}
 
-	return globalMin / globalMinBase, globalMinStart, globalMinEnd
+	return drawdown, drawdownStart, drawdownEnd
 }
 
 func (p *PaperWallet) Summary() {
