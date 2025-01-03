@@ -6,7 +6,7 @@
 [![Discord](https://img.shields.io/discord/960156400376483840?color=5865F2&label=discord)](https://discord.gg/TGCrUH972E)
 [![Discord](https://img.shields.io/badge/donate-patreon-red)](https://www.patreon.com/ninjabot_github)
 
-A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for sport and future markets. 
+A fast cryptocurrency trading bot framework implemented in Go. Ninjabot permits users to create and test custom strategies for spot and futures market. 
 
 Docs: https://rodrigo-brito.github.io/ninjabot/
 
