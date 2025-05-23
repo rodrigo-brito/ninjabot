@@ -14,7 +14,7 @@ require (
 	github.com/samber/lo v1.47.0
 	github.com/schollz/progressbar/v3 v3.16.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/tidwall/buntdb v1.3.2
 	github.com/urfave/cli/v2 v2.27.5
 	github.com/vektra/mockery/v2 v2.38.0
