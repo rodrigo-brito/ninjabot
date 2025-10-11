@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/rodrigo-brito/ninjabot/model"
 )
@@ -46,8 +46,8 @@ func TestFormatQuantity(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(fmt.Sprintf("given %f %s", tc.quantity, tc.pair), func(t *testing.T) {
-			require.Equal(t, tc.expected, binance.formatQuantity(tc.pair, tc.quantity))
-			require.Equal(t, tc.expected, binance.formatPrice(tc.pair, tc.quantity))
+			assert.Equal(t, tc.expected, binance.formatQuantity(tc.pair, tc.quantity))
+			assert.Equal(t, tc.expected, binance.formatPrice(tc.pair, tc.quantity))
 		})
 	}
 }

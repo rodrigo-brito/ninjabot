@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -722,8 +723,15 @@ func (p *PaperWallet) CreateOrderMarketQuote(side model.SideType, pair string,
 	defer p.Unlock()
 
 	info := p.AssetsInfo(pair)
-	quantity := common.AmountToLotSize(info.StepSize, info.BaseAssetPrecision, quoteQuantity/p.lastCandle[pair].Close)
-	return p.createOrderMarket(side, pair, quantity)
+	amountStr := strconv.FormatFloat(quoteQuantity/p.lastCandle[pair].Close, 'f', -1, 64)
+	minQuantityStr := strconv.FormatFloat(info.MinQuantity, 'f', -1, 64)
+	stepSizeStr := strconv.FormatFloat(info.StepSize, 'f', -1, 64)
+	quantity := common.AmountToLotSize(amountStr, minQuantityStr, stepSizeStr, info.BaseAssetPrecision)
+	quantityFloat, err := strconv.ParseFloat(quantity, 64)
+	if err != nil {
+		return model.Order{}, err
+	}
+	return p.createOrderMarket(side, pair, quantityFloat)
 }
 
 func (p *PaperWallet) Cancel(order model.Order) error {
