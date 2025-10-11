@@ -15,8 +15,10 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.22
-      - run: go test -race -coverprofile="coverage.txt" -covermode=atomic ./...
+          go-version: 1.24
+          go-setup-tools: true
+      - run: |
+          go test -race -coverprofile="coverage.txt" -covermode=atomic ./...
 
       - name: lint
         if: github.event_name == 'pull_request'
