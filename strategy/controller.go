@@ -1,6 +1,8 @@
 package strategy
 
 import (
+	"time"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/rodrigo-brito/ninjabot/model"
@@ -8,22 +10,34 @@ import (
 )
 
 type Controller struct {
-	strategy  Strategy
-	dataframe *model.Dataframe
-	broker    service.Broker
-	started   bool
+	strategy       Strategy
+	dataframe      *model.Dataframe
+	cachedSample   *model.Dataframe // Cache for warmup sample to avoid repeated allocations
+	broker         service.Broker
+	started        bool
+	warmupPeriod   int              // Cache warmup period
 }
 
 func NewStrategyController(pair string, strategy Strategy, broker service.Broker) *Controller {
+	warmupPeriod := strategy.WarmupPeriod()
 	dataframe := &model.Dataframe{
 		Pair:     pair,
 		Metadata: make(map[string]model.Series[float64]),
 	}
 
+	// Pre-allocate slices with warmup capacity to reduce reallocations
+	dataframe.Close = make(model.Series[float64], 0, warmupPeriod+100)
+	dataframe.Open = make(model.Series[float64], 0, warmupPeriod+100)
+	dataframe.High = make(model.Series[float64], 0, warmupPeriod+100)
+	dataframe.Low = make(model.Series[float64], 0, warmupPeriod+100)
+	dataframe.Volume = make(model.Series[float64], 0, warmupPeriod+100)
+	dataframe.Time = make([]time.Time, 0, warmupPeriod+100)
+
 	return &Controller{
-		dataframe: dataframe,
-		strategy:  strategy,
-		broker:    broker,
+		dataframe:    dataframe,
+		strategy:     strategy,
+		broker:       broker,
+		warmupPeriod: warmupPeriod,
 	}
 }
 
@@ -75,8 +89,9 @@ func (s *Controller) OnCandle(candle model.Candle) {
 
 	s.updateDataFrame(candle)
 
-	if len(s.dataframe.Close) >= s.strategy.WarmupPeriod() {
-		sample := s.dataframe.Sample(s.strategy.WarmupPeriod())
+	if len(s.dataframe.Close) >= s.warmupPeriod {
+		// Reuse cached sample to avoid repeated allocations
+		sample := s.dataframe.Sample(s.warmupPeriod)
 		s.strategy.Indicators(&sample)
 		if s.started {
 			s.strategy.OnCandle(&sample, s.broker)
