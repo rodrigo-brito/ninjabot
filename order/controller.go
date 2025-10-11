@@ -30,22 +30,53 @@ type summary struct {
 	LoseShort        []float64
 	LoseShortPercent []float64
 	Volume           float64
+	
+	// Cached values to avoid repeated slice concatenations
+	cachedWin        []float64
+	cachedWinPercent []float64
+	cachedLose       []float64
+	cachedLosePercent []float64
+	cacheValid       bool
 }
 
-func (s summary) Win() []float64 {
-	return append(s.WinLong, s.WinShort...)
+func (s *summary) invalidateCache() {
+	s.cacheValid = false
 }
 
-func (s summary) WinPercent() []float64 {
-	return append(s.WinLongPercent, s.WinShortPercent...)
+func (s *summary) Win() []float64 {
+	if !s.cacheValid {
+		s.rebuildCache()
+	}
+	return s.cachedWin
 }
 
-func (s summary) Lose() []float64 {
-	return append(s.LoseLong, s.LoseShort...)
+func (s *summary) WinPercent() []float64 {
+	if !s.cacheValid {
+		s.rebuildCache()
+	}
+	return s.cachedWinPercent
 }
 
-func (s summary) LosePercent() []float64 {
-	return append(s.LoseLongPercent, s.LoseShortPercent...)
+func (s *summary) Lose() []float64 {
+	if !s.cacheValid {
+		s.rebuildCache()
+	}
+	return s.cachedLose
+}
+
+func (s *summary) LosePercent() []float64 {
+	if !s.cacheValid {
+		s.rebuildCache()
+	}
+	return s.cachedLosePercent
+}
+
+func (s *summary) rebuildCache() {
+	s.cachedWin = append(s.WinLong, s.WinShort...)
+	s.cachedWinPercent = append(s.WinLongPercent, s.WinShortPercent...)
+	s.cachedLose = append(s.LoseLong, s.LoseShort...)
+	s.cachedLosePercent = append(s.LoseLongPercent, s.LoseShortPercent...)
+	s.cacheValid = true
 }
 
 func (s summary) Profit() float64 {
@@ -219,7 +250,7 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 }
 
 type Controller struct {
-	mtx            sync.Mutex
+	mtx            sync.RWMutex // Use RWMutex for better read concurrency
 	ctx            context.Context
 	exchange       service.Exchange
 	storage        storage.Storage
@@ -278,21 +309,23 @@ func (c *Controller) updatePosition(o *model.Order) {
 
 	if result != nil {
 		// TODO: replace by a slice of Result
+		summary := c.Results[o.Pair]
+		summary.invalidateCache() // Invalidate cache when modifying
 		if result.ProfitPercent >= 0 {
 			if result.Side == model.SideTypeBuy {
-				c.Results[o.Pair].WinLong = append(c.Results[o.Pair].WinLong, result.ProfitValue)
-				c.Results[o.Pair].WinLongPercent = append(c.Results[o.Pair].WinLongPercent, result.ProfitPercent)
+				summary.WinLong = append(summary.WinLong, result.ProfitValue)
+				summary.WinLongPercent = append(summary.WinLongPercent, result.ProfitPercent)
 			} else {
-				c.Results[o.Pair].WinShort = append(c.Results[o.Pair].WinShort, result.ProfitValue)
-				c.Results[o.Pair].WinShortPercent = append(c.Results[o.Pair].WinShortPercent, result.ProfitPercent)
+				summary.WinShort = append(summary.WinShort, result.ProfitValue)
+				summary.WinShortPercent = append(summary.WinShortPercent, result.ProfitPercent)
 			}
 		} else {
 			if result.Side == model.SideTypeBuy {
-				c.Results[o.Pair].LoseLong = append(c.Results[o.Pair].LoseLong, result.ProfitValue)
-				c.Results[o.Pair].LoseLongPercent = append(c.Results[o.Pair].LoseLongPercent, result.ProfitPercent)
+				summary.LoseLong = append(summary.LoseLong, result.ProfitValue)
+				summary.LoseLongPercent = append(summary.LoseLongPercent, result.ProfitPercent)
 			} else {
-				c.Results[o.Pair].LoseShort = append(c.Results[o.Pair].LoseShort, result.ProfitValue)
-				c.Results[o.Pair].LoseShortPercent = append(c.Results[o.Pair].LoseShortPercent, result.ProfitPercent)
+				summary.LoseShort = append(summary.LoseShort, result.ProfitValue)
+				summary.LoseShortPercent = append(summary.LoseShortPercent, result.ProfitPercent)
 			}
 		}
 
@@ -339,10 +372,7 @@ func (c *Controller) processTrade(order *model.Order) {
 }
 
 func (c *Controller) updateOrders() {
-	c.mtx.Lock()
-	defer c.mtx.Unlock()
-
-	//pending orders
+	// Fetch orders without holding lock
 	orders, err := c.storage.Orders(storage.WithStatusIn(
 		model.OrderStatusTypeNew,
 		model.OrderStatusTypePartiallyFilled,
@@ -350,11 +380,10 @@ func (c *Controller) updateOrders() {
 	))
 	if err != nil {
 		c.notifyError(err)
-		c.mtx.Unlock()
 		return
 	}
 
-	// For each pending order, check for updates
+	// For each pending order, check for updates (no lock needed for reads)
 	var updatedOrders []model.Order
 	for _, order := range orders {
 		excOrder, err := c.exchange.Order(order.Pair, order.ExchangeID)
@@ -379,10 +408,13 @@ func (c *Controller) updateOrders() {
 		updatedOrders = append(updatedOrders, excOrder)
 	}
 
+	// Lock only when updating internal state
+	c.mtx.Lock()
 	for _, processOrder := range updatedOrders {
 		c.processTrade(&processOrder)
 		c.orderFeed.Publish(processOrder, false)
 	}
+	c.mtx.Unlock()
 }
 
 func (c *Controller) Status() Status {
@@ -434,7 +466,10 @@ func (c *Controller) PositionValue(pair string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return asset * c.lastPrice[pair], nil
+	c.mtx.RLock()
+	price := c.lastPrice[pair]
+	c.mtx.RUnlock()
+	return asset * price, nil
 }
 
 func (c *Controller) Order(pair string, id int64) (model.Order, error) {
