@@ -30,13 +30,13 @@ type summary struct {
 	LoseShort        []float64
 	LoseShortPercent []float64
 	Volume           float64
-	
+
 	// Cached values to avoid repeated slice concatenations
-	cachedWin        []float64
-	cachedWinPercent []float64
-	cachedLose       []float64
+	cachedWin         []float64
+	cachedWinPercent  []float64
+	cachedLose        []float64
 	cachedLosePercent []float64
-	cacheValid       bool
+	cacheValid        bool
 }
 
 func (s *summary) invalidateCache() {
@@ -92,7 +92,7 @@ func (s summary) SQN() float64 {
 	avgProfit := s.Profit() / total
 	stdDev := 0.0
 	for _, profit := range append(s.Win(), s.Lose()...) {
-		stdDev += math.Pow(profit-avgProfit, 2)
+		stdDev += (profit - avgProfit) * (profit - avgProfit)
 	}
 	stdDev = math.Sqrt(stdDev / total)
 	return math.Sqrt(total) * (s.Profit() / total) / stdDev
@@ -170,14 +170,14 @@ func (s summary) SaveReturns(filename string) error {
 	defer file.Close()
 
 	for _, value := range s.WinPercent() {
-		_, err = file.WriteString(fmt.Sprintf("%.4f\n", value))
+		_, err = fmt.Fprintf(file, "%.4f\n", value)
 		if err != nil {
 			return err
 		}
 	}
 
 	for _, value := range s.LosePercent() {
-		_, err = file.WriteString(fmt.Sprintf("%.4f\n", value))
+		_, err = fmt.Fprintf(file, "%.4f\n", value)
 		if err != nil {
 			return err
 		}

@@ -28,23 +28,23 @@ type AssetValue struct {
 
 type PaperWallet struct {
 	sync.Mutex
-	ctx            context.Context
-	baseCoin       string
-	counter        int64
-	takerFee       float64
-	makerFee       float64
-	initialValue   float64
-	feeder         service.Feeder
-	orders         []model.Order
-	pendingOrders  map[string][]int // pair -> order indices for fast lookup
-	assets         map[string]*assetInfo
-	avgShortPrice  map[string]float64
-	avgLongPrice   map[string]float64
-	volume         map[string]float64
-	lastCandle     map[string]model.Candle
-	fistCandle     map[string]model.Candle
-	assetValues    map[string][]AssetValue
-	equityValues   []AssetValue
+	ctx           context.Context
+	baseCoin      string
+	counter       int64
+	takerFee      float64
+	makerFee      float64
+	initialValue  float64
+	feeder        service.Feeder
+	orders        []model.Order
+	pendingOrders map[string][]int // pair -> order indices for fast lookup
+	assets        map[string]*assetInfo
+	avgShortPrice map[string]float64
+	avgLongPrice  map[string]float64
+	volume        map[string]float64
+	lastCandle    map[string]model.Candle
+	fistCandle    map[string]model.Candle
+	assetValues   map[string][]AssetValue
+	equityValues  []AssetValue
 }
 
 func (p *PaperWallet) AssetsInfo(pair string) model.AssetInfo {
@@ -477,20 +477,20 @@ func (p *PaperWallet) removeCompletedOrders(pair string, completedIndices []int)
 	if len(completedIndices) == 0 {
 		return
 	}
-	
+
 	pending := p.pendingOrders[pair]
 	newPending := make([]int, 0, len(pending)-len(completedIndices))
 	completedMap := make(map[int]bool, len(completedIndices))
 	for _, idx := range completedIndices {
 		completedMap[idx] = true
 	}
-	
+
 	for _, idx := range pending {
 		if !completedMap[idx] {
 			newPending = append(newPending, idx)
 		}
 	}
-	
+
 	if len(newPending) == 0 {
 		delete(p.pendingOrders, pair)
 	} else {
@@ -503,7 +503,7 @@ func (p *PaperWallet) updateEquityValues(candle model.Candle) {
 	if !candle.Complete {
 		return
 	}
-	
+
 	if candle.Complete {
 		var total float64
 		for asset, info := range p.assets {

@@ -28,7 +28,7 @@ func Payoff(values []float64) float64 {
 
 	avgWin := stat.Mean(wins, nil)
 	avgLose := stat.Mean(loses, nil)
-	
+
 	// Avoid division by zero or NaN
 	if math.IsNaN(avgWin) || math.IsNaN(avgLose) || avgLose == 0 {
 		return 0

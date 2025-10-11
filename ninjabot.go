@@ -7,8 +7,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/aybabtme/uniplot/histogram"
-
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/notification"
@@ -19,6 +17,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 	"github.com/rodrigo-brito/ninjabot/tools/metrics"
 
+	"github.com/aybabtme/uniplot/histogram"
 	"github.com/olekukonko/tablewriter"
 	"github.com/schollz/progressbar/v3"
 )
@@ -203,7 +202,7 @@ func (n *NinjaBot) Summary() {
 		totalReturns += len(summary.WinPercent()) + len(summary.LosePercent())
 	}
 	returns := make([]float64, 0, totalReturns)
-	
+
 	for _, summary := range n.orderController.Results {
 		avgPayoff += summary.Payoff() * float64(len(summary.Win())+len(summary.Lose()))
 		avgProfitFactor += summary.ProfitFactor() * float64(len(summary.Win())+len(summary.Lose()))

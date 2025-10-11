@@ -10,12 +10,11 @@ import (
 )
 
 type Controller struct {
-	strategy       Strategy
-	dataframe      *model.Dataframe
-	cachedSample   *model.Dataframe // Cache for warmup sample to avoid repeated allocations
-	broker         service.Broker
-	started        bool
-	warmupPeriod   int              // Cache warmup period
+	strategy     Strategy
+	dataframe    *model.Dataframe
+	broker       service.Broker
+	started      bool
+	warmupPeriod int // Cache warmup period
 }
 
 func NewStrategyController(pair string, strategy Strategy, broker service.Broker) *Controller {

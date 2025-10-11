@@ -20,11 +20,9 @@ jobs:
 
       - name: lint
         if: github.event_name == 'pull_request'
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
-          skip-build-cache: true
-          skip-pkg-cache: true
 
       - name: coverage
         uses: codecov/codecov-action@v2
