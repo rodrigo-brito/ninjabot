@@ -7,8 +7,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/aybabtme/uniplot/histogram"
-
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/notification"
@@ -19,6 +17,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/tools/log"
 	"github.com/rodrigo-brito/ninjabot/tools/metrics"
 
+	"github.com/aybabtme/uniplot/histogram"
 	"github.com/olekukonko/tablewriter"
 	"github.com/schollz/progressbar/v3"
 )
@@ -197,7 +196,13 @@ func (n *NinjaBot) Summary() {
 	avgPayoff := 0.0
 	avgProfitFactor := 0.0
 
-	returns := make([]float64, 0)
+	// Pre-calculate total returns size to avoid reallocations
+	totalReturns := 0
+	for _, summary := range n.orderController.Results {
+		totalReturns += len(summary.WinPercent()) + len(summary.LosePercent())
+	}
+	returns := make([]float64, 0, totalReturns)
+
 	for _, summary := range n.orderController.Results {
 		avgPayoff += summary.Payoff() * float64(len(summary.Win())+len(summary.Lose()))
 		avgProfitFactor += summary.ProfitFactor() * float64(len(summary.Win())+len(summary.Lose()))
@@ -240,9 +245,9 @@ func (n *NinjaBot) Summary() {
 	fmt.Println(buffer.String())
 	fmt.Println("------ RETURN -------")
 	totalReturn := 0.0
-	returnsPercent := make([]float64, len(returns))
-	for i, p := range returns {
-		returnsPercent[i] = p * 100
+	returnsPercent := make([]float64, 0, len(returns))
+	for _, p := range returns {
+		returnsPercent = append(returnsPercent, p*100)
 		totalReturn += p
 	}
 	hist := histogram.Hist(15, returnsPercent)

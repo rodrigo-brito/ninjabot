@@ -21,7 +21,20 @@ func Payoff(values []float64) float64 {
 		}
 	}
 
-	return math.Abs(stat.Mean(wins, nil) / stat.Mean(loses, nil))
+	// Handle edge cases to avoid NaN
+	if len(wins) == 0 || len(loses) == 0 {
+		return 0
+	}
+
+	avgWin := stat.Mean(wins, nil)
+	avgLose := stat.Mean(loses, nil)
+
+	// Avoid division by zero or NaN
+	if math.IsNaN(avgWin) || math.IsNaN(avgLose) || avgLose == 0 {
+		return 0
+	}
+
+	return math.Abs(avgWin / avgLose)
 }
 
 func ProfitFactor(values []float64) float64 {

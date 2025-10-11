@@ -36,6 +36,7 @@ type PaperWallet struct {
 	initialValue  float64
 	feeder        service.Feeder
 	orders        []model.Order
+	pendingOrders map[string][]int // pair -> order indices for fast lookup
 	assets        map[string]*assetInfo
 	avgShortPrice map[string]float64
 	avgLongPrice  map[string]float64
@@ -88,7 +89,8 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 	wallet := PaperWallet{
 		ctx:           ctx,
 		baseCoin:      baseCoin,
-		orders:        make([]model.Order, 0),
+		orders:        make([]model.Order, 0, 100), // Pre-allocate with capacity
+		pendingOrders: make(map[string][]int),
 		assets:        make(map[string]*assetInfo),
 		fistCandle:    make(map[string]model.Candle),
 		lastCandle:    make(map[string]model.Candle),
@@ -96,7 +98,7 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 		avgLongPrice:  make(map[string]float64),
 		volume:        make(map[string]float64),
 		assetValues:   make(map[string][]AssetValue),
-		equityValues:  make([]AssetValue, 0),
+		equityValues:  make([]AssetValue, 0, 1000), // Pre-allocate for equity tracking
 	}
 
 	for _, option := range options {
@@ -378,13 +380,25 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 		p.fistCandle[candle.Pair] = candle
 	}
 
-	for i, order := range p.orders {
-		if order.Pair != candle.Pair || order.Status != model.OrderStatusTypeNew {
-			continue
-		}
+	// Use indexed lookup for pending orders - O(1) instead of O(n)
+	pendingIndices, hasPending := p.pendingOrders[candle.Pair]
+	if !hasPending {
+		// Fast path: no pending orders for this pair
+		p.updateEquityValues(candle)
+		return
+	}
 
-		if _, ok := p.volume[candle.Pair]; !ok {
-			p.volume[candle.Pair] = 0
+	if _, ok := p.volume[candle.Pair]; !ok {
+		p.volume[candle.Pair] = 0
+	}
+
+	// Process only pending orders for this pair
+	completedIndices := make([]int, 0, len(pendingIndices))
+	for _, i := range pendingIndices {
+		order := p.orders[i]
+		if order.Status != model.OrderStatusTypeNew {
+			completedIndices = append(completedIndices, i)
+			continue
 		}
 
 		asset, quote := SplitAssetQuote(order.Pair)
@@ -396,6 +410,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			p.volume[candle.Pair] += order.Price * order.Quantity
 			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
+			completedIndices = append(completedIndices, i)
 
 			// update assets size
 			p.updateAveragePrice(order.Side, order.Pair, order.Quantity, order.Price)
@@ -440,12 +455,53 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			p.volume[candle.Pair] += orderVolume
 			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
+			completedIndices = append(completedIndices, i)
 
 			// update assets size
 			p.updateAveragePrice(order.Side, order.Pair, order.Quantity, orderPrice)
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
 			p.assets[quote].Free = p.assets[quote].Free + order.Quantity*orderPrice
 		}
+	}
+
+	// Remove completed orders from pending index
+	if len(completedIndices) > 0 {
+		p.removeCompletedOrders(candle.Pair, completedIndices)
+	}
+
+	p.updateEquityValues(candle)
+}
+
+// removeCompletedOrders removes completed order indices from the pending map
+func (p *PaperWallet) removeCompletedOrders(pair string, completedIndices []int) {
+	if len(completedIndices) == 0 {
+		return
+	}
+
+	pending := p.pendingOrders[pair]
+	newPending := make([]int, 0, len(pending)-len(completedIndices))
+	completedMap := make(map[int]bool, len(completedIndices))
+	for _, idx := range completedIndices {
+		completedMap[idx] = true
+	}
+
+	for _, idx := range pending {
+		if !completedMap[idx] {
+			newPending = append(newPending, idx)
+		}
+	}
+
+	if len(newPending) == 0 {
+		delete(p.pendingOrders, pair)
+	} else {
+		p.pendingOrders[pair] = newPending
+	}
+}
+
+// updateEquityValues calculates and stores equity values for complete candles
+func (p *PaperWallet) updateEquityValues(candle model.Candle) {
+	if !candle.Complete {
+		return
 	}
 
 	if candle.Complete {
@@ -548,7 +604,10 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 		GroupID:    &groupID,
 		RefPrice:   p.lastCandle[pair].Close,
 	}
+	// Add orders and update pending index
+	orderIdx := len(p.orders)
 	p.orders = append(p.orders, limitMaker, stopOrder)
+	p.pendingOrders[pair] = append(p.pendingOrders[pair], orderIdx, orderIdx+1)
 
 	return []model.Order{limitMaker, stopOrder}, nil
 }
@@ -578,7 +637,10 @@ func (p *PaperWallet) CreateOrderLimit(side model.SideType, pair string,
 		Price:      limit,
 		Quantity:   size,
 	}
+	// Add order and update pending index
+	orderIdx := len(p.orders)
 	p.orders = append(p.orders, order)
+	p.pendingOrders[pair] = append(p.pendingOrders[pair], orderIdx)
 	return order, nil
 }
 
@@ -614,7 +676,10 @@ func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) 
 		Stop:       &limit,
 		Quantity:   size,
 	}
+	// Add order and update pending index
+	orderIdx := len(p.orders)
 	p.orders = append(p.orders, order)
+	p.pendingOrders[pair] = append(p.pendingOrders[pair], orderIdx)
 	return order, nil
 }
 

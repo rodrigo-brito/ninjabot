@@ -1,6 +1,8 @@
 module github.com/rodrigo-brito/ninjabot
 
-go 1.18
+go 1.22
+
+toolchain go1.24.3
 
 require (
 	github.com/StudioSol/set v1.0.0
