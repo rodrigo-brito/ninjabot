@@ -222,3 +222,172 @@ func TestController_Position(t *testing.T) {
 	assert.Equal(t, 1.0, asset)
 	assert.Equal(t, 1500.0, quote)
 }
+
+func TestController_SQN(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 10000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	// Execute multiple trades to calculate SQN
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
+	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1500})
+	_, err = controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1200})
+	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1400})
+	_, err = controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	sqn := controller.Results["BTCUSDT"].SQN()
+	assert.Greater(t, sqn, 0.0)
+}
+
+func TestController_ProfitFactor(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 10000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	// Winning trade
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
+	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1500})
+	_, err = controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	// Losing trade
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1200})
+	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
+	_, err = controller.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	profitFactor := controller.Results["BTCUSDT"].ProfitFactor()
+	assert.Greater(t, profitFactor, 0.0)
+	// Profit factor calculation may vary based on implementation
+	assert.Greater(t, profitFactor, 1.0) // Should be profitable overall
+}
+
+func TestController_Status(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	status := controller.Status()
+	assert.NotNil(t, status)
+}
+
+func TestController_Account(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	account, err := controller.Account()
+	require.NoError(t, err)
+	assert.NotNil(t, account)
+}
+
+func TestController_LastQuote(t *testing.T) {
+	t.Skip("LastQuote requires a feeder implementation")
+	// This test requires a proper feeder setup which is complex for unit testing
+	// The function is tested indirectly through integration tests
+}
+
+func TestController_Order(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
+	createdOrder, err := controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	fetchedOrder, err := controller.Order("BTCUSDT", createdOrder.ExchangeID)
+	require.NoError(t, err)
+	assert.Equal(t, createdOrder.ExchangeID, fetchedOrder.ExchangeID)
+}
+
+func TestController_CreateOrderMarketQuote(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
+	order, err := controller.CreateOrderMarketQuote(model.SideTypeBuy, "BTCUSDT", 1000)
+	require.NoError(t, err)
+	assert.Equal(t, model.SideTypeBuy, order.Side)
+	assert.Greater(t, order.Quantity, 0.0)
+}
+
+func TestController_CreateOrderStop(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
+	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.NoError(t, err)
+
+	order, err := controller.CreateOrderStop("BTCUSDT", 1, 900)
+	require.NoError(t, err)
+	assert.Equal(t, model.SideTypeSell, order.Side)
+	assert.NotNil(t, order.Stop)
+	assert.Equal(t, 900.0, *order.Stop)
+}
+
+func TestController_Cancel(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx := context.Background()
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1500})
+	order, err := controller.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 1000)
+	require.NoError(t, err)
+
+	err = controller.Cancel(order)
+	require.NoError(t, err)
+}
+
+func TestController_StartStop(t *testing.T) {
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	wallet := exchange.NewPaperWallet(ctx, "USDT", exchange.WithPaperAsset("USDT", 3000))
+	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+
+	// Start controller
+	go controller.Start()
+	time.Sleep(100 * time.Millisecond)
+
+	// Stop controller
+	controller.Stop()
+	time.Sleep(100 * time.Millisecond)
+}
