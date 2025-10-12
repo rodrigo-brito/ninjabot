@@ -29,18 +29,19 @@ var (
 
 type Chart struct {
 	sync.Mutex
-	port            int
-	debug           bool
-	candles         map[string][]Candle
-	dataframe       map[string]*model.Dataframe
-	ordersIDsByPair map[string]*set.LinkedHashSetINT64
-	orderByID       map[int64]model.Order
-	indicators      []Indicator
-	paperWallet     *exchange.PaperWallet
-	scriptContent   string
-	indexHTML       *template.Template
-	strategy        strategy.Strategy
-	lastUpdate      time.Time
+	port              int
+	debug             bool
+	candles           map[string][]Candle
+	dataframe         map[string]*model.Dataframe
+	ordersIDsByPair   map[string]*set.LinkedHashSetINT64
+	orderByID         map[int64]model.Order
+	indicators        []Indicator
+	paperWallet       *exchange.PaperWallet
+	scriptContent     string
+	indexHTML         *template.Template
+	enhancedIndexHTML *template.Template
+	strategy          strategy.Strategy
+	lastUpdate        time.Time
 }
 
 type Candle struct {
@@ -342,6 +343,29 @@ func (c *Chart) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (c *Chart) handleEnhancedIndex(w http.ResponseWriter, r *http.Request) {
+	var pairs = make([]string, 0, len(c.candles))
+	for pair := range c.candles {
+		pairs = append(pairs, pair)
+	}
+
+	sort.Strings(pairs)
+	pair := r.URL.Query().Get("pair")
+	if pair == "" && len(pairs) > 0 {
+		http.Redirect(w, r, fmt.Sprintf("/enhanced?pair=%s", pairs[0]), http.StatusFound)
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	err := c.enhancedIndexHTML.Execute(w, map[string]interface{}{
+		"pair":  pair,
+		"pairs": pairs,
+	})
+	if err != nil {
+		log.Error(err)
+	}
+}
+
 func (c *Chart) handleData(w http.ResponseWriter, r *http.Request) {
 	pair := r.URL.Query().Get("pair")
 	if pair == "" {
@@ -428,12 +452,24 @@ func (c *Chart) Start() error {
 		fmt.Fprint(w, c.scriptContent)
 	})
 
+	http.HandleFunc("/assets/chart_enhanced.js", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-type", "application/javascript")
+		content, err := staticFiles.ReadFile("assets/chart_enhanced.js")
+		if err != nil {
+			http.Error(w, "File not found", http.StatusNotFound)
+			return
+		}
+		fmt.Fprint(w, string(content))
+	})
+
 	http.HandleFunc("/health", c.handleHealth)
 	http.HandleFunc("/history", c.handleTradingHistoryData)
 	http.HandleFunc("/data", c.handleData)
+	http.HandleFunc("/enhanced", c.handleEnhancedIndex)
 	http.HandleFunc("/", c.handleIndex)
 
 	fmt.Printf("Chart available at http://localhost:%d\n", c.port)
+	fmt.Printf("Enhanced chart available at http://localhost:%d/enhanced\n", c.port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", c.port), nil)
 }
 
@@ -489,6 +525,11 @@ func NewChart(options ...Option) (*Chart, error) {
 	}
 
 	chart.indexHTML, err = template.ParseFS(staticFiles, "assets/chart.html")
+	if err != nil {
+		return nil, err
+	}
+
+	chart.enhancedIndexHTML, err = template.ParseFS(staticFiles, "assets/chart_enhanced.html")
 	if err != nil {
 		return nil, err
 	}
