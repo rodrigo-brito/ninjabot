@@ -8,7 +8,7 @@ require (
 	github.com/StudioSol/set v1.0.0
 	github.com/adshao/go-binance/v2 v2.8.8
 	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e
-	github.com/evanw/esbuild v0.25.10
+	github.com/evanw/esbuild v0.27.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/jpillora/backoff v1.0.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
