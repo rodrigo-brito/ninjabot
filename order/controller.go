@@ -421,6 +421,13 @@ func (c *Controller) Status() Status {
 	return c.status
 }
 
+func (c *Controller) requireRunning() error {
+	if c.status != StatusRunning {
+		return fmt.Errorf("bot is stopped")
+	}
+	return nil
+}
+
 func (c *Controller) Start() {
 	if c.status != StatusRunning {
 		c.status = StatusRunning
@@ -481,6 +488,10 @@ func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, pric
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	if err := c.requireRunning(); err != nil {
+		return nil, err
+	}
+
 	log.Infof("[ORDER] Creating OCO order for %s", pair)
 	orders, err := c.exchange.CreateOrderOCO(side, pair, size, price, stop, stopLimit)
 	if err != nil {
@@ -504,6 +515,10 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
+
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderLimit(side, pair, size, limit)
 	if err != nil {
@@ -524,6 +539,10 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, amount float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
+
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarketQuote(side, pair, amount)
@@ -549,6 +568,10 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
+
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarket(side, pair, size)
 	if err != nil {
@@ -572,6 +595,10 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 func (c *Controller) CreateOrderStop(pair string, size float64, limit float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
+
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
 
 	log.Infof("[ORDER] Creating STOP order for %s", pair)
 	order, err := c.exchange.CreateOrderStop(pair, size, limit)
