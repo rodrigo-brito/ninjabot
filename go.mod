@@ -15,7 +15,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.53.0
 	github.com/schollz/progressbar/v3 v3.18.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/buntdb v1.3.2
 	github.com/urfave/cli/v2 v2.27.7
