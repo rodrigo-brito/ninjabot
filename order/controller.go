@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -18,6 +19,10 @@ import (
 	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
 )
+
+// ErrBotStopped is returned by CreateOrder* when the controller has been stopped.
+// Cancel is intentionally not gated, so open orders can still be cleaned up.
+var ErrBotStopped = errors.New("bot is stopped")
 
 type summary struct {
 	Pair             string
@@ -418,42 +423,58 @@ func (c *Controller) updateOrders() {
 }
 
 func (c *Controller) Status() Status {
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
 	return c.status
 }
 
+// requireRunning rejects new orders only after an explicit Stop().
+// Controllers that never called Start() keep the zero-value status and still
+// accept orders, preserving the public API for direct embedding / tests.
+// Must be called while holding c.mtx.
 func (c *Controller) requireRunning() error {
-	if c.status != StatusRunning {
-		return fmt.Errorf("bot is stopped")
+	if c.status == StatusStopped {
+		return ErrBotStopped
 	}
 	return nil
 }
 
 func (c *Controller) Start() {
-	if c.status != StatusRunning {
-		c.status = StatusRunning
-		go func() {
-			ticker := time.NewTicker(c.tickerInterval)
-			for {
-				select {
-				case <-ticker.C:
-					c.updateOrders()
-				case <-c.finish:
-					ticker.Stop()
-					return
-				}
-			}
-		}()
-		log.Info("Bot started.")
+	c.mtx.Lock()
+	if c.status == StatusRunning {
+		c.mtx.Unlock()
+		return
 	}
+	c.status = StatusRunning
+	c.mtx.Unlock()
+
+	go func() {
+		ticker := time.NewTicker(c.tickerInterval)
+		for {
+			select {
+			case <-ticker.C:
+				c.updateOrders()
+			case <-c.finish:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	log.Info("Bot started.")
 }
 
 func (c *Controller) Stop() {
-	if c.status == StatusRunning {
-		c.status = StatusStopped
-		c.updateOrders()
-		c.finish <- true
-		log.Info("Bot stopped.")
+	c.mtx.Lock()
+	if c.status != StatusRunning {
+		c.mtx.Unlock()
+		return
 	}
+	c.status = StatusStopped
+	c.mtx.Unlock()
+
+	c.updateOrders()
+	c.finish <- true
+	log.Info("Bot stopped.")
 }
 
 func (c *Controller) Account() (model.Account, error) {
