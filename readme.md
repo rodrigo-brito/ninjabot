@@ -79,11 +79,33 @@ BTCUSDT         = 448030.05 USDT
 ETHUSDT         = 407769.64 USDT
 TOTAL           = 855799.68 USDT
 -------------------
-Chart available at http://localhost:8080
+Dashboard available at http://localhost:8080
 
 ```
 
-### Plot result
+### Dashboard
+
+The `ui` package serves a web dashboard with candles, indicators, orders, equity curve and trade statistics, with live updates when running in paper/live mode:
+
+```go
+chart, err := ui.New(
+    ui.WithStrategyIndicators(strategy),
+    ui.WithCustomIndicators(indicator.RSI(14, "purple")),
+    ui.WithPaperWallet(wallet),
+)
+// ... ninjabot.WithCandleSubscription(chart), ninjabot.WithOrderSubscription(chart)
+chart.Start() // http://localhost:8080
+```
+
+The dashboard bundle is **not embedded** in your binary. On first start it is downloaded from the GitHub release that matches the ninjabot version in your `go.mod`, verified against the release checksums and cached in your user cache directory (`~/Library/Caches/ninjabot/ui` on macOS, `~/.cache/ninjabot/ui` on Linux, `%LocalAppData%\ninjabot\ui` on Windows). After that it works offline.
+
+| Override | Effect |
+|---|---|
+| `NINJABOT_UI_DIR=/path/to/web/dist` or `ui.WithUIDir(dir)` | Serve a local build of the dashboard (no download). |
+| `NINJABOT_UI_VERSION=v1.2.3` / `latest` or `ui.WithUIVersion(v)` | Pin the release tag to download. Useful when ninjabot comes from a `replace` directive or a commit hash, where the version cannot be detected. |
+| `ui.WithCacheDir(dir)` | Change where bundles are cached. |
+
+If the bundle cannot be fetched, the bot keeps running, the JSON API (`/api/pairs`, `/api/{pair}/snapshot`, `/api/events`) stays up and `http://localhost:8080` explains how to fix it.
 
 <img width="100%"  src="https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png" />
 

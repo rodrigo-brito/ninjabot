@@ -11,14 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     name: Tests and Lint
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.24
-          go-setup-tools: true
+          go-version: '1.24'
       - run: |
           go test -race -coverprofile="coverage.txt" -covermode=atomic ./...
+
+      - name: generated types are up to date
+        run: make generate-check
 
       - name: lint
         if: github.event_name == 'pull_request'
@@ -27,7 +29,24 @@ jobs:
           version: latest
 
       - name: coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.txt
+
+  web:
+    runs-on: ubuntu-latest
+    name: Web dashboard
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build

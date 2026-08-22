@@ -6,10 +6,10 @@ import (
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/exchange"
-	"github.com/rodrigo-brito/ninjabot/plot"
-	"github.com/rodrigo-brito/ninjabot/plot/indicator"
 	"github.com/rodrigo-brito/ninjabot/storage"
 	"github.com/rodrigo-brito/ninjabot/tools/log"
+	"github.com/rodrigo-brito/ninjabot/ui"
+	"github.com/rodrigo-brito/ninjabot/ui/indicator"
 )
 
 // This example shows how to use backtesting with NinjaBot
@@ -61,12 +61,12 @@ func main() {
 	)
 
 	// create a chart  with indicators from the strategy and a custom additional RSI indicator
-	chart, err := plot.NewChart(
-		plot.WithStrategyIndicators(strategy),
-		plot.WithCustomIndicators(
+	chart, err := ui.New(
+		ui.WithStrategyIndicators(strategy),
+		ui.WithCustomIndicators(
 			indicator.RSI(14, "purple"),
 		),
-		plot.WithPaperWallet(wallet),
+		ui.WithPaperWallet(wallet),
 	)
 	if err != nil {
 		log.Fatal(err)

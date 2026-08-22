@@ -40,6 +40,13 @@ archives:
 
 checksum:
   name_template: 'checksums.txt'
+  # The dashboard bundle is verified against this file by ui/bundle.go.
+  extra_files:
+    - glob: ./web/ninjabot-ui.tar.gz
+
+release:
+  extra_files:
+    - glob: ./web/ninjabot-ui.tar.gz
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

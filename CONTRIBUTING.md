@@ -31,6 +31,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 - **Go 1.18 or higher** - [Download Go](https://golang.org/dl/)
 - **Git** - [Download Git](https://git-scm.com/downloads)
 - **Make** (optional, but recommended)
+- **Bun** (only for the web dashboard in `web/`) - [Install Bun](https://bun.sh)
 
 ### Setting Up Your Development Environment
 
@@ -70,6 +71,18 @@ This project and everyone participating in it is governed by our [Code of Conduc
    # Install mockery for generating mocks
    go install github.com/vektra/mockery/v2@latest
    ```
+
+6. **Web dashboard (optional):** the dashboard lives in `web/` (Bun + Vite + React + TypeScript + lightweight-charts) and is served by the `ui` Go package. It is published as a release asset and downloaded by the Go library at runtime, so it is not embedded in the binary.
+
+   ```bash
+   make ui-install          # bun install
+   make ui-dev              # Vite dev server on :5173, proxies /api to a bot on :8080
+   make ui-check            # biome + tsc + vitest
+   make ui-build            # web/dist (app.js, app.css)
+   NINJABOT_UI_DIR=$PWD/web/dist go run examples/backtesting/backtesting.go   # serve your local build
+   ```
+
+   The API types in `web/src/api/types.ts` are generated from `ui/dto.go`; run `make generate` after changing them (CI checks they are in sync).
 
 ## How Can I Contribute?
 
