@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -18,6 +19,10 @@ import (
 	"github.com/olekukonko/tablewriter"
 	log "github.com/sirupsen/logrus"
 )
+
+// ErrBotStopped is returned by CreateOrder* when the controller has been stopped.
+// Cancel is intentionally not gated, so open orders can still be cleaned up.
+var ErrBotStopped = errors.New("bot is stopped")
 
 type summary struct {
 	Pair             string
@@ -418,35 +423,58 @@ func (c *Controller) updateOrders() {
 }
 
 func (c *Controller) Status() Status {
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
 	return c.status
 }
 
-func (c *Controller) Start() {
-	if c.status != StatusRunning {
-		c.status = StatusRunning
-		go func() {
-			ticker := time.NewTicker(c.tickerInterval)
-			for {
-				select {
-				case <-ticker.C:
-					c.updateOrders()
-				case <-c.finish:
-					ticker.Stop()
-					return
-				}
-			}
-		}()
-		log.Info("Bot started.")
+// requireRunning rejects new orders only after an explicit Stop().
+// Controllers that never called Start() keep the zero-value status and still
+// accept orders, preserving the public API for direct embedding / tests.
+// Must be called while holding c.mtx.
+func (c *Controller) requireRunning() error {
+	if c.status == StatusStopped {
+		return ErrBotStopped
 	}
+	return nil
+}
+
+func (c *Controller) Start() {
+	c.mtx.Lock()
+	if c.status == StatusRunning {
+		c.mtx.Unlock()
+		return
+	}
+	c.status = StatusRunning
+	c.mtx.Unlock()
+
+	go func() {
+		ticker := time.NewTicker(c.tickerInterval)
+		for {
+			select {
+			case <-ticker.C:
+				c.updateOrders()
+			case <-c.finish:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+	log.Info("Bot started.")
 }
 
 func (c *Controller) Stop() {
-	if c.status == StatusRunning {
-		c.status = StatusStopped
-		c.updateOrders()
-		c.finish <- true
-		log.Info("Bot stopped.")
+	c.mtx.Lock()
+	if c.status != StatusRunning {
+		c.mtx.Unlock()
+		return
 	}
+	c.status = StatusStopped
+	c.mtx.Unlock()
+
+	c.updateOrders()
+	c.finish <- true
+	log.Info("Bot stopped.")
 }
 
 func (c *Controller) Account() (model.Account, error) {
@@ -481,6 +509,10 @@ func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, pric
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	if err := c.requireRunning(); err != nil {
+		return nil, err
+	}
+
 	log.Infof("[ORDER] Creating OCO order for %s", pair)
 	orders, err := c.exchange.CreateOrderOCO(side, pair, size, price, stop, stopLimit)
 	if err != nil {
@@ -504,6 +536,10 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
+
 	log.Infof("[ORDER] Creating LIMIT %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderLimit(side, pair, size, limit)
 	if err != nil {
@@ -524,6 +560,10 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, amount float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
+
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
 
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarketQuote(side, pair, amount)
@@ -549,6 +589,10 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
+
 	log.Infof("[ORDER] Creating MARKET %s order for %s", side, pair)
 	order, err := c.exchange.CreateOrderMarket(side, pair, size)
 	if err != nil {
@@ -572,6 +616,10 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 func (c *Controller) CreateOrderStop(pair string, size float64, limit float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
+
+	if err := c.requireRunning(); err != nil {
+		return model.Order{}, err
+	}
 
 	log.Infof("[ORDER] Creating STOP order for %s", pair)
 	order, err := c.exchange.CreateOrderStop(pair, size, limit)
