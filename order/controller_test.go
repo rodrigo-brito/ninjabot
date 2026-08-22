@@ -369,6 +369,60 @@ func TestPosition_Update(t *testing.T) {
 		assert.Equal(t, 900.0, position.AvgPrice)
 	})
 
+	t.Run("fees are deducted from the profit", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeBuy, AvgPrice: 1000, Quantity: 1, Fee: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeSell, 1, 1100)
+		order.Fee = 1.1
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.True(t, finished)
+		assert.InDelta(t, 97.9, order.ProfitValue, 1e-9) // 100 - 1 - 1.1
+		assert.InDelta(t, 0.0979, order.Profit, 1e-9)
+		assert.InDelta(t, order.ProfitValue, result.ProfitValue, 1e-9)
+	})
+
+	t.Run("only the closed share of the fees is settled", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeBuy, AvgPrice: 1000, Quantity: 2, Fee: 2, CreatedAt: base}
+		order := newOrder(model.SideTypeSell, 1, 1100)
+		order.Fee = 1.1
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.False(t, finished)
+		assert.InDelta(t, 97.9, order.ProfitValue, 1e-9) // 100 - 1 (half the entry) - 1.1
+		assert.Equal(t, 1.0, position.Quantity)
+		assert.InDelta(t, 1.0, position.Fee, 1e-9) // the fee of the open half
+	})
+
+	t.Run("a flip carries the unused fee to the new position", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeBuy, AvgPrice: 1000, Quantity: 1, Fee: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeSell, 3, 1100)
+		order.Fee = 3.3
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.False(t, finished)
+		assert.InDelta(t, 97.9, order.ProfitValue, 1e-9) // 100 - 1 - 1.1 (a third of the exit)
+		assert.Equal(t, 2.0, position.Quantity)
+		assert.InDelta(t, 2.2, position.Fee, 1e-9) // the remaining two thirds
+	})
+
+	t.Run("adding to a position accumulates the fees", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeBuy, AvgPrice: 1000, Quantity: 1, Fee: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeBuy, 1, 1200)
+		order.Fee = 1.2
+
+		result, finished := position.Update(order)
+
+		require.Nil(t, result)
+		assert.False(t, finished)
+		assert.InDelta(t, 2.2, position.Fee, 1e-9)
+	})
+
 	t.Run("stop loss settles at the stop price", func(t *testing.T) {
 		stop := 950.0
 		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 1, CreatedAt: base}

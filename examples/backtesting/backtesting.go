@@ -57,6 +57,8 @@ func main() {
 		ctx,
 		"USDT",
 		exchange.WithPaperAsset("USDT", 10000),
+		// maker and taker fees charged on every fill, 0.1% is the Binance spot default
+		exchange.WithPaperFee(0.001, 0.001),
 		exchange.WithDataFeed(csvFeed),
 	)
 

@@ -53,6 +53,7 @@ type Order struct {
 	Status      string   `json:"status"`
 	Price       float64  `json:"price"`
 	Quantity    float64  `json:"quantity"`
+	Fee         float64  `json:"fee"`
 	CreatedAt   int64    `json:"created_at"`
 	UpdatedAt   int64    `json:"updated_at"`
 	CandleTime  int64    `json:"candle_time"`

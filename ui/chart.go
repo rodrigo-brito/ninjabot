@@ -393,6 +393,7 @@ func (c *Chart) toOrder(o model.Order, candles []Candle) Order {
 		Status:      string(o.Status),
 		Price:       o.Price,
 		Quantity:    o.Quantity,
+		Fee:         o.Fee,
 		CreatedAt:   o.CreatedAt.Unix(),
 		UpdatedAt:   o.UpdatedAt.Unix(),
 		CandleTime:  candleTimeFor(candles, o.UpdatedAt),
@@ -438,6 +439,7 @@ func (c *Chart) orderRowsByPair(pair string) [][]string {
 			fmt.Sprintf("%f", o.Quantity),
 			fmt.Sprintf("%f", o.Price),
 			fmt.Sprintf("%.2f", o.Quantity*o.Price),
+			fmt.Sprintf("%.4f", o.Fee),
 			profit,
 		})
 	}

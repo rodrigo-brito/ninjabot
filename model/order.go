@@ -40,6 +40,9 @@ type Order struct {
 	Price      float64         `db:"price" json:"price"`
 	Quantity   float64         `db:"quantity" json:"quantity"`
 
+	// Fee charged by the exchange to fill the order, in quote currency.
+	Fee float64 `db:"fee" json:"fee"`
+
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 

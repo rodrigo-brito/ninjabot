@@ -70,7 +70,7 @@ func TestChart_OnOrderAndSnapshot(t *testing.T) {
 		ID: 2, Pair: "ETHUSDT", Side: model.SideTypeSell, Type: model.OrderTypeStopLoss,
 		Status: model.OrderStatusTypeFilled, Price: 3020, Quantity: 1, Stop: &stop,
 		CreatedAt: base.Add(time.Hour), UpdatedAt: base.Add(5 * time.Hour), // after last candle
-		Profit: 0.1, ProfitValue: 20, RefPrice: 3000,
+		Profit: 0.1, ProfitValue: 20, Fee: 3.02, RefPrice: 3000,
 	})
 	// order for a pair without candles must not panic
 	c.OnOrder(model.Order{ID: 3, Pair: "SOLUSDT", UpdatedAt: base})
@@ -98,8 +98,10 @@ func TestChart_OnOrderAndSnapshot(t *testing.T) {
 
 	rows := c.orderRowsByPair("ETHUSDT")
 	require.Len(t, rows, 2)
-	assert.Equal(t, []string{base.Format(time.RFC3339), "FILLED", "BUY", "1", "MARKET", "1.000000", "3000.000000", "3000.00", ""}, rows[0])
-	assert.Equal(t, "0.10", rows[1][8])
+	assert.Equal(t, []string{base.Format(time.RFC3339), "FILLED", "BUY", "1", "MARKET", "1.000000",
+		"3000.000000", "3000.00", "0.0000", ""}, rows[0])
+	assert.Equal(t, "3.0200", rows[1][8])
+	assert.Equal(t, "0.10", rows[1][9])
 
 	assert.Empty(t, c.orderRowsByPair("UNKNOWN"))
 	assert.Empty(t, c.ordersByPair("UNKNOWN"))

@@ -12,6 +12,7 @@ function order(partial: Partial<Order>): Order {
     status: "FILLED",
     price: 100,
     quantity: 1,
+    fee: 0,
     created_at: 0,
     updated_at: 0,
     candle_time: 0,
