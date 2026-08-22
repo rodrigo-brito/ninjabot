@@ -237,35 +237,43 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 	if p.Side == order.Side {
 		p.AvgPrice = (p.AvgPrice*p.Quantity + price*order.Quantity) / (p.Quantity + order.Quantity)
 		p.Quantity += order.Quantity
-	} else {
-		if p.Quantity == order.Quantity {
-			finished = true
-		} else if p.Quantity > order.Quantity {
-			p.Quantity -= order.Quantity
-		} else {
-			p.Quantity = order.Quantity - p.Quantity
-			p.Side = order.Side
-			p.CreatedAt = order.CreatedAt
-			p.AvgPrice = price
-		}
-
-		quantity := math.Min(p.Quantity, order.Quantity)
-		order.Profit = (price - p.AvgPrice) / p.AvgPrice
-		order.ProfitValue = (price - p.AvgPrice) * quantity
-
-		result = &Result{
-			CreatedAt:     order.CreatedAt,
-			Pair:          order.Pair,
-			Duration:      order.CreatedAt.Sub(p.CreatedAt),
-			ProfitPercent: order.Profit,
-			ProfitValue:   order.ProfitValue,
-			Side:          p.Side,
-		}
-
-		return result, finished
+		return nil, false
 	}
 
-	return nil, false
+	// The order (partially) closes the position: settle the closed leg
+	// against the position state before any mutation. Shorts profit when
+	// the price falls.
+	closedQuantity := math.Min(p.Quantity, order.Quantity)
+	profitPrice := price - p.AvgPrice
+	if p.Side == model.SideTypeSell {
+		profitPrice = p.AvgPrice - price
+	}
+
+	order.Profit = profitPrice / p.AvgPrice
+	order.ProfitValue = profitPrice * closedQuantity
+
+	result = &Result{
+		CreatedAt:     order.CreatedAt,
+		Pair:          order.Pair,
+		Duration:      order.CreatedAt.Sub(p.CreatedAt),
+		ProfitPercent: order.Profit,
+		ProfitValue:   order.ProfitValue,
+		Side:          p.Side,
+	}
+
+	if p.Quantity == order.Quantity {
+		finished = true
+	} else if p.Quantity > order.Quantity {
+		p.Quantity -= order.Quantity
+	} else {
+		// the order overshoots and opens a position on the other side
+		p.Quantity = order.Quantity - p.Quantity
+		p.Side = order.Side
+		p.CreatedAt = order.CreatedAt
+		p.AvgPrice = price
+	}
+
+	return result, finished
 }
 
 type Controller struct {
