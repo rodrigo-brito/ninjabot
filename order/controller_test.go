@@ -232,6 +232,8 @@ func TestController_StopGatesCreateOrder(t *testing.T) {
 		exchange.WithPaperAsset("BTC", 1),
 	)
 	controller := NewController(ctx, wallet, storage, NewOrderFeed())
+	defer controller.Stop()
+
 	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 1000})
 
 	// Zero-value status (never Start()'d) must still accept orders — public API.
@@ -239,11 +241,15 @@ func TestController_StopGatesCreateOrder(t *testing.T) {
 	require.NoError(t, err)
 
 	controller.Start()
-	_, err = controller.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 0.1, 900)
+	pending, err := controller.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 0.1, 900)
 	require.NoError(t, err)
 
 	controller.Stop()
+
 	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 0.1)
+	require.ErrorIs(t, err, ErrBotStopped)
+
+	_, err = controller.CreateOrderMarketQuote(model.SideTypeBuy, "BTCUSDT", 100)
 	require.ErrorIs(t, err, ErrBotStopped)
 
 	_, err = controller.CreateOrderLimit(model.SideTypeSell, "BTCUSDT", 0.1, 1100)
@@ -252,14 +258,17 @@ func TestController_StopGatesCreateOrder(t *testing.T) {
 	_, err = controller.CreateOrderStop("BTCUSDT", 0.1, 800)
 	require.ErrorIs(t, err, ErrBotStopped)
 
+	_, err = controller.CreateOrderOCO(model.SideTypeSell, "BTCUSDT", 0.1, 1100, 900, 890)
+	require.ErrorIs(t, err, ErrBotStopped)
+
 	// Cancel stays available while stopped so open orders can be cleaned up.
-	err = controller.Cancel(model.Order{Pair: "BTCUSDT", ExchangeID: 1})
-	// Paper wallet may not know that id; we only care that Cancel is not gated.
-	require.NotErrorIs(t, err, ErrBotStopped)
+	require.NoError(t, controller.Cancel(pending))
+
+	canceled, err := controller.Order("BTCUSDT", pending.ExchangeID)
+	require.NoError(t, err)
+	assert.Equal(t, model.OrderStatusTypeCanceled, canceled.Status)
 
 	controller.Start()
 	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 0.1)
 	require.NoError(t, err)
-
-	controller.Stop()
 }

@@ -212,6 +212,22 @@ func (t telegram) ProfitHandle(m *tb.Message) {
 	}
 }
 
+// notifyOrderError reports a failed manual order back to the user. The
+// controller notifies exchange/storage failures on its own, but orders
+// rejected because the bot is stopped never reach that path — without this
+// the command would silently do nothing.
+func (t telegram) notifyOrderError(m *tb.Message, err error) {
+	if !errors.Is(err, order.ErrBotStopped) {
+		log.Error(err)
+		return
+	}
+
+	_, sendErr := t.client.Send(m.Sender, "Bot is stopped, no order was created. Send /start to resume.", t.defaultMenu)
+	if sendErr != nil {
+		log.Error(sendErr)
+	}
+}
+
 func (t telegram) BuyHandle(m *tb.Message) {
 	match := buyRegexp.FindStringSubmatch(m.Text)
 	if len(match) == 0 {
@@ -256,6 +272,7 @@ func (t telegram) BuyHandle(m *tb.Message) {
 
 	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeBuy, pair, amount)
 	if err != nil {
+		t.notifyOrderError(m, err)
 		return
 	}
 	log.Info("[TELEGRAM]: BUY ORDER CREATED: ", order)
@@ -301,6 +318,7 @@ func (t telegram) SellHandle(m *tb.Message) {
 		amount = amount * asset / 100.0
 		order, err := t.orderController.CreateOrderMarket(model.SideTypeSell, pair, amount)
 		if err != nil {
+			t.notifyOrderError(m, err)
 			return
 		}
 		log.Info("[TELEGRAM]: SELL ORDER CREATED: ", order)
@@ -309,6 +327,7 @@ func (t telegram) SellHandle(m *tb.Message) {
 
 	order, err := t.orderController.CreateOrderMarketQuote(model.SideTypeSell, pair, amount)
 	if err != nil {
+		t.notifyOrderError(m, err)
 		return
 	}
 	log.Info("[TELEGRAM]: SELL ORDER CREATED: ", order)
@@ -348,7 +367,9 @@ func (t telegram) StopHandle(m *tb.Message) {
 	}
 
 	t.orderController.Stop()
-	_, err := t.client.Send(m.Sender, "Bot stopped.", t.defaultMenu)
+	_, err := t.client.Send(m.Sender,
+		"Bot stopped. New orders are rejected until /start — including protective stops, "+
+			"so any open position is left unprotected.", t.defaultMenu)
 	if err != nil {
 		log.Error(err)
 	}
