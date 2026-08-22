@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime/debug"
 	"sync/atomic"
@@ -272,21 +273,135 @@ func TestIsReleaseTag(t *testing.T) {
 	assert.False(t, isReleaseTag("1.2.3"))
 	assert.False(t, isReleaseTag("latest"))
 	assert.False(t, isReleaseTag("v0.0.0-20260822101010-abcdef123456"))
+	assert.False(t, isReleaseTag("v0.5.1-0.20260822101010-abcdef123456"))
+	assert.False(t, isReleaseTag("v1.2.0-rc.1.0.20260822101010-abcdef123456"))
 	assert.False(t, isReleaseTag("v1.0.0+incompatible"))
 	assert.False(t, isReleaseTag("v1.2.3+meta"))
 	assert.False(t, isReleaseTag("(devel)"))
 }
 
-func TestReleaseVersion(t *testing.T) {
+func TestDetectVersionFrom(t *testing.T) {
 	dep := func(version string, replace *debug.Module) *debug.Module {
 		return &debug.Module{Path: modulePath, Version: version, Replace: replace}
 	}
+	consumer := func(deps ...*debug.Module) *debug.BuildInfo {
+		return &debug.BuildInfo{Main: debug.Module{Path: "example.com/bot"}, Deps: deps}
+	}
+	repo := func(version string) *debug.BuildInfo {
+		return &debug.BuildInfo{Main: debug.Module{Path: modulePath, Version: version}}
+	}
+	describeTag := func(tag string) func(string) string {
+		return func(string) string { return tag }
+	}
+	noDescribe := func(dir string) string {
+		t.Errorf("git describe must not run for %s", dir)
+		return ""
+	}
 
-	assert.Equal(t, "", releaseVersion(&debug.BuildInfo{Main: debug.Module{Path: modulePath}}), "built inside the repo")
-	assert.Equal(t, "", releaseVersion(&debug.BuildInfo{Main: debug.Module{Path: "example.com/bot"}}), "not a dependency")
-	assert.Equal(t, "v1.4.0", releaseVersion(&debug.BuildInfo{Main: debug.Module{Path: "example.com/bot"}, Deps: []*debug.Module{dep("v1.4.0", nil)}}))
-	assert.Equal(t, "", releaseVersion(&debug.BuildInfo{Main: debug.Module{Path: "example.com/bot"}, Deps: []*debug.Module{dep("v0.0.0-20260822101010-abcdef123456", nil)}}), "pseudo-version")
-	assert.Equal(t, "", releaseVersion(&debug.BuildInfo{Main: debug.Module{Path: "example.com/bot"}, Deps: []*debug.Module{dep("v1.4.0", &debug.Module{Path: "../ninjabot"})}}), "replace directive")
+	t.Run("exact module version", func(t *testing.T) {
+		d := detectVersionFrom(consumer(dep("v1.4.0", nil)), "/src/ui", noDescribe)
+		assert.Equal(t, detectedVersion{version: "v1.4.0", reason: "module version"}, d)
+	})
+
+	t.Run("pseudo-version falls back to the release before it", func(t *testing.T) {
+		d := detectVersionFrom(consumer(dep("v0.5.1-0.20260822101010-abcdef123456", nil)), "", noDescribe)
+		assert.Equal(t, "v0.5.0", d.version)
+		assert.True(t, d.inferred)
+	})
+
+	t.Run("pseudo-version without a previous tag", func(t *testing.T) {
+		d := detectVersionFrom(consumer(dep("v0.0.0-20260822101010-abcdef123456", nil)), "", describeTag("v9.9.9"))
+		assert.Equal(t, "", d.version, "consumers never use git describe")
+	})
+
+	t.Run("not a dependency", func(t *testing.T) {
+		d := detectVersionFrom(consumer(), "/src/ui", noDescribe)
+		assert.Equal(t, "", d.version)
+		assert.Contains(t, d.reason, "not a dependency")
+	})
+
+	t.Run("replace to a local directory uses git describe", func(t *testing.T) {
+		var seen string
+		describe := func(dir string) string { seen = dir; return "v0.5.0" }
+		d := detectVersionFrom(consumer(dep("v0.0.0-00010101000000-000000000000", &debug.Module{Path: "../ninjabot"})), "", describe)
+		assert.Equal(t, "../ninjabot", seen)
+		assert.Equal(t, "v0.5.0", d.version)
+		assert.True(t, d.inferred)
+
+		d = detectVersionFrom(consumer(dep("v0.5.0", &debug.Module{Path: "../ninjabot"})), "", describeTag(""))
+		assert.Equal(t, "", d.version, "no tags in the checkout")
+	})
+
+	t.Run("replace to another module version does not describe", func(t *testing.T) {
+		d := detectVersionFrom(consumer(dep("v0.5.0", &debug.Module{Path: "github.com/fork/ninjabot", Version: "v0.5.0"})), "", noDescribe)
+		assert.Equal(t, "", d.version)
+	})
+
+	t.Run("built inside the repository", func(t *testing.T) {
+		// go build stamps a VCS pseudo-version (Go 1.24+)
+		d := detectVersionFrom(repo("v0.5.1-0.20260822143150-a993611026c5+dirty"), "/src/ui", noDescribe)
+		assert.Equal(t, "v0.5.0", d.version)
+
+		// go run reports (devel): ask git
+		var seen string
+		describe := func(dir string) string { seen = dir; return "v0.5.0" }
+		d = detectVersionFrom(repo("(devel)"), "/src/ui", describe)
+		assert.Equal(t, "/src/ui", seen)
+		assert.Equal(t, "v0.5.0", d.version)
+		assert.True(t, d.inferred)
+
+		// exact tag checkout
+		d = detectVersionFrom(repo("v0.5.0"), "/src/ui", noDescribe)
+		assert.Equal(t, detectedVersion{version: "v0.5.0", reason: "module version"}, d)
+
+		// trimpath / moved binary: no source dir, no git
+		d = detectVersionFrom(repo("(devel)"), "", noDescribe)
+		assert.Equal(t, "", d.version)
+	})
+}
+
+func TestBaseOfPseudoVersion(t *testing.T) {
+	cases := map[string]string{
+		"v0.5.1-0.20260822101010-abcdef123456":       "v0.5.0",
+		"v0.5.1-0.20260822101010-abcdef123456+dirty": "v0.5.0",
+		"v1.0.0-0.20260822101010-abcdef123456":       "", // v1.0.0-0 cannot follow a tag: patch is 0
+		"v0.0.0-20260822101010-abcdef123456":         "",
+		"v1.2.0-rc.1.0.20260822101010-abcdef123456":  "v1.2.0-rc.1",
+		"v1.2.3":                                "",
+		"latest":                                "",
+		"(devel)":                               "",
+		"v2.10.4-0.20260822101010-abcdef123456": "v2.10.3",
+	}
+	for in, want := range cases {
+		assert.Equal(t, want, baseOfPseudoVersion(in), in)
+	}
+}
+
+func TestGitDescribe(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not installed")
+	}
+	dir := t.TempDir()
+	run := func(args ...string) {
+		cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
+		cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@t", "GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@t")
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, string(out))
+	}
+	run("init", "-q")
+	assert.Equal(t, "", gitDescribe(dir), "no commits")
+
+	run("commit", "-q", "--allow-empty", "-m", "one")
+	assert.Equal(t, "", gitDescribe(dir), "no tags")
+
+	run("tag", "v0.3.0")
+	run("tag", "not-a-release")
+	run("commit", "-q", "--allow-empty", "-m", "two")
+	run("tag", "v0.4.0-rc.1")
+	run("commit", "-q", "--allow-empty", "-m", "three")
+	assert.Equal(t, "v0.4.0-rc.1", gitDescribe(dir))
+
+	assert.Equal(t, "", gitDescribe(filepath.Join(t.TempDir(), "missing")))
 }
 
 func TestNewestCached(t *testing.T) {

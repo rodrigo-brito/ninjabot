@@ -102,7 +102,7 @@ The dashboard bundle is **not embedded** in your binary. On first start it is do
 | Override | Effect |
 |---|---|
 | `NINJABOT_UI_DIR=/path/to/web/dist` or `ui.WithUIDir(dir)` | Serve a local build of the dashboard (no download). |
-| `NINJABOT_UI_VERSION=v1.2.3` / `latest` or `ui.WithUIVersion(v)` | Pin the release tag to download. Useful when ninjabot comes from a `replace` directive or a commit hash, where the version cannot be detected. |
+| `NINJABOT_UI_VERSION=v1.2.3` / `latest` or `ui.WithUIVersion(v)` | Pin the release tag to download. By default the tag is the ninjabot version in your `go.mod`; for a commit hash (pseudo-version) the nearest release before it is used, and inside a local checkout (`go run ./examples/...`, `replace` directive) the nearest `git` tag. |
 | `ui.WithCacheDir(dir)` | Change where bundles are cached. |
 
 If the bundle cannot be fetched, the bot keeps running, the JSON API (`/api/pairs`, `/api/{pair}/snapshot`, `/api/events`) stays up and `http://localhost:8080` explains how to fix it.
