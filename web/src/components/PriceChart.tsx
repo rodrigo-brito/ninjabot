@@ -21,7 +21,7 @@ import { useEffect, useRef } from "react";
 import type { Candle, Indicator, Metric, Order, Snapshot } from "../api/types";
 import { type TradeLine, TradeLinesPrimitive } from "../chart/tradeLines";
 import { formatCompact, formatPercent } from "../lib/format";
-import { type Palette, palettes, type Theme } from "../lib/theme";
+import { type Palette, palettes, seriesColor, type Theme } from "../lib/theme";
 
 interface Props {
   snapshot: Snapshot;
@@ -80,7 +80,7 @@ function createMetricSeries(
   paneIndex: number,
   palette: Palette,
 ): ISeriesApi<SeriesType> {
-  const color = metric.color || palette.accent;
+  const color = seriesColor(metric.color, palette.accent);
   switch (metric.style) {
     case "bar":
     case "histogram":
@@ -180,6 +180,8 @@ function chartOptions(palette: Palette) {
     layout: {
       background: { type: ColorType.Solid, color: palette.background },
       textColor: palette.text,
+      fontFamily: palette.fontFamily,
+      fontSize: 11,
       attributionLogo: false,
       panes: {
         separatorColor: palette.border,
@@ -366,7 +368,7 @@ export function PriceChart({ snapshot, theme }: Props) {
             <span key={indicator.name} className="legend-item">
               {indicator.metrics.map((metric, index) => (
                 <span key={metricKey(indicator, metric, index)}>
-                  <i style={{ background: metric.color || "var(--accent)" }} />
+                  <i style={{ background: seriesColor(metric.color, "var(--accent)") }} />
                   {metric.name ? `${indicator.name} ${metric.name}` : indicator.name}
                 </span>
               ))}
