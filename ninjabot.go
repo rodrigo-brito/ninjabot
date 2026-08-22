@@ -19,6 +19,8 @@ import (
 
 	"github.com/aybabtme/uniplot/histogram"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 	"github.com/schollz/progressbar/v3"
 )
 
@@ -190,9 +192,21 @@ func (n *NinjaBot) Summary() {
 	)
 
 	buffer := bytes.NewBuffer(nil)
-	table := tablewriter.NewWriter(buffer)
-	table.SetHeader([]string{"Pair", "Trades", "Win", "Loss", "% Win", "Payoff", "Pr Fact.", "SQN", "Profit", "Volume"})
-	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
+	table := tablewriter.NewTable(buffer,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Symbols: tw.NewSymbols(tw.StyleASCII),
+		})),
+		tablewriter.WithHeaderAutoFormat(tw.Off),
+		tablewriter.WithHeaderAlignment(tw.AlignCenter),
+		tablewriter.WithRowAlignmentConfig(tw.CellAlignment{
+			PerColumn: []tw.Align{
+				tw.AlignLeft, tw.AlignRight, tw.AlignRight, tw.AlignRight, tw.AlignRight,
+				tw.AlignRight, tw.AlignRight, tw.AlignRight, tw.AlignRight, tw.AlignRight,
+			},
+		}),
+		tablewriter.WithFooterAlignmentConfig(tw.CellAlignment{Global: tw.AlignRight}),
+	)
+	table.Header([]string{"PAIR", "TRADES", "WIN", "LOSS", "% WIN", "PAYOFF", "PR FACT.", "SQN", "PROFIT", "VOLUME"})
 	avgPayoff := 0.0
 	avgProfitFactor := 0.0
 
@@ -206,7 +220,7 @@ func (n *NinjaBot) Summary() {
 	for _, summary := range n.orderController.Results {
 		avgPayoff += summary.Payoff() * float64(len(summary.Win())+len(summary.Lose()))
 		avgProfitFactor += summary.ProfitFactor() * float64(len(summary.Win())+len(summary.Lose()))
-		table.Append([]string{
+		err := table.Append([]string{
 			summary.Pair,
 			strconv.Itoa(len(summary.Win()) + len(summary.Lose())),
 			strconv.Itoa(len(summary.Win())),
@@ -218,6 +232,10 @@ func (n *NinjaBot) Summary() {
 			fmt.Sprintf("%.2f", summary.Profit()),
 			fmt.Sprintf("%.2f", summary.Volume),
 		})
+		if err != nil {
+			log.Error(err)
+		}
+
 		total += summary.Profit()
 		sqn += summary.SQN()
 		wins += len(summary.Win())
@@ -228,7 +246,7 @@ func (n *NinjaBot) Summary() {
 		returns = append(returns, summary.LosePercent()...)
 	}
 
-	table.SetFooter([]string{
+	table.Footer([]string{
 		"TOTAL",
 		strconv.Itoa(wins + loses),
 		strconv.Itoa(wins),
@@ -240,7 +258,9 @@ func (n *NinjaBot) Summary() {
 		fmt.Sprintf("%.2f", total),
 		fmt.Sprintf("%.2f", volume),
 	})
-	table.Render()
+	if err := table.Render(); err != nil {
+		log.Error(err)
+	}
 
 	fmt.Println(buffer.String())
 	fmt.Println("------ RETURN -------")

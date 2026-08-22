@@ -17,6 +17,8 @@ import (
 	"github.com/rodrigo-brito/ninjabot/storage"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -148,7 +150,14 @@ func (s summary) WinPercentage() float64 {
 
 func (s summary) String() string {
 	tableString := &strings.Builder{}
-	table := tablewriter.NewWriter(tableString)
+	table := tablewriter.NewTable(tableString,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Symbols: tw.NewSymbols(tw.StyleASCII),
+		})),
+		tablewriter.WithRowAlignmentConfig(tw.CellAlignment{
+			PerColumn: []tw.Align{tw.AlignLeft, tw.AlignRight},
+		}),
+	)
 	_, quote := exchange.SplitAssetQuote(s.Pair)
 	data := [][]string{
 		{"Coin", s.Pair},
@@ -161,9 +170,14 @@ func (s summary) String() string {
 		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
 		{"Volume", fmt.Sprintf("%.4f %s", s.Volume, quote)},
 	}
-	table.AppendBulk(data)
-	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT})
-	table.Render()
+	if err := table.Bulk(data); err != nil {
+		log.Error(err)
+	}
+
+	if err := table.Render(); err != nil {
+		log.Error(err)
+	}
+
 	return tableString.String()
 }
 
