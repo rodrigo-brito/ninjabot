@@ -180,7 +180,7 @@ func (b *BinanceFuture) CreateOrderStop(pair string, quantity float64, limit flo
 	}
 
 	order, err := b.client.NewCreateOrderService().Symbol(pair).
-		Type(futures.OrderTypeStopMarket).
+		Type(futures.OrderType(futures.AlgoOrderTypeStopMarket)).
 		TimeInForce(futures.TimeInForceTypeGTC).
 		Side(futures.SideTypeSell).
 		Quantity(b.formatQuantity(pair, quantity)).
