@@ -88,6 +88,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// enable the dashboard control panel (start/stop and manual orders)
+	chart.SetOrderController(bot.Controller())
+
 	go func() {
 		err := chart.Start()
 		if err != nil {

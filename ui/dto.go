@@ -115,3 +115,28 @@ type OrderEvent struct {
 	Pair  string `json:"pair"`
 	Order Order  `json:"order"`
 }
+
+// ControlsResponse reports whether the bot control panel is enabled and the
+// controller status ("running" or "stopped"). It is also the payload of the
+// SSE "controls" event, sent when the bot is started or stopped from the
+// dashboard.
+type ControlsResponse struct {
+	Enabled bool   `json:"enabled"`
+	Status  string `json:"status"`
+}
+
+// ControlOrderRequest is the payload of POST /api/controls/order. Amount is
+// in quote currency; with Percent it is a percentage of the available balance
+// (quote balance for buys, asset balance for sells), mirroring the Telegram
+// /buy and /sell commands.
+type ControlOrderRequest struct {
+	Pair    string  `json:"pair"`
+	Side    string  `json:"side"`
+	Amount  float64 `json:"amount"`
+	Percent bool    `json:"percent"`
+}
+
+// ErrorResponse is the JSON body of API error replies.
+type ErrorResponse struct {
+	Error string `json:"error"`
+}

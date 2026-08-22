@@ -123,3 +123,31 @@ export interface OrderEvent {
   pair: string;
   order: Order;
 }
+/**
+ * ControlsResponse reports whether the bot control panel is enabled and the
+ * controller status ("running" or "stopped"). It is also the payload of the
+ * SSE "controls" event, sent when the bot is started or stopped from the
+ * dashboard.
+ */
+export interface ControlsResponse {
+  enabled: boolean;
+  status: string;
+}
+/**
+ * ControlOrderRequest is the payload of POST /api/controls/order. Amount is
+ * in quote currency; with Percent it is a percentage of the available balance
+ * (quote balance for buys, asset balance for sells), mirroring the Telegram
+ * /buy and /sell commands.
+ */
+export interface ControlOrderRequest {
+  pair: string;
+  side: string;
+  amount: number /* float64 */;
+  percent: boolean;
+}
+/**
+ * ErrorResponse is the JSON body of API error replies.
+ */
+export interface ErrorResponse {
+  error: string;
+}
