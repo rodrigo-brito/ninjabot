@@ -123,10 +123,10 @@ main {
   width: 100%;
   max-width: 1480px;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-5) var(--space-8);
+  padding: var(--space-5) var(--space-5) var(--space-8);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 /* ------------------------------------------------------------------ */
@@ -417,7 +417,7 @@ button:hover {
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .content.loading {
@@ -431,7 +431,7 @@ button:hover {
 .stats {
   display: grid;
   grid-template-columns: minmax(280px, 1.4fr) minmax(0, 3fr);
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .stat-hero {
@@ -639,6 +639,176 @@ tbody tr:last-child td {
 }
 
 /* ------------------------------------------------------------------ */
+/* Control panel                                                       */
+/* ------------------------------------------------------------------ */
+.control-panel {
+  gap: var(--space-3);
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.control-label {
+  margin-right: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.control-label strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.control-divider {
+  align-self: stretch;
+  width: 1px;
+  background: var(--border);
+}
+
+.control-panel input[type="number"],
+.control-panel select {
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  transition: border-color 0.15s ease;
+}
+
+.control-panel input[type="number"] {
+  width: 110px;
+}
+
+.control-panel input[type="number"]:focus,
+.control-panel select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.control-panel button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.control-panel button:disabled:hover {
+  border-color: var(--border-strong);
+}
+
+.control-btn {
+  font-weight: 600;
+}
+
+.control-btn.accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.control-btn.buy {
+  color: var(--pos);
+  border-color: color-mix(in srgb, var(--pos) 45%, transparent);
+  background: color-mix(in srgb, var(--pos) 12%, transparent);
+}
+
+.control-btn.buy:hover:not(:disabled) {
+  border-color: var(--pos);
+}
+
+.control-btn.sell,
+.control-btn.danger-outline {
+  color: var(--neg);
+  border-color: color-mix(in srgb, var(--neg) 45%, transparent);
+  background: color-mix(in srgb, var(--neg) 10%, transparent);
+}
+
+.control-btn.sell:hover:not(:disabled),
+.control-btn.danger-outline:hover:not(:disabled) {
+  border-color: var(--neg);
+}
+
+.control-btn.danger {
+  background: var(--neg);
+  border-color: var(--neg);
+  color: #fff;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.status-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+.status-chip.running {
+  color: var(--pos);
+  border-color: color-mix(in srgb, var(--pos) 45%, transparent);
+  background: color-mix(in srgb, var(--pos) 10%, transparent);
+}
+
+.status-chip.running i {
+  background: var(--pos);
+}
+
+.status-chip.stopped {
+  color: var(--neg);
+  border-color: color-mix(in srgb, var(--neg) 45%, transparent);
+  background: color-mix(in srgb, var(--neg) 10%, transparent);
+}
+
+.status-chip.stopped i {
+  background: var(--neg);
+}
+
+.control-feedback {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.control-feedback.ok {
+  color: var(--pos);
+}
+
+.control-feedback.error {
+  color: var(--neg);
+}
+
+/* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 @media (max-width: 980px) {
@@ -670,5 +840,13 @@ tbody tr:last-child td {
 
   .stat-hero .stat-value {
     font-size: 28px;
+  }
+
+  .control-divider {
+    display: none;
+  }
+
+  .control-group {
+    width: 100%;
   }
 }

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchPairs, fetchSnapshot, subscribeEvents, UI_VERSION } from "./api/client";
-import type { Snapshot } from "./api/types";
+import {
+  fetchControls,
+  fetchPairs,
+  fetchSnapshot,
+  subscribeEvents,
+  UI_VERSION,
+} from "./api/client";
+import type { ControlsResponse, Snapshot } from "./api/types";
+import { ControlPanel } from "./components/ControlPanel";
 import { EquityChart } from "./components/EquityChart";
 import { Header } from "./components/Header";
 import { OrdersTable } from "./components/OrdersTable";
@@ -27,6 +34,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [controls, setControls] = useState<ControlsResponse | null>(null);
   const pairRef = useRef<string | null>(pair);
   pairRef.current = pair;
 
@@ -81,6 +89,25 @@ export function App() {
     return () => controller.abort();
   }, [pair]);
 
+  // Bot control state: SSE pushes changes made from this dashboard, polling
+  // catches changes made elsewhere (Telegram, another browser).
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = () => {
+      fetchControls(controller.signal)
+        .then(setControls)
+        .catch(() => {
+          // leave the last known state; polling retries
+        });
+    };
+    load();
+    const timer = window.setInterval(load, 10000);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, []);
+
   // Live updates.
   useEffect(() => {
     return subscribeEvents({
@@ -92,6 +119,7 @@ export function App() {
       onOrder: (event) => {
         setSnapshot((s) => (s ? applyOrderEvent(s, event) : s));
       },
+      onControls: setControls,
     });
   }, []);
 
@@ -119,6 +147,15 @@ export function App() {
         {snapshot && stats && (
           <div className={loading ? "content loading" : "content"}>
             <StatsBar stats={stats} snapshot={snapshot} theme={theme} />
+            {controls?.enabled && (
+              <ControlPanel
+                pair={snapshot.pair}
+                asset={snapshot.asset}
+                quote={snapshot.quote}
+                controls={controls}
+                onControlsChange={setControls}
+              />
+            )}
             <PriceChart snapshot={snapshot} theme={theme} />
             {snapshot.equity_values.length > 0 && <EquityChart snapshot={snapshot} theme={theme} />}
             <OrdersTable pair={snapshot.pair} quote={snapshot.quote} orders={snapshot.orders} />

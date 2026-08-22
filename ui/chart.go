@@ -56,6 +56,7 @@ type Chart struct {
 	indicators  []CustomIndicator
 	paperWallet *exchange.PaperWallet
 	strategy    strategy.Strategy
+	controller  OrderController
 	lastUpdate  time.Time
 
 	events *broker
