@@ -51,37 +51,57 @@ Output:
 ```
 INFO[2023-03-25 13:54] [SETUP] Using paper wallet                   
 INFO[2023-03-25 13:54] [SETUP] Initial Portfolio = 10000.000000 USDT 
----------+--------+-----+------+--------+--------+-----+----------+-----------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | SQN |  PROFIT  |  VOLUME   |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-| ETHUSDT |      9 |   6 |    3 | 66.7 % |  3.407 | 1.3 | 21748.41 | 407769.64 |
-| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.929 | 1.5 | 13511.66 | 448030.05 |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-|   TOTAL |     23 |  12 |   11 | 52.2 % |  4.942 | 1.4 | 35260.07 | 855799.68 |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | PR FACT. | SQN |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.813 |    4.360 | 1.4 | 12756.38 | 437924.95 |
+| ETHUSDT |     12 |   6 |    6 | 50.0 % |  6.662 |    6.662 | 1.3 | 20468.89 | 394148.32 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|   TOTAL |     26 |  12 |   14 | 46.2 % |  6.205 |    5.423 | 1.3 | 33225.27 | 832073.28 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
 
--- FINAL WALLET --
+----- FINAL WALLET -----
 0.0000 BTC = 0.0000 USDT
 0.0000 ETH = 0.0000 USDT
-45260.0735 USDT
+43225.2687 USDT
 
 ----- RETURNS -----
 START PORTFOLIO     = 10000.00 USDT
-FINAL PORTFOLIO     = 45260.07 USDT
-GROSS PROFIT        =  35260.073493 USDT (352.60%)
+FINAL PORTFOLIO     = 43225.27 USDT
+GROSS PROFIT        =  34057.342011 USDT (340.57%)
+TRADING FEES        =  832.073277 USDT
+NET PROFIT          =  33225.268735 USDT (332.25%)
 MARKET CHANGE (B&H) =  407.09%
 
 ------ RISK -------
 MAX DRAWDOWN = -11.76 %
 
 ------ VOLUME -----
-BTCUSDT         = 448030.05 USDT
-ETHUSDT         = 407769.64 USDT
-TOTAL           = 855799.68 USDT
+BTCUSDT         = 437924.95 USDT
+ETHUSDT         = 394148.32 USDT
+TOTAL           = 832073.28 USDT
 -------------------
 Dashboard available at http://localhost:8080
 
 ```
+
+### Trading Fees
+
+The paper wallet charges the exchange fees on every fill, so backtest and paper trading results are net of costs:
+
+```go
+wallet := exchange.NewPaperWallet(
+    ctx,
+    "USDT",
+    exchange.WithPaperAsset("USDT", 10000),
+    exchange.WithPaperFee(0.001, 0.001), // maker, taker - 0.1% is the Binance spot default
+    exchange.WithDataFeed(csvFeed),
+)
+```
+
+Orders that rest on the book (limit and take profit) pay the **maker** fee, the ones that cross the spread (market and triggered stop orders) pay the **taker** fee. The fee is charged in quote currency, stored in `Order.Fee` and deducted from the profit of each trade, so the results table, the dashboard and the `NET PROFIT` line all report returns after costs.
+
+An order sized with the entire available balance leaves no room for its fee - the wallet fills a slightly smaller quantity instead of rejecting it.
 
 ### Dashboard
 

@@ -126,8 +126,8 @@ func TestServer_API(t *testing.T) {
 	assert.Contains(t, resp.Header.Get("Content-Disposition"), "history_ETHUSDT.csv")
 	lines := strings.Split(strings.TrimSpace(body), "\n")
 	require.Len(t, lines, 2)
-	assert.Equal(t, "created_at,status,side,id,type,quantity,price,total,profit", lines[0])
-	assert.Equal(t, "2021-09-26T20:00:00Z,FILLED,BUY,7,MARKET,2.000000,3000.000000,6000.00,", lines[1])
+	assert.Equal(t, "created_at,status,side,id,type,quantity,price,total,fee,profit", lines[0])
+	assert.Equal(t, "2021-09-26T20:00:00Z,FILLED,BUY,7,MARKET,2.000000,3000.000000,6000.00,0.0000,", lines[1])
 
 	resp, _ = get(t, srv.URL+"/api/BTCUSDT/orders.csv")
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)

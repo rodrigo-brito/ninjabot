@@ -114,3 +114,63 @@ func TestMarketOrder(t *testing.T) {
 
 	bot.Summary()
 }
+
+// runBTCBacktest replays the BTCUSDT sample with the given paper wallet fees
+// and returns the realized profit and the final quote balance.
+func runBTCBacktest(t *testing.T, maker, taker float64) (profit, quote float64, trades int) {
+	t.Helper()
+	ctx := context.Background()
+
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+
+	strategy := new(fakeStrategy)
+	csvFeed, err := exchange.NewCSVFeed(
+		strategy.Timeframe(),
+		exchange.PairFeed{
+			Pair:      "BTCUSDT",
+			File:      "testdata/btc-1h.csv",
+			Timeframe: "1h",
+		},
+	)
+	require.NoError(t, err)
+
+	paperWallet := exchange.NewPaperWallet(
+		ctx,
+		"USDT",
+		exchange.WithPaperAsset("USDT", 10000),
+		exchange.WithPaperFee(maker, taker),
+		exchange.WithDataFeed(csvFeed),
+	)
+
+	bot, err := NewBot(ctx, Settings{Pairs: []string{"BTCUSDT"}},
+		paperWallet,
+		strategy,
+		WithStorage(storage),
+		WithBacktest(paperWallet),
+		WithLogLevel(log.ErrorLevel),
+	)
+	require.NoError(t, err)
+	require.NoError(t, bot.Run(ctx))
+
+	_, quote, err = bot.paperWallet.Position("BTCUSDT")
+	require.NoError(t, err)
+
+	results := bot.orderController.Results["BTCUSDT"]
+	return results.Profit(), quote, len(results.Win()) + len(results.Lose())
+}
+
+func TestMarketOrderWithFee(t *testing.T) {
+	profit, quote, trades := runBTCBacktest(t, 0, 0)
+	feeProfit, feeQuote, feeTrades := runBTCBacktest(t, 0.001, 0.001)
+
+	// the same trades are taken, they just yield less
+	require.Equal(t, trades, feeTrades)
+	require.Less(t, feeProfit, profit)
+	require.Less(t, feeQuote, quote)
+
+	// the profit reported by the order controller is net of fees, so it has to
+	// match what the wallet actually holds at the end of the simulation
+	require.InDelta(t, 10000+profit, quote, 1e-6)
+	require.InDelta(t, 10000+feeProfit, feeQuote, 1e-6)
+}

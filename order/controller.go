@@ -222,9 +222,12 @@ type Result struct {
 }
 
 type Position struct {
-	Side      model.SideType
-	AvgPrice  float64
-	Quantity  float64
+	Side     model.SideType
+	AvgPrice float64
+	Quantity float64
+	// Fee paid to open the position, in quote currency. It is settled against
+	// the profit as the position is closed.
+	Fee       float64
 	CreatedAt time.Time
 }
 
@@ -237,6 +240,7 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 	if p.Side == order.Side {
 		p.AvgPrice = (p.AvgPrice*p.Quantity + price*order.Quantity) / (p.Quantity + order.Quantity)
 		p.Quantity += order.Quantity
+		p.Fee += order.Fee
 		return nil, false
 	}
 
@@ -249,8 +253,22 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 		profitPrice = p.AvgPrice - price
 	}
 
+	// Both legs are charged a fee, but only the share matching the closed
+	// quantity belongs to this result.
+	var entryFee, exitFee float64
+	if p.Quantity > 0 {
+		entryFee = p.Fee * closedQuantity / p.Quantity
+	}
+	if order.Quantity > 0 {
+		exitFee = order.Fee * closedQuantity / order.Quantity
+	}
+
 	order.Profit = profitPrice / p.AvgPrice
 	order.ProfitValue = profitPrice * closedQuantity
+	if fee := entryFee + exitFee; fee > 0 {
+		order.ProfitValue -= fee
+		order.Profit = order.ProfitValue / (p.AvgPrice * closedQuantity)
+	}
 
 	result = &Result{
 		CreatedAt:     order.CreatedAt,
@@ -265,8 +283,11 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 		finished = true
 	} else if p.Quantity > order.Quantity {
 		p.Quantity -= order.Quantity
+		p.Fee -= entryFee
 	} else {
-		// the order overshoots and opens a position on the other side
+		// the order overshoots and opens a position on the other side, the
+		// share of its fee not consumed by the close opens the new position
+		p.Fee = order.Fee - exitFee
 		p.Quantity = order.Quantity - p.Quantity
 		p.Side = order.Side
 		p.CreatedAt = order.CreatedAt
@@ -323,6 +344,7 @@ func (c *Controller) updatePosition(o *model.Order) {
 		c.position[o.Pair] = &Position{
 			AvgPrice:  o.Price,
 			Quantity:  o.Quantity,
+			Fee:       o.Fee,
 			CreatedAt: o.CreatedAt,
 			Side:      o.Side,
 		}

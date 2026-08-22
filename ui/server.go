@@ -135,7 +135,8 @@ func (c *Chart) handleOrdersCSV(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment;filename=history_"+pair+".csv")
 
 	writer := csv.NewWriter(w)
-	_ = writer.Write([]string{"created_at", "status", "side", "id", "type", "quantity", "price", "total", "profit"})
+	_ = writer.Write([]string{"created_at", "status", "side", "id", "type", "quantity", "price", "total",
+		"fee", "profit"})
 	_ = writer.WriteAll(rows)
 	writer.Flush()
 	if err := writer.Error(); err != nil {

@@ -34,6 +34,7 @@ type PaperWallet struct {
 	counter       int64
 	takerFee      float64
 	makerFee      float64
+	feesPaid      float64
 	initialValue  float64
 	feeder        service.Feeder
 	orders        []model.Order
@@ -212,7 +213,10 @@ func (p *PaperWallet) Summary() {
 	fmt.Println("----- RETURNS -----")
 	fmt.Printf("START PORTFOLIO     = %.2f %s\n", p.initialValue, p.baseCoin)
 	fmt.Printf("FINAL PORTFOLIO     = %.2f %s\n", total+baseCoinValue, p.baseCoin)
-	fmt.Printf("GROSS PROFIT        =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
+	fmt.Printf("GROSS PROFIT        =  %f %s (%.2f%%)\n", profit+p.feesPaid, p.baseCoin,
+		(profit+p.feesPaid)/p.initialValue*100)
+	fmt.Printf("TRADING FEES        =  %f %s\n", p.feesPaid, p.baseCoin)
+	fmt.Printf("NET PROFIT          =  %f %s (%.2f%%)\n", profit, p.baseCoin, profit/p.initialValue*100)
 	fmt.Printf("MARKET CHANGE (B&H) =  %.2f%%\n", avgMarketChange*100)
 	fmt.Println()
 	fmt.Println("------ RISK -------")
@@ -227,7 +231,49 @@ func (p *PaperWallet) Summary() {
 	fmt.Println("-------------------")
 }
 
-func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, value float64, fill bool) error {
+// feeRate returns the fee charged for an order type. Orders that rest on the
+// book and fill at their own price add liquidity and pay the maker fee, the
+// ones that cross the spread - market and triggered stop orders - pay the taker
+// fee.
+func (p *PaperWallet) feeRate(orderType model.OrderType) float64 {
+	switch orderType {
+	case model.OrderTypeLimit, model.OrderTypeLimitMaker,
+		model.OrderTypeTakeProfit, model.OrderTypeTakeProfitLimit:
+		return p.makerFee
+	default:
+		return p.takerFee
+	}
+}
+
+// chargeFee deducts a fee, in quote currency, from the wallet, registers it in
+// the total paid so far and returns it.
+func (p *PaperWallet) chargeFee(quote string, fee float64) float64 {
+	if fee == 0 {
+		return 0
+	}
+
+	if _, ok := p.assets[quote]; !ok {
+		p.assets[quote] = &assetInfo{}
+	}
+
+	p.assets[quote].Free -= fee
+	p.feesPaid += fee
+
+	return fee
+}
+
+// validateFunds checks whether the wallet can afford the order and, when fill
+// is true, moves the balances. Fees are always charged in quote currency: they
+// come out of the proceeds when a position is closed, and out of the free
+// balance when one is opened.
+//
+// It returns the traded amount and its fee. The amount may be slightly smaller
+// than requested: an order sized with the whole available balance leaves no
+// room for its fee, so instead of rejecting it we trim it by the fee. The trim
+// is capped at the fee itself, so a genuinely underfunded order still fails.
+func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, value, feeRate float64,
+	fill bool) (filled, fee float64, err error) {
+
 	asset, quote := SplitAssetQuote(pair)
 	if _, ok := p.assets[asset]; !ok {
 		p.assets[asset] = &assetInfo{}
@@ -243,12 +289,28 @@ func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, va
 			funds += p.assets[asset].Free * value
 		}
 
-		if funds < amount*value {
-			return &OrderError{
-				Err:      ErrInsufficientFunds,
-				Pair:     pair,
-				Quantity: amount,
+		// A sell that liquidates a long position pays the fee out of the sale
+		// proceeds, but a short entry receives nothing to pay it with, so the
+		// wallet must hold enough quote to cover it.
+		upfrontRate := 0.0
+		if amount > math.Max(p.assets[asset].Free, 0) {
+			upfrontRate = feeRate
+		}
+
+		if funds < amount*value*(1+upfrontRate) {
+			trimmed := 0.0
+			if fill {
+				trimmed = trimByFee(amount, funds/(value*(1+upfrontRate)), feeRate)
 			}
+
+			if trimmed == 0 {
+				return 0, 0, &OrderError{
+					Err:      ErrInsufficientFunds,
+					Pair:     pair,
+					Quantity: amount,
+				}
+			}
+			amount = trimmed
 		}
 
 		lockedAsset := math.Min(math.Max(p.assets[asset].Free, 0), amount) // ignore negative asset amount to lock
@@ -264,6 +326,7 @@ func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, va
 				p.assets[quote].Free += amount * value
 
 			}
+			fee = p.chargeFee(quote, amount*value*feeRate)
 		} else {
 			p.assets[asset].Lock += lockedAsset
 			p.assets[quote].Lock += lockedQuote
@@ -271,27 +334,35 @@ func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, va
 
 		log.Debugf("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
 	} else { // SideTypeBuy
+		shortPosition := math.Min(p.assets[asset].Free, 0)
+
 		var liquidShortValue float64
-		if p.assets[asset].Free < 0 {
-			v := math.Abs(p.assets[asset].Free)
+		if shortPosition < 0 {
+			v := math.Abs(shortPosition)
 			liquidShortValue = 2*v*p.avgShortPrice[pair] - v*value // liquid price of short position
 			funds += liquidShortValue
 		}
 
-		amountToBuy := amount
-		if p.assets[asset].Free < 0 {
-			amountToBuy = amount + p.assets[asset].Free
-		}
-
-		if funds < amountToBuy*value {
-			return &OrderError{
-				Err:      ErrInsufficientFunds,
-				Pair:     pair,
-				Quantity: amount,
+		// the quantity covering an open short is paid with its liquidation
+		// value, only the remainder consumes quote balance
+		if funds < (amount+shortPosition)*value+amount*value*feeRate {
+			trimmed := 0.0
+			if fill {
+				maxAmount := (funds - shortPosition*value) / (value * (1 + feeRate))
+				trimmed = trimByFee(amount, maxAmount, feeRate)
 			}
+
+			if trimmed == 0 {
+				return 0, 0, &OrderError{
+					Err:      ErrInsufficientFunds,
+					Pair:     pair,
+					Quantity: amount,
+				}
+			}
+			amount = trimmed
 		}
 
-		lockedAsset := math.Min(-math.Min(p.assets[asset].Free, 0), amount) // ignore positive amount to lock
+		lockedAsset := math.Min(-shortPosition, amount) // ignore positive amount to lock
 		lockedQuote := (amount-lockedAsset)*value - liquidShortValue
 
 		p.assets[asset].Free += lockedAsset
@@ -300,6 +371,7 @@ func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, va
 		if fill {
 			p.updateAveragePrice(side, pair, amount, value)
 			p.assets[asset].Free += amount - lockedAsset
+			fee = p.chargeFee(quote, amount*value*feeRate)
 		} else {
 			p.assets[asset].Lock += lockedAsset
 			p.assets[quote].Lock += lockedQuote
@@ -307,7 +379,24 @@ func (p *PaperWallet) validateFunds(side model.SideType, pair string, amount, va
 		log.Debugf("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
 	}
 
-	return nil
+	return amount, fee, nil
+}
+
+// trimByFee reduces amount to maxAmount when the shortfall is no bigger than
+// the fee charged over the order, and returns 0 otherwise - the wallet is then
+// underfunded for reasons other than the fee, and the order must be rejected.
+func trimByFee(amount, maxAmount, feeRate float64) float64 {
+	if feeRate <= 0 {
+		return 0
+	}
+
+	// the epsilon absorbs the rounding noise of a size derived from the exact
+	// available balance, which lands within an ulp of the limit
+	if maxAmount < amount/(1+feeRate)*(1-1e-9) {
+		return 0
+	}
+
+	return math.Min(amount, maxAmount)
 }
 
 func (p *PaperWallet) updateAveragePrice(side model.SideType, pair string, amount, value float64) {
@@ -408,15 +497,19 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 				p.assets[asset] = &assetInfo{}
 			}
 
+			fee := order.Quantity * order.Price * p.feeRate(order.Type)
+
 			p.volume[candle.Pair] += order.Price * order.Quantity
 			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
+			p.orders[i].Fee = fee
 			completedIndices = append(completedIndices, i)
 
 			// update assets size
 			p.updateAveragePrice(order.Side, order.Pair, order.Quantity, order.Price)
 			p.assets[asset].Free = p.assets[asset].Free + order.Quantity
 			p.assets[quote].Lock = p.assets[quote].Lock - order.Price*order.Quantity
+			p.chargeFee(quote, fee)
 		}
 
 		if order.Side == model.SideTypeSell {
@@ -452,16 +545,19 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 			}
 
 			orderVolume := order.Quantity * orderPrice
+			fee := orderVolume * p.feeRate(order.Type)
 
 			p.volume[candle.Pair] += orderVolume
 			p.orders[i].UpdatedAt = candle.Time
 			p.orders[i].Status = model.OrderStatusTypeFilled
+			p.orders[i].Fee = fee
 			completedIndices = append(completedIndices, i)
 
 			// update assets size
 			p.updateAveragePrice(order.Side, order.Pair, order.Quantity, orderPrice)
 			p.assets[asset].Lock = p.assets[asset].Lock - order.Quantity
-			p.assets[quote].Free = p.assets[quote].Free + order.Quantity*orderPrice
+			p.assets[quote].Free = p.assets[quote].Free + orderVolume
+			p.chargeFee(quote, fee)
 		}
 	}
 
@@ -571,7 +667,7 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 		return nil, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(side, pair, size, price, false)
+	_, _, err := p.validateFunds(side, pair, size, price, p.feeRate(model.OrderTypeLimitMaker), false)
 	if err != nil {
 		return nil, err
 	}
@@ -623,7 +719,7 @@ func (p *PaperWallet) CreateOrderLimit(side model.SideType, pair string,
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(side, pair, size, limit, false)
+	_, _, err := p.validateFunds(side, pair, size, limit, p.feeRate(model.OrderTypeLimit), false)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -660,7 +756,8 @@ func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) 
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(model.SideTypeSell, pair, size, limit, false)
+	_, _, err := p.validateFunds(model.SideTypeSell, pair, size, limit,
+		p.feeRate(model.OrderTypeStopLossLimit), false)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -689,7 +786,10 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	err := p.validateFunds(side, pair, size, p.lastCandle[pair].Close, true)
+	price := p.lastCandle[pair].Close
+
+	// the wallet may fill less than requested to make room for the fee
+	filled, fee, err := p.validateFunds(side, pair, size, price, p.feeRate(model.OrderTypeMarket), true)
 	if err != nil {
 		return model.Order{}, err
 	}
@@ -698,7 +798,7 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 		p.volume[pair] = 0
 	}
 
-	p.volume[pair] += p.lastCandle[pair].Close * size
+	p.volume[pair] += price * filled
 
 	order := model.Order{
 		ExchangeID: p.ID(),
@@ -708,8 +808,9 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 		Side:       side,
 		Type:       model.OrderTypeMarket,
 		Status:     model.OrderStatusTypeFilled,
-		Price:      p.lastCandle[pair].Close,
-		Quantity:   size,
+		Price:      price,
+		Quantity:   filled,
+		Fee:        fee,
 	}
 
 	p.orders = append(p.orders, order)

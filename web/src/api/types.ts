@@ -54,6 +54,7 @@ export interface Order {
   status: string;
   price: number /* float64 */;
   quantity: number /* float64 */;
+  fee: number /* float64 */;
   created_at: number /* int64 */;
   updated_at: number /* int64 */;
   candle_time: number /* int64 */;

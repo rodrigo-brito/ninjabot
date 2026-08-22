@@ -13,7 +13,7 @@ import (
 func TestPaperWallet_ValidateFunds(t *testing.T) {
 	t.Run("simple lock limit", func(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
-		err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 1, 100, false)
+		_, _, err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 1, 100, 0, false)
 		require.NoError(t, err)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
@@ -24,7 +24,7 @@ func TestPaperWallet_ValidateFunds(t *testing.T) {
 	t.Run("simple buy market", func(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 		wallet.lastCandle["BTCUSDT"] = model.Candle{Pair: "BTCUSDT", Close: 100}
-		err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 1, 100, true)
+		_, _, err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 1, 100, 0, true)
 		require.NoError(t, err)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
@@ -35,7 +35,7 @@ func TestPaperWallet_ValidateFunds(t *testing.T) {
 	t.Run("simple short market", func(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
 		wallet.lastCandle["BTCUSDT"] = model.Candle{Pair: "BTCUSDT", Close: 100}
-		err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 1, 100, true)
+		_, _, err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 1, 100, 0, true)
 		require.NoError(t, err)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
@@ -45,7 +45,7 @@ func TestPaperWallet_ValidateFunds(t *testing.T) {
 
 	t.Run("simple short limit", func(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
-		err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 1, 100, false)
+		_, _, err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 1, 100, 0, false)
 		require.NoError(t, err)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 100.0, wallet.assets["USDT"].Lock)
@@ -57,7 +57,7 @@ func TestPaperWallet_ValidateFunds(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("BTC", 1), WithPaperAsset("USDT", 100))
 		wallet.avgLongPrice["BTCUSDT"] = 100
 
-		err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 2, 100, true)
+		_, _, err := wallet.validateFunds(model.SideTypeSell, "BTCUSDT", 2, 100, 0, true)
 		require.NoError(t, err)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
@@ -69,7 +69,7 @@ func TestPaperWallet_ValidateFunds(t *testing.T) {
 		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("BTC", -1), WithPaperAsset("USDT", 100))
 		wallet.avgShortPrice["BTCUSDT"] = 100
 
-		err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 2, 150, true)
+		_, _, err := wallet.validateFunds(model.SideTypeBuy, "BTCUSDT", 2, 150, 0, true)
 		require.NoError(t, err)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
 		require.Equal(t, 0.0, wallet.assets["USDT"].Lock)
@@ -597,4 +597,114 @@ func TestUpdateAveragePrice(t *testing.T) {
 		}
 	})
 
+}
+
+func TestPaperWallet_Fees(t *testing.T) {
+	t.Run("market order charges taker fee", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT",
+			WithPaperAsset("USDT", 100), WithPaperFee(0.001, 0.002))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50})
+
+		order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+		require.NoError(t, err)
+		require.Equal(t, 1.0, order.Quantity)
+		require.InDelta(t, 0.1, order.Fee, 1e-9) // 50 * 0.002
+		require.InDelta(t, 49.9, wallet.assets["USDT"].Free, 1e-9)
+		require.Equal(t, 1.0, wallet.assets["BTC"].Free)
+
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
+		order, err = wallet.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+		require.NoError(t, err)
+		require.InDelta(t, 0.2, order.Fee, 1e-9) // 100 * 0.002
+		require.InDelta(t, 149.7, wallet.assets["USDT"].Free, 1e-9)
+		require.Equal(t, 0.0, wallet.assets["BTC"].Free)
+		require.InDelta(t, 0.3, wallet.feesPaid, 1e-9)
+	})
+
+	t.Run("limit order charges maker fee", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT",
+			WithPaperAsset("USDT", 100), WithPaperFee(0.001, 0.002))
+
+		_, err := wallet.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 0.5, 100)
+		require.NoError(t, err)
+
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
+		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[0].Status)
+		require.InDelta(t, 0.05, wallet.orders[0].Fee, 1e-9) // 50 * 0.001
+		require.InDelta(t, 49.95, wallet.assets["USDT"].Free, 1e-9)
+		require.Equal(t, 0.5, wallet.assets["BTC"].Free)
+		require.InDelta(t, 0.05, wallet.feesPaid, 1e-9)
+	})
+
+	t.Run("stop loss charges taker fee", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT",
+			WithPaperAsset("USDT", 100), WithPaperFee(0.001, 0.002))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
+
+		_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 0.5)
+		require.NoError(t, err)
+
+		_, err = wallet.CreateOrderStop("BTCUSDT", 0.5, 80)
+		require.NoError(t, err)
+
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 70, Low: 70})
+		require.Equal(t, model.OrderStatusTypeFilled, wallet.orders[1].Status)
+		require.InDelta(t, 0.08, wallet.orders[1].Fee, 1e-9) // 0.5 * 80 * 0.002
+		require.InDelta(t, 89.82, wallet.assets["USDT"].Free, 1e-9)
+	})
+
+	t.Run("all-in market order is trimmed to fit the fee", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT",
+			WithPaperAsset("USDT", 100), WithPaperFee(0.001, 0.002))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50})
+
+		// a strategy sizing the order with the whole balance leaves no room
+		// for the fee, so the wallet fills a slightly smaller quantity
+		order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 2)
+		require.NoError(t, err)
+		require.InDelta(t, 1.996008, order.Quantity, 1e-6)
+		require.InDelta(t, order.Quantity, wallet.assets["BTC"].Free, 1e-9)
+		require.InDelta(t, 0, wallet.assets["USDT"].Free, 1e-9)
+		require.InDelta(t, 100, order.Quantity*order.Price+order.Fee, 1e-9)
+	})
+
+	t.Run("underfunded order is still rejected", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT",
+			WithPaperAsset("USDT", 100), WithPaperFee(0.001, 0.002))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50})
+
+		order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 100)
+		require.Equal(t, &OrderError{
+			Err:      ErrInsufficientFunds,
+			Pair:     "BTCUSDT",
+			Quantity: 100,
+		}, err)
+		require.Empty(t, order)
+	})
+
+	t.Run("short entry pays the fee upfront", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT",
+			WithPaperAsset("USDT", 100), WithPaperFee(0.001, 0.002))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100})
+
+		// no proceeds are credited on a short entry, the fee comes out of the
+		// free balance and the size is trimmed to make room for it
+		order, err := wallet.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 1)
+		require.NoError(t, err)
+		require.InDelta(t, 0.998004, order.Quantity, 1e-6)
+		require.InDelta(t, -order.Quantity, wallet.assets["BTC"].Free, 1e-9)
+		require.InDelta(t, 0, wallet.assets["USDT"].Free, 1e-9)
+	})
+
+	t.Run("wallet without fees is unchanged", func(t *testing.T) {
+		wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 100))
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 50})
+
+		order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 2)
+		require.NoError(t, err)
+		require.Equal(t, 2.0, order.Quantity)
+		require.Equal(t, 0.0, order.Fee)
+		require.Equal(t, 0.0, wallet.assets["USDT"].Free)
+		require.Equal(t, 0.0, wallet.feesPaid)
+	})
 }

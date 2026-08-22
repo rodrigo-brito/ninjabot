@@ -51,6 +51,7 @@ export function OrdersTable({ pair, quote, orders }: Props) {
                 <th className="num">Price</th>
                 <th className="num">Quantity</th>
                 <th className="num">Total ({quote})</th>
+                <th className="num">Fee</th>
                 <th className="num">Profit</th>
               </tr>
             </thead>
@@ -67,6 +68,7 @@ export function OrdersTable({ pair, quote, orders }: Props) {
                   <td className="num mono">{formatPrice(order.price)}</td>
                   <td className="num mono">{formatQuantity(order.quantity)}</td>
                   <td className="num mono">{formatNumber(order.price * order.quantity)}</td>
+                  <td className="num mono">{order.fee ? formatNumber(order.fee) : "—"}</td>
                   <td className={`num mono ${signClass(order.profit)}`}>
                     {order.profit !== 0 || order.profit_value !== 0
                       ? `${formatPercent(order.profit)} (${formatNumber(order.profit_value)})`
