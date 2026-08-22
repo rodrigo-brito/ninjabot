@@ -272,3 +272,115 @@ func TestController_StopGatesCreateOrder(t *testing.T) {
 	_, err = controller.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 0.1)
 	require.NoError(t, err)
 }
+
+func TestPosition_Update(t *testing.T) {
+	base := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	newOrder := func(side model.SideType, quantity, price float64) *model.Order {
+		return &model.Order{
+			Pair:      "BTCUSDT",
+			Side:      side,
+			Type:      model.OrderTypeMarket,
+			Quantity:  quantity,
+			Price:     price,
+			CreatedAt: base.Add(time.Hour),
+		}
+	}
+
+	t.Run("short closed in profit", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 2, CreatedAt: base}
+		order := newOrder(model.SideTypeBuy, 2, 800)
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.True(t, finished)
+		assert.Equal(t, model.SideTypeSell, result.Side)
+		assert.InDelta(t, 0.2, order.Profit, 1e-9)
+		assert.InDelta(t, 400.0, order.ProfitValue, 1e-9)
+	})
+
+	t.Run("short closed in loss", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeBuy, 1, 1200)
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.True(t, finished)
+		assert.Equal(t, model.SideTypeSell, result.Side)
+		assert.InDelta(t, -0.2, order.Profit, 1e-9)
+		assert.InDelta(t, -200.0, order.ProfitValue, 1e-9)
+	})
+
+	t.Run("short partially closed", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 2, CreatedAt: base}
+		order := newOrder(model.SideTypeBuy, 1, 900)
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.False(t, finished)
+		assert.InDelta(t, 0.1, order.Profit, 1e-9)
+		assert.InDelta(t, 100.0, order.ProfitValue, 1e-9)
+		assert.Equal(t, model.SideTypeSell, position.Side)
+		assert.Equal(t, 1.0, position.Quantity)
+		assert.Equal(t, 1000.0, position.AvgPrice)
+	})
+
+	t.Run("long flipped to short", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeBuy, AvgPrice: 1000, Quantity: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeSell, 3, 1100)
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.False(t, finished)
+
+		// the closed leg is the old long: 1 unit bought at 1000, sold at 1100
+		assert.Equal(t, model.SideTypeBuy, result.Side)
+		assert.InDelta(t, 0.1, order.Profit, 1e-9)
+		assert.InDelta(t, 100.0, order.ProfitValue, 1e-9)
+
+		// the remainder opens a short at the order price
+		assert.Equal(t, model.SideTypeSell, position.Side)
+		assert.Equal(t, 2.0, position.Quantity)
+		assert.Equal(t, 1100.0, position.AvgPrice)
+		assert.Equal(t, order.CreatedAt, position.CreatedAt)
+	})
+
+	t.Run("short flipped to long", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeBuy, 2, 900)
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.False(t, finished)
+
+		// the closed leg is the old short: sold at 1000, bought back at 900
+		assert.Equal(t, model.SideTypeSell, result.Side)
+		assert.InDelta(t, 0.1, order.Profit, 1e-9)
+		assert.InDelta(t, 100.0, order.ProfitValue, 1e-9)
+
+		// the remainder opens a long at the order price
+		assert.Equal(t, model.SideTypeBuy, position.Side)
+		assert.Equal(t, 1.0, position.Quantity)
+		assert.Equal(t, 900.0, position.AvgPrice)
+	})
+
+	t.Run("stop loss settles at the stop price", func(t *testing.T) {
+		stop := 950.0
+		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 1, CreatedAt: base}
+		order := newOrder(model.SideTypeBuy, 1, 990)
+		order.Type = model.OrderTypeStopLoss
+		order.Stop = &stop
+
+		result, finished := position.Update(order)
+
+		require.NotNil(t, result)
+		assert.True(t, finished)
+		assert.InDelta(t, 0.05, order.Profit, 1e-9)
+		assert.InDelta(t, 50.0, order.ProfitValue, 1e-9)
+	})
+}
