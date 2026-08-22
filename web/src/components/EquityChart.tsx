@@ -49,6 +49,8 @@ export function EquityChart({ snapshot, theme }: Props) {
       layout: {
         background: { type: ColorType.Solid, color: palette.background },
         textColor: palette.text,
+        fontFamily: palette.fontFamily,
+        fontSize: 11,
         attributionLogo: false,
       },
       grid: { vertLines: { color: palette.grid }, horzLines: { color: palette.grid } },

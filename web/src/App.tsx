@@ -118,7 +118,7 @@ export function App() {
         )}
         {snapshot && stats && (
           <div className={loading ? "content loading" : "content"}>
-            <StatsBar stats={stats} snapshot={snapshot} />
+            <StatsBar stats={stats} snapshot={snapshot} theme={theme} />
             <PriceChart snapshot={snapshot} theme={theme} />
             {snapshot.equity_values.length > 0 && <EquityChart snapshot={snapshot} theme={theme} />}
             <OrdersTable pair={snapshot.pair} quote={snapshot.quote} orders={snapshot.orders} />
