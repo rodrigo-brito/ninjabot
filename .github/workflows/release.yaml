@@ -20,7 +20,21 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Builds the dashboard and packs it as web/ninjabot-ui.tar.gz. The Go
+      # library downloads this asset from the release on first use
+      # (see ui/bundle.go), so it must be attached to every release.
+      - name: Build web dashboard
+        run: |
+          make ui-install
+          make ui-bundle
+          tar -tzf web/ninjabot-ui.tar.gz | grep -q '^./app.js$'
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6

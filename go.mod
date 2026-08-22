@@ -8,8 +8,8 @@ require (
 	github.com/StudioSol/set v1.1.0
 	github.com/adshao/go-binance/v2 v2.8.12
 	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e
-	github.com/evanw/esbuild v0.27.2
 	github.com/glebarez/sqlite v1.11.0
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/jpillora/backoff v1.0.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/olekukonko/tablewriter v1.1.4
@@ -22,6 +22,7 @@ require (
 	github.com/vektra/mockery/v2 v2.38.0
 	github.com/xhit/go-str2duration/v2 v2.1.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
+	golang.org/x/mod v0.21.0
 	gonum.org/v1/gonum v0.16.0
 	gopkg.in/tucnak/telebot.v2 v2.5.0
 	gorm.io/gorm v1.31.1
@@ -82,7 +83,6 @@ require (
 	github.com/tidwall/rtred v0.1.2 // indirect
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.28.0 // indirect

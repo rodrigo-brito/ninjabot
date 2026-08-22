@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NinjaBot — dashboard unavailable</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f1115; color: #e6e6e6; margin: 0; padding: 48px 24px; }
+      main { max-width: 720px; margin: 0 auto; }
+      h1 { font-size: 22px; margin: 0 0 8px; }
+      p { line-height: 1.5; color: #b3b3b3; }
+      pre { background: #1a1d24; border: 1px solid #2a2e38; border-radius: 6px; padding: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; color: #f3f3f3; }
+      code { background: #1a1d24; padding: 1px 5px; border-radius: 4px; }
+      ul { padding-left: 20px; }
+      li { margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>🥷 Dashboard unavailable</h1>
+      <p>The bot is running and the API is up, but the dashboard bundle could not be loaded:</p>
+      <pre>{{.Error}}</pre>
+      <p>How to fix it:</p>
+      <ul>
+        <li><strong>No network?</strong> The bundle is downloaded once from GitHub Releases and cached locally. Connect and restart, or run once on a machine with internet.</li>
+        <li><strong>Development build?</strong> Build the dashboard locally (<code>cd web && bun install && bun run build</code>) and start the bot with <code>{{.EnvDir}}=$PWD/web/dist</code> or <code>ui.WithUIDir("web/dist")</code>.</li>
+        <li><strong>Pin a version</strong> with <code>{{.EnvVersion}}=vX.Y.Z</code> or <code>ui.WithUIVersion("vX.Y.Z")</code>.</li>
+      </ul>
+      <p>The JSON API keeps working: <a href="/api/pairs" style="color:#7aa2f7">/api/pairs</a>, <code>/api/{pair}/snapshot</code>, <code>/api/events</code>.</p>
+    </main>
+  </body>
+</html>

@@ -5,8 +5,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/rodrigo-brito/ninjabot/plot"
-	"github.com/rodrigo-brito/ninjabot/plot/indicator"
+	"github.com/rodrigo-brito/ninjabot/ui"
+	"github.com/rodrigo-brito/ninjabot/ui/indicator"
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
@@ -63,8 +63,8 @@ func main() {
 	// initializing my strategy
 	strategy := new(strategies.CrossEMA)
 
-	chart, err := plot.NewChart(
-		plot.WithCustomIndicators(
+	chart, err := ui.New(
+		ui.WithCustomIndicators(
 			indicator.EMA(8, "red"),
 			indicator.SMA(21, "blue"),
 		),

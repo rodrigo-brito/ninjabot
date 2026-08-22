@@ -1,0 +1,11 @@
+# Generates the TypeScript types of the dashboard API from ui/dto.go.
+# Run `make generate` from the repository root.
+packages:
+  - path: "github.com/rodrigo-brito/ninjabot/ui"
+    output_path: "../web/src/api/types.ts"
+    include_files:
+      - "dto.go"
+    frontmatter: |
+      // Source: ui/dto.go — run `make generate` after changing the Go types.
+    type_mappings:
+      int64: "number"
