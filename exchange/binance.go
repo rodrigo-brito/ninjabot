@@ -525,7 +525,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 		}
 
 		for {
-			done, _, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
+			done, stop, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
 				ba.Reset()
 				candle := CandleFromWsKline(pair, event.Kline)
 
@@ -541,10 +541,17 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 					}
 				}
 
-				ccandle <- candle
-
+				// A canceled context releases the handler, so it never
+				// blocks the stream shutdown below.
+				select {
+				case ccandle <- candle:
+				case <-ctx.Done():
+				}
 			}, func(err error) {
-				cerr <- err
+				select {
+				case cerr <- err:
+				case <-ctx.Done():
+				}
 			})
 			if err != nil {
 				cerr <- err
@@ -555,6 +562,10 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 
 			select {
 			case <-ctx.Done():
+				// Stop the stream and wait for its handlers to return before
+				// closing the channels they write to.
+				close(stop)
+				<-done
 				close(cerr)
 				close(ccandle)
 				return
