@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/adshao/go-binance/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/rodrigo-brito/ninjabot/model"
 )
@@ -50,4 +52,50 @@ func TestFormatQuantity(t *testing.T) {
 			assert.Equal(t, tc.expected, binance.formatPrice(tc.pair, tc.quantity))
 		})
 	}
+}
+
+func TestBinance_newOrder(t *testing.T) {
+	t.Run("filled order reports the average fill price", func(t *testing.T) {
+		order := newOrder(&binance.Order{
+			OrderID:                  10,
+			Symbol:                   "BTCUSDT",
+			Side:                     binance.SideTypeSell,
+			Type:                     binance.OrderTypeStopLossLimit,
+			Status:                   binance.OrderStatusTypeFilled,
+			Price:                    "900",
+			StopPrice:                "950",
+			OrigQuantity:             "2",
+			ExecutedQuantity:         "2",
+			CummulativeQuoteQuantity: "1900",
+			OrderListId:              7,
+		})
+
+		require.Equal(t, 950.0, order.Price) // 1900 / 2
+		require.Equal(t, 2.0, order.Quantity)
+		require.NotNil(t, order.Stop)
+		require.Equal(t, 950.0, *order.Stop)
+		require.NotNil(t, order.GroupID)
+		require.Equal(t, int64(7), *order.GroupID)
+	})
+
+	t.Run("open order keeps the requested price and no group", func(t *testing.T) {
+		order := newOrder(&binance.Order{
+			OrderID:                  11,
+			Symbol:                   "BTCUSDT",
+			Side:                     binance.SideTypeBuy,
+			Type:                     binance.OrderTypeLimit,
+			Status:                   binance.OrderStatusTypeNew,
+			Price:                    "900",
+			StopPrice:                "0.00000000",
+			OrigQuantity:             "2",
+			ExecutedQuantity:         "0.00000000",
+			CummulativeQuoteQuantity: "0.00000000",
+			OrderListId:              -1,
+		})
+
+		require.Equal(t, 900.0, order.Price)
+		require.Equal(t, 2.0, order.Quantity)
+		require.Nil(t, order.Stop)
+		require.Nil(t, order.GroupID)
+	})
 }

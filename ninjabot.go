@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -225,7 +226,7 @@ func (n *NinjaBot) Summary() {
 			strconv.Itoa(len(summary.Win()) + len(summary.Lose())),
 			strconv.Itoa(len(summary.Win())),
 			strconv.Itoa(len(summary.Lose())),
-			fmt.Sprintf("%.1f %%", float64(len(summary.Win()))/float64(len(summary.Win())+len(summary.Lose()))*100),
+			fmt.Sprintf("%.1f %%", summary.WinPercentage()),
 			fmt.Sprintf("%.3f", summary.Payoff()),
 			fmt.Sprintf("%.3f", summary.ProfitFactor()),
 			fmt.Sprintf("%.1f", summary.SQN()),
@@ -246,15 +247,18 @@ func (n *NinjaBot) Summary() {
 		returns = append(returns, summary.LosePercent()...)
 	}
 
+	// averages over an empty run are reported as 0 instead of NaN
+	trades := math.Max(float64(wins+loses), 1)
+	pairs := math.Max(float64(len(n.orderController.Results)), 1)
 	table.Footer([]string{
 		"TOTAL",
 		strconv.Itoa(wins + loses),
 		strconv.Itoa(wins),
 		strconv.Itoa(loses),
-		fmt.Sprintf("%.1f %%", float64(wins)/float64(wins+loses)*100),
-		fmt.Sprintf("%.3f", avgPayoff/float64(wins+loses)),
-		fmt.Sprintf("%.3f", avgProfitFactor/float64(wins+loses)),
-		fmt.Sprintf("%.1f", sqn/float64(len(n.orderController.Results))),
+		fmt.Sprintf("%.1f %%", float64(wins)/trades*100),
+		fmt.Sprintf("%.3f", avgPayoff/trades),
+		fmt.Sprintf("%.3f", avgProfitFactor/trades),
+		fmt.Sprintf("%.1f", sqn/pairs),
 		fmt.Sprintf("%.2f", total),
 		fmt.Sprintf("%.2f", volume),
 	})
@@ -345,9 +349,14 @@ func (n *NinjaBot) backtestCandles() {
 			n.paperWallet.OnCandle(candle)
 		}
 
+		// settle the orders filled by this candle before the strategy runs, so
+		// positions and trade results follow the candles, not the wall clock
+		n.orderController.UpdateOrders()
+
 		n.strategiesControllers[candle.Pair].OnPartialCandle(candle)
 		if candle.Complete {
 			n.strategiesControllers[candle.Pair].OnCandle(candle)
+			n.orderController.OnCandle(candle)
 		}
 
 		if err := progressBar.Add(1); err != nil {
