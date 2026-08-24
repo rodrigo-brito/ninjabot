@@ -2,7 +2,7 @@
 title: "Getting Started"
 linkTitle: "Getting Started"
 categories: ["Guides"]
-weight: 2
+weight: 1
 description: >
   This page describes the first steps do install and setup a basic bot with Ninjabot
 ---
@@ -48,13 +48,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/rodrigo-brito/ninjabot"
 	"github.com/rodrigo-brito/ninjabot/examples/strategies"
 	"github.com/rodrigo-brito/ninjabot/exchange"
-	"github.com/rodrigo-brito/ninjabot/plot"
 	"github.com/rodrigo-brito/ninjabot/storage"
+	"github.com/rodrigo-brito/ninjabot/ui"
+	"github.com/rodrigo-brito/ninjabot/ui/indicator"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -97,17 +97,19 @@ func main() {
 		ctx,
 		"USDT",
 		exchange.WithPaperAsset("USDT", 10000),
+		// maker and taker fees charged on every fill, 0.1% is the Binance spot default
+		exchange.WithPaperFee(0.001, 0.001),
 		exchange.WithDataFeed(csvFeed),
 	)
 
 	// Initialize a chart to plot trading results
-	chart, err := plot.NewChart(
-		plot.WithStrategyIndicators(strategy), // load indicators from strategy
-		plot.WithCustomIndicators( // you can specify additiona indicators
+	chart, err := ui.New(
+		ui.WithStrategyIndicators(strategy), // load indicators from strategy
+		ui.WithCustomIndicators( // you can specify additional indicators
 			indicator.RSI(14, "purple"),
 			indicator.Stoch(8, 3, 3, "red", "blue"),
 		),
-		plot.WithPaperWallet(wallet), // necessary to display the equity chart
+		ui.WithPaperWallet(wallet), // necessary to display the equity chart
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -145,6 +147,10 @@ func main() {
 }
 ```
 
+{{% pageinfo %}}
+Up to `v0.5.0` the chart lived in the `plot` package and was created with `plot.NewChart`. It is now the `ui` package, created with `ui.New`, and the indicators moved from `plot/indicator` to `ui/indicator`.
+{{% /pageinfo %}}
+
 To execute your strategy, just run:
 
 ```bash
@@ -154,39 +160,76 @@ go run main.go
 Output:
 
 ```
-INFO[2021-10-31 18:13] [SETUP] Using paper wallet
-INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | SQN |  PROFIT  |  VOLUME   |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.929 | 1.5 | 13511.66 | 448030.05 |
-| ETHUSDT |      9 |   6 |    3 | 66.7 % |  3.407 | 1.3 | 21748.41 | 407769.64 |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-|   TOTAL |     23 |  12 |   11 | 52.2 % |  4.942 | 1.4 | 35260.07 | 855799.68 |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
+INFO[2026-08-24 07:21] [SETUP] Using paper wallet
+INFO[2026-08-24 07:21] [SETUP] Initial Portfolio = 10000.000000 USDT
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | PR FACT. | SQN |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| BTCUSDT |     21 |   7 |   14 | 33.3 % |  5.743 |    2.871 | 1.4 | 12759.66 | 437832.11 |
+| ETHUSDT |      9 |   5 |    4 | 55.6 % |  4.803 |    6.004 | 1.3 | 20454.68 | 393786.29 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|   TOTAL |     30 |  12 |   18 | 40.0 % |  5.461 |    3.811 | 1.3 | 33214.34 | 831618.40 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
 
--- FINAL WALLET --
-0.0000 BTC = 0.0000 USDT
+------ RETURN -------
+-9.134--4.507  20%    ████▋        6
+-4.507-0.1201  43.3%  ██████████▏  13
+0.1201-4.747   3.33%  ▊            1
+4.747-9.374    3.33%  ▊            1
+9.374-14       10%    ██▍          3
+14-18.63       3.33%  ▊            1
+18.63-23.25    6.67%  █▋           2
+23.25-27.88    0%     ▏
+27.88-32.51    3.33%  ▊            1
+32.51-37.14    0%     ▏
+37.14-41.76    0%     ▏
+41.76-46.39    0%     ▏
+46.39-51.02    0%     ▏
+51.02-55.64    3.33%  ▊            1
+55.64-60.27    3.33%  ▊            1
+
+------ CONFIDENCE INTERVAL (95%) -------
+| BTCUSDT |
+RETURN:      4.41% (-1.37% ~ 11.46%)
+PAYOFF:      5.99 (2.09 ~ 11.70)
+PROF.FACTOR: 3.24 (0.54 ~ 8.48)
+| ETHUSDT |
+RETURN:      9.42% (-1.03% ~ 24.07%)
+PAYOFF:      17.22 (1.10 ~ 23.17)
+PROF.FACTOR: 65.16 (0.66 ~ 47.16)
+
+----- FINAL WALLET -----
+0.0000 BTC = 0.0185 USDT
 0.0000 ETH = 0.0000 USDT
-45260.0735 USDT
+43214.3144 USDT
 
 ----- RETURNS -----
 START PORTFOLIO     = 10000.00 USDT
-FINAL PORTFOLIO     = 45260.07 USDT
-GROSS PROFIT        =  35260.073493 USDT (352.60%)
+FINAL PORTFOLIO     = 43214.33 USDT
+GROSS PROFIT        =  34045.951221 USDT (340.46%)
+TRADING FEES        =  831.618401 USDT
+NET PROFIT          =  33214.332820 USDT (332.14%)
 MARKET CHANGE (B&H) =  407.09%
 
 ------ RISK -------
 MAX DRAWDOWN = -11.76 %
 
 ------ VOLUME -----
-ETHUSDT         = 407769.64 USDT
-BTCUSDT         = 448030.05 USDT
-TOTAL           = 855799.68 USDT
-COSTS (0.001*V) = 855.80 USDT (ESTIMATION)
+BTCUSDT         = 437832.11 USDT
+ETHUSDT         = 393786.29 USDT
+TOTAL           = 831618.40 USDT
 -------------------
-Chart available at http://localhost:8080
+Dashboard available at http://localhost:8080
 
 ```
 
-![SignatureJohnLennon](https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png)
+The meaning of each column, and how to export the raw returns, is described in [Backtesting]({{< relref "/docs/backtesting" >}}).
+
+![Dashboard](https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png)
+
+## Next steps
+
+- [Create your own strategy]({{< relref "/docs/strategy" >}})
+- [Backtesting, fees and results]({{< relref "/docs/backtesting" >}})
+- [Dashboard and live controls]({{< relref "/docs/dashboard" >}})
+- [Telegram and notifications]({{< relref "/docs/telegram" >}})

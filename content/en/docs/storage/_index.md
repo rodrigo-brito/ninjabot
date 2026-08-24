@@ -2,7 +2,7 @@
 title: "Storage"
 linkTitle: "Storage"
 categories: ["Reference"]
-weight: 2
+weight: 8
 description: >
   This page describes how to set customize the storage (memory, sqlite, sql, etc).
 ---
@@ -18,6 +18,8 @@ type Storage interface {
 	Orders(filters ...OrderFilter) ([]*model.Order, error)
 }
 ```
+
+By default, when no storage is informed, the bot creates a local file called `ninjabot.db`. The storage keeps the orders of the bot, so that pending orders survive a restart.
 
 A storage can be customized at bot startup time, with the option `WithStorage(storage)`:
 
@@ -72,3 +74,31 @@ if err != nil {
     log.Fatal(err)
 }
 ```
+
+For SQLite, Ninjabot uses the pure Go driver `github.com/glebarez/sqlite`, which requires no CGO:
+
+```go
+import (
+    "github.com/glebarez/sqlite"
+
+    "github.com/rodrigo-brito/ninjabot/storage"
+)
+
+storage, err := storage.FromSQL(sqlite.Open("ninjabot.db"))
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+## Querying orders
+
+The orders kept by any storage can be filtered with the helpers of the `storage` package:
+
+```go
+orders, err := storage.Orders(
+    storage.WithPair("BTCUSDT"),
+    storage.WithStatusIn(model.OrderStatusTypeNew, model.OrderStatusTypePartiallyFilled),
+)
+```
+
+The available filters are `WithPair`, `WithStatus`, `WithStatusIn` and `WithUpdateAtBeforeOrEqual`.

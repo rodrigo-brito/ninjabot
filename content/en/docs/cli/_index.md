@@ -2,7 +2,7 @@
 title: "Ninjabot CLI"
 linkTitle: "Nijabot CLI"
 categories: ["Reference"]
-weight: 2
+weight: 9
 description: >
     This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
 ---
@@ -54,8 +54,11 @@ OPTIONS:
    --end value, -e value        eg. 2020-12-31 (default: <nil>)
    --timeframe value, -t value  eg. 1h
    --output value, -o value     eg. ./btc.csv
+   --futures, -f                true or false (default: false)
    --help, -h                   show help (default: false)
 ```
+
+`--pair`, `--timeframe` and `--output` are required. `--start` and `--end` must be informed together, and they take precedence over `--days`. Without any of them, the last month is downloaded.
 
 **Examples of Usage**
 
@@ -68,3 +71,10 @@ ninjabot download --pair BTCUSDT --timeframe 1d --days 30 --output ./btc-1d.csv
 ```bash
 ninjabot download -p BTCUSDT -t 1h -s "2020-12-01" -e "2020-12-31" -o ./btc-1h.csv
 ```
+
+- Downloading historical data from the **futures** market, with the `--futures` flag:
+```bash
+ninjabot download -p BTCUSDT -t 1h -d 30 -o ./btc-1h.csv --futures
+```
+
+The generated CSV can be loaded with `exchange.NewCSVFeed`, and resampled to the timeframe of your strategy - a 1h dataset can feed a 4h strategy, for example.

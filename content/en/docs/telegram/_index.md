@@ -2,7 +2,7 @@
 title: "Telegram"
 linkTitle: "Telegram"
 categories: ["Reference"]
-weight: 2
+weight: 5
 description: >
     This page describes how to set up Telegram with Ninjabot.
 ---
@@ -77,13 +77,53 @@ Telegram bot requires that your bot is `running` to control and get information 
 
 We have the following commands:
 
-- `/help` - Display help instructions
-- `/stop` - Stop buy and sell coins
-- `/start` - Start buy and sell coins
-- `/status` - Check bot status
-- `/balance` - Wallet balance
-- `/profit` - Summary of last trade results
-- `/buy` - open a buy order
-- `/sell` - open a sell order
+| Command | Description |
+|---|---|
+| `/help` | Display help instructions. |
+| `/status` | Check bot status: `running` or `stopped`. |
+| `/balance` | Wallet balance, with the value of the open positions. |
+| `/profit` | Summary of the trade results so far. |
+| `/start` | Start buying and selling coins. |
+| `/stop` | Stop buying and selling coins. |
+| `/buy BTCUSDT 100` | Market buy of 100 USDT (the amount is in quote currency). |
+| `/buy BTCUSDT 50%` | Market buy with 50% of the available quote balance. |
+| `/sell BTCUSDT 100` | Market sell of 100 USDT worth of the asset. |
+| `/sell BTCUSDT 50%` | Market sell of 50% of the asset balance. |
 
 ![telegram](https://user-images.githubusercontent.com/7620947/150681951-f81c83ae-203e-4b48-8fba-14c59c08abb4.gif)
+
+### Stopping the bot
+
+`/stop` pauses **every** new order, not only the entries of your strategy. The protective stops and take profits your strategy tries to place are rejected too, so an open position is left unprotected until you send `/start`.
+
+Orders rejected while the bot is stopped are reported back to you, instead of failing silently:
+
+> Bot is stopped, no order was created. Send /start to resume.
+
+The same start/stop control is available on the [dashboard control panel]({{< relref "/docs/dashboard" >}}).
+
+## Notifications
+
+Besides answering commands, Telegram receives a notification for every order created, filled, canceled or rejected, and for the errors of the bot. Nothing else is needed: when `Telegram.Enabled` is `true` in the settings, `NewBot` creates the Telegram client and registers it as the notifier of the bot.
+
+### E-mail notifications
+
+Any type that implements `service.Notifier` can be used as the notifier of the bot, through the `WithNotifier` option - for example, the e-mail notifier:
+
+```go
+import "github.com/rodrigo-brito/ninjabot/notification"
+
+mail := notification.NewMail(notification.MailParams{
+	SMTPServerAddress: "smtp.gmail.com",
+	SMTPServerPort:    587,
+	From:              "from@example.com",
+	To:                "to@example.com",
+	Password:          os.Getenv("SMTP_PASSWORD"),
+})
+
+bot, err := ninjabot.NewBot(ctx, settings, exch, strategy, ninjabot.WithNotifier(mail))
+```
+
+{{% pageinfo color="warning" %}}
+Only one notifier is active at a time. When Telegram is enabled, it takes precedence over the one registered with `WithNotifier`, so use `WithNotifier` for bots that do not use Telegram.
+{{% /pageinfo %}}
