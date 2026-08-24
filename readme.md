@@ -258,7 +258,7 @@ When no release can be inferred - a development build with no reachable `git` ta
 
 If the bundle cannot be fetched, the bot keeps running, the JSON API stays up and `http://localhost:8080` explains how to fix it.
 
-<img width="100%"  src="https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png" />
+<img width="100%" alt="Image" src="https://github.com/user-attachments/assets/0c89e4b6-68c0-44b4-9b53-6a19d013cdc6" />
 
 #### Bot control panel
 
