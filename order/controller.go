@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -94,15 +95,24 @@ func (s summary) Profit() float64 {
 	return profit
 }
 
+// SQN is the System Quality Number (Van Tharp): sqrt(trades) * mean / stddev
+// of the trade results. It needs at least two trades with distinct results,
+// and is 0 otherwise.
 func (s summary) SQN() float64 {
 	total := float64(len(s.Win()) + len(s.Lose()))
+	if total < 2 {
+		return 0
+	}
 	avgProfit := s.Profit() / total
 	stdDev := 0.0
 	for _, profit := range append(s.Win(), s.Lose()...) {
 		stdDev += (profit - avgProfit) * (profit - avgProfit)
 	}
 	stdDev = math.Sqrt(stdDev / total)
-	return math.Sqrt(total) * (s.Profit() / total) / stdDev
+	if stdDev == 0 {
+		return 0
+	}
+	return math.Sqrt(total) * avgProfit / stdDev
 }
 
 func (s summary) Payoff() float64 {
@@ -165,8 +175,8 @@ func (s summary) String() string {
 		{"Win", strconv.Itoa(len(s.Win()))},
 		{"Loss", strconv.Itoa(len(s.Lose()))},
 		{"% Win", fmt.Sprintf("%.1f", s.WinPercentage())},
-		{"Payoff", fmt.Sprintf("%.1f", s.Payoff()*100)},
-		{"Pr.Fact", fmt.Sprintf("%.1f", s.Payoff()*100)},
+		{"Payoff", fmt.Sprintf("%.3f", s.Payoff())},
+		{"Pr.Fact", fmt.Sprintf("%.3f", s.ProfitFactor())},
 		{"Profit", fmt.Sprintf("%.4f %s", s.Profit(), quote)},
 		{"Volume", fmt.Sprintf("%.4f %s", s.Volume, quote)},
 	}
@@ -231,11 +241,31 @@ type Position struct {
 	CreatedAt time.Time
 }
 
-func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
-	price := order.Price
-	if order.Type == model.OrderTypeStopLoss || order.Type == model.OrderTypeStopLossLimit {
-		price = *order.Stop
+// quantityEpsilon is the relative tolerance used to consider two quantities
+// equal. Quantities are accumulated in floating point (0.1 + 0.2 != 0.3), and
+// an order sized with the position reported by the exchange may differ from
+// the tracked quantity by a rounding error, which would leave a dust position
+// open forever.
+const quantityEpsilon = 1e-9
+
+func sameQuantity(a, b float64) bool {
+	return math.Abs(a-b) <= quantityEpsilon*math.Max(math.Abs(a), math.Abs(b))
+}
+
+// filledAt is the time an order was executed: the last update for orders that
+// rested on the book, the creation for the ones filled immediately.
+func filledAt(order *model.Order) time.Time {
+	if !order.UpdatedAt.IsZero() {
+		return order.UpdatedAt
 	}
+	return order.CreatedAt
+}
+
+func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
+	// Price is the average fill price reported by the exchange, also for stop
+	// orders: live exchanges return the executed price, and the paper wallet
+	// records the trigger price it filled at.
+	price := order.Price
 
 	if p.Side == order.Side {
 		p.AvgPrice = (p.AvgPrice*p.Quantity + price*order.Quantity) / (p.Quantity + order.Quantity)
@@ -270,16 +300,17 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 		order.Profit = order.ProfitValue / (p.AvgPrice * closedQuantity)
 	}
 
+	closedAt := filledAt(order)
 	result = &Result{
-		CreatedAt:     order.CreatedAt,
+		CreatedAt:     closedAt,
 		Pair:          order.Pair,
-		Duration:      order.CreatedAt.Sub(p.CreatedAt),
+		Duration:      closedAt.Sub(p.CreatedAt),
 		ProfitPercent: order.Profit,
 		ProfitValue:   order.ProfitValue,
 		Side:          p.Side,
 	}
 
-	if p.Quantity == order.Quantity {
+	if sameQuantity(p.Quantity, order.Quantity) {
 		finished = true
 	} else if p.Quantity > order.Quantity {
 		p.Quantity -= order.Quantity
@@ -290,7 +321,7 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 		p.Fee = order.Fee - exitFee
 		p.Quantity = order.Quantity - p.Quantity
 		p.Side = order.Side
-		p.CreatedAt = order.CreatedAt
+		p.CreatedAt = closedAt
 		p.AvgPrice = price
 	}
 
@@ -299,6 +330,7 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 
 type Controller struct {
 	mtx            sync.RWMutex // Use RWMutex for better read concurrency
+	updateMtx      sync.Mutex   // serializes UpdateOrders, so a fill is never settled twice
 	ctx            context.Context
 	exchange       service.Exchange
 	storage        storage.Storage
@@ -311,6 +343,11 @@ type Controller struct {
 	status         Status
 
 	position map[string]*Position
+
+	// pending holds the orders waiting for an update from the exchange, keyed
+	// by their storage id: the ones created by this controller plus, once
+	// started, the open orders left in storage by a previous run.
+	pending map[int64]model.Order
 }
 
 func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage,
@@ -326,6 +363,7 @@ func NewController(ctx context.Context, exchange service.Exchange, storage stora
 		tickerInterval: time.Second,
 		finish:         make(chan bool),
 		position:       make(map[string]*Position),
+		pending:        make(map[int64]model.Order),
 	}
 }
 
@@ -345,7 +383,7 @@ func (c *Controller) updatePosition(o *model.Order) {
 			AvgPrice:  o.Price,
 			Quantity:  o.Quantity,
 			Fee:       o.Fee,
-			CreatedAt: o.CreatedAt,
+			CreatedAt: filledAt(o),
 			Side:      o.Side,
 		}
 		return
@@ -420,8 +458,27 @@ func (c *Controller) processTrade(order *model.Order) {
 	c.updatePosition(order)
 }
 
-func (c *Controller) updateOrders() {
-	// Fetch orders without holding lock
+// isOpen reports whether an order still waits for an update from the exchange.
+func isOpen(status model.OrderStatusType) bool {
+	switch status {
+	case model.OrderStatusTypeNew, model.OrderStatusTypePartiallyFilled, model.OrderStatusTypePendingCancel:
+		return true
+	}
+	return false
+}
+
+// track registers an order created by the controller, so that UpdateOrders
+// follows it until the exchange reports it filled or canceled.
+// Must be called while holding c.mtx.
+func (c *Controller) track(order model.Order) {
+	if isOpen(order.Status) {
+		c.pending[order.ID] = order
+	}
+}
+
+// loadPendingOrders recovers the open orders left in storage by a previous
+// run, so that their fills are still accounted after a restart.
+func (c *Controller) loadPendingOrders() {
 	orders, err := c.storage.Orders(storage.WithStatusIn(
 		model.OrderStatusTypeNew,
 		model.OrderStatusTypePartiallyFilled,
@@ -431,6 +488,40 @@ func (c *Controller) updateOrders() {
 		c.notifyError(err)
 		return
 	}
+
+	c.mtx.Lock()
+	defer c.mtx.Unlock()
+	for _, order := range orders {
+		c.pending[order.ID] = *order
+	}
+}
+
+// UpdateOrders fetches the status of the pending orders from the exchange,
+// persists the ones that changed and settles their fills: the position, the
+// profit of the trade and the order feed are updated here.
+//
+// A started controller runs it every second on its own. Backtests replay years
+// of candles in a few seconds, so they must call it after every candle to
+// account the fills in the order they happen; it is cheap when nothing is
+// pending.
+func (c *Controller) UpdateOrders() {
+	c.updateMtx.Lock()
+	defer c.updateMtx.Unlock()
+
+	c.mtx.RLock()
+	orders := make([]model.Order, 0, len(c.pending))
+	for _, order := range c.pending {
+		orders = append(orders, order)
+	}
+	c.mtx.RUnlock()
+
+	if len(orders) == 0 {
+		return
+	}
+
+	// settle in creation order, so that fills of the same tick are applied
+	// to the position deterministically
+	sort.Slice(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
 
 	// For each pending order, check for updates (no lock needed for reads)
 	var updatedOrders []model.Order
@@ -457,9 +548,18 @@ func (c *Controller) updateOrders() {
 		updatedOrders = append(updatedOrders, excOrder)
 	}
 
+	if len(updatedOrders) == 0 {
+		return
+	}
+
 	// Lock only when updating internal state
 	c.mtx.Lock()
 	for _, processOrder := range updatedOrders {
+		if isOpen(processOrder.Status) {
+			c.pending[processOrder.ID] = processOrder
+		} else {
+			delete(c.pending, processOrder.ID)
+		}
 		c.processTrade(&processOrder)
 		c.orderFeed.Publish(processOrder, false)
 	}
@@ -492,12 +592,14 @@ func (c *Controller) Start() {
 	c.status = StatusRunning
 	c.mtx.Unlock()
 
+	c.loadPendingOrders()
+
 	go func() {
 		ticker := time.NewTicker(c.tickerInterval)
 		for {
 			select {
 			case <-ticker.C:
-				c.updateOrders()
+				c.UpdateOrders()
 			case <-c.finish:
 				ticker.Stop()
 				return
@@ -516,7 +618,7 @@ func (c *Controller) Stop() {
 	c.status = StatusStopped
 	c.mtx.Unlock()
 
-	c.updateOrders()
+	c.UpdateOrders()
 	c.finish <- true
 	log.Info("Bot stopped.")
 }
@@ -570,6 +672,7 @@ func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, pric
 			c.notifyError(err)
 			return nil, err
 		}
+		c.track(orders[i])
 		go c.orderFeed.Publish(orders[i], true)
 	}
 
@@ -596,6 +699,7 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 		c.notifyError(err)
 		return model.Order{}, err
 	}
+	c.track(order)
 	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, nil
@@ -624,6 +728,7 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, am
 
 	// calculate profit
 	c.processTrade(&order)
+	c.track(order) // exchanges may report a market order as new and fill it right after
 	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
@@ -652,6 +757,7 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 
 	// calculate profit
 	c.processTrade(&order)
+	c.track(order) // exchanges may report a market order as new and fill it right after
 	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
@@ -677,6 +783,7 @@ func (c *Controller) CreateOrderStop(pair string, size float64, limit float64) (
 		c.notifyError(err)
 		return model.Order{}, err
 	}
+	c.track(order)
 	go c.orderFeed.Publish(order, true)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, nil
@@ -697,6 +804,9 @@ func (c *Controller) Cancel(order model.Order) error {
 	if err != nil {
 		c.notifyError(err)
 		return err
+	}
+	if _, ok := c.pending[order.ID]; ok {
+		c.pending[order.ID] = order
 	}
 	log.Infof("[ORDER CANCELED] %s", order)
 	return nil

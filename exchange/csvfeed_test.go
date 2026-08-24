@@ -3,11 +3,15 @@ package exchange
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/rodrigo-brito/ninjabot/model"
 )
 
 func TestNewCSVFeed(t *testing.T) {
@@ -214,4 +218,180 @@ func TestIsFistCandlePeriod(t *testing.T) {
 		require.EqualError(t, err, "invalid timeframe: 1y")
 		require.False(t, last)
 	})
+}
+
+// newDailyFeed loads the BTC daily fixture.
+func newDailyFeed(t *testing.T) *CSVFeed {
+	t.Helper()
+
+	feed, err := NewCSVFeed("1d", PairFeed{
+		Timeframe: "1d",
+		Pair:      "BTCUSDT",
+		File:      "../testdata/btc-1d.csv",
+	})
+	require.NoError(t, err)
+
+	return feed
+}
+
+// writeCSV writes a temporary CSV file and returns its path.
+func writeCSV(t *testing.T, content string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "feed.csv")
+	require.NoError(t, os.WriteFile(path, []byte(content), 0600))
+
+	return path
+}
+
+func TestCSVFeedAssetsInfo(t *testing.T) {
+	info := newDailyFeed(t).AssetsInfo("BTCUSDT")
+
+	require.Equal(t, "BTC", info.BaseAsset)
+	require.Equal(t, "USDT", info.QuoteAsset)
+	require.Equal(t, 8, info.BaseAssetPrecision)
+	require.Equal(t, 0.00000001, info.StepSize)
+}
+
+func TestCSVFeedLastQuote(t *testing.T) {
+	quote, err := newDailyFeed(t).LastQuote(context.Background(), "BTCUSDT")
+
+	require.ErrorContains(t, err, "invalid operation", "a backtest feed has no live quote")
+	require.Zero(t, quote)
+}
+
+func TestCSVFeedLimit(t *testing.T) {
+	feed := newDailyFeed(t)
+	candles := feed.CandlePairTimeFrame["BTCUSDT--1d"]
+	require.Len(t, candles, 14)
+
+	feed.Limit(5 * 24 * time.Hour)
+
+	require.Len(t, feed.CandlePairTimeFrame["BTCUSDT--1d"], 5, "only the last five days are kept")
+}
+
+func TestCSVFeedCandlesByPeriod(t *testing.T) {
+	feed := newDailyFeed(t)
+	all := feed.CandlePairTimeFrame["BTCUSDT--1d"]
+
+	t.Run("returns the candles inside the window", func(t *testing.T) {
+		candles, err := feed.CandlesByPeriod(context.Background(), "BTCUSDT", "1d",
+			all[2].Time, all[5].Time)
+
+		require.NoError(t, err)
+		require.Len(t, candles, 4)
+		require.Equal(t, all[2].Time, candles[0].Time)
+	})
+
+	t.Run("returns nothing outside the window", func(t *testing.T) {
+		candles, err := feed.CandlesByPeriod(context.Background(), "BTCUSDT", "1d",
+			all[0].Time.Add(-48*time.Hour), all[0].Time.Add(-24*time.Hour))
+
+		require.NoError(t, err)
+		require.Empty(t, candles)
+	})
+}
+
+func TestCSVFeedCandlesByLimitInsufficientData(t *testing.T) {
+	feed := newDailyFeed(t)
+
+	_, err := feed.CandlesByLimit(context.Background(), "BTCUSDT", "1d", 100)
+
+	require.ErrorIs(t, err, ErrInsufficientData)
+}
+
+func TestCSVFeedCandlesSubscription(t *testing.T) {
+	feed := newDailyFeed(t)
+
+	candles, errs := feed.CandlesSubscription(context.Background(), "BTCUSDT", "1d")
+
+	var received []model.Candle
+	for candle := range candles {
+		received = append(received, candle)
+	}
+
+	require.Len(t, received, 14)
+
+	_, open := <-errs
+	require.False(t, open, "the error channel is closed once the feed is exhausted")
+}
+
+func TestNewCSVFeedErrors(t *testing.T) {
+	header := "time,open,close,low,high,volume\n"
+
+	tests := []struct {
+		name string
+		file string
+	}{
+		{
+			name: "missing file",
+			file: "../testdata/does-not-exist.csv",
+		},
+		{
+			name: "malformed CSV",
+			file: writeCSV(t, "time,open\n1,2,3\n"),
+		},
+		{
+			name: "invalid timestamp",
+			file: writeCSV(t, header+"abc,1,2,3,4,5\n"),
+		},
+		{
+			name: "invalid open",
+			file: writeCSV(t, header+"1619395200,abc,2,3,4,5\n"),
+		},
+		{
+			name: "invalid close",
+			file: writeCSV(t, header+"1619395200,1,abc,3,4,5\n"),
+		},
+		{
+			name: "invalid low",
+			file: writeCSV(t, header+"1619395200,1,2,abc,4,5\n"),
+		},
+		{
+			name: "invalid high",
+			file: writeCSV(t, header+"1619395200,1,2,3,abc,5\n"),
+		},
+		{
+			name: "invalid volume",
+			file: writeCSV(t, header+"1619395200,1,2,3,4,abc\n"),
+		},
+		{
+			name: "invalid metadata column",
+			file: writeCSV(t, "time,open,close,low,high,volume,lsr\n1619395200,1,2,3,4,5,abc\n"),
+		},
+		{
+			name: "unsupported target timeframe",
+			file: writeCSV(t, header+"1619395200,1,2,3,4,5\n"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			targetTimeframe := "1d"
+			if tt.name == "unsupported target timeframe" {
+				targetTimeframe = "3m"
+			}
+
+			_, err := NewCSVFeed(targetTimeframe, PairFeed{
+				Timeframe: "1d",
+				Pair:      "BTCUSDT",
+				File:      tt.file,
+			})
+
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestNewCSVFeedHeikinAshi(t *testing.T) {
+	feed, err := NewCSVFeed("1d", PairFeed{
+		Timeframe:  "1d",
+		Pair:       "BTCUSDT",
+		File:       "../testdata/btc-1d.csv",
+		HeikinAshi: true,
+	})
+	require.NoError(t, err)
+
+	candle := feed.CandlePairTimeFrame["BTCUSDT--1d"][1]
+	require.NotEqual(t, 54001.39, candle.Open, "Heikin Ashi averages the previous candle")
 }

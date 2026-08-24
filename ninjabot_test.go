@@ -174,3 +174,106 @@ func TestMarketOrderWithFee(t *testing.T) {
 	require.InDelta(t, 10000+profit, quote, 1e-6)
 	require.InDelta(t, 10000+feeProfit, feeQuote, 1e-6)
 }
+
+// ocoStrategy opens a long with a market order every few candles and brackets
+// it with an OCO sell: a target 3% above and a stop 2% below the entry.
+type ocoStrategy struct {
+	candles int
+}
+
+func (ocoStrategy) Timeframe() string                               { return "1h" }
+func (ocoStrategy) WarmupPeriod() int                               { return 1 }
+func (ocoStrategy) Indicators(*Dataframe) []strategy.ChartIndicator { return nil }
+
+func (s *ocoStrategy) OnCandle(df *Dataframe, broker service.Broker) {
+	s.candles++
+	asset, quote, err := broker.Position(df.Pair)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if asset > 0 || s.candles%50 != 0 {
+		return
+	}
+
+	closePrice := df.Close.Last(0)
+	size := quote * 0.3 / closePrice
+	if _, err := broker.CreateOrderMarket(SideTypeBuy, df.Pair, size); err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = broker.CreateOrderOCO(SideTypeSell, df.Pair, size, closePrice*1.03, closePrice*0.98, closePrice*0.979)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// TestOCOBacktest checks that the fills of pending orders are accounted as the
+// candles go by: every trade result must match the bracket that closed it.
+func TestOCOBacktest(t *testing.T) {
+	ctx := context.Background()
+
+	storage, err := storage.FromMemory()
+	require.NoError(t, err)
+
+	strategy := new(ocoStrategy)
+	csvFeed, err := exchange.NewCSVFeed(
+		strategy.Timeframe(),
+		exchange.PairFeed{
+			Pair:      "BTCUSDT",
+			File:      "testdata/btc-1h.csv",
+			Timeframe: "1h",
+		},
+	)
+	require.NoError(t, err)
+
+	paperWallet := exchange.NewPaperWallet(
+		ctx,
+		"USDT",
+		exchange.WithPaperAsset("USDT", 10000),
+		exchange.WithPaperFee(0.001, 0.001),
+		exchange.WithDataFeed(csvFeed),
+	)
+
+	bot, err := NewBot(ctx, Settings{Pairs: []string{"BTCUSDT"}},
+		paperWallet,
+		strategy,
+		WithStorage(storage),
+		WithBacktest(paperWallet),
+		WithLogLevel(log.ErrorLevel),
+	)
+	require.NoError(t, err)
+	require.NoError(t, bot.Run(ctx))
+
+	// every filled sell closes one bracket and produces exactly one result
+	orders, err := storage.Orders()
+	require.NoError(t, err)
+	filledSells := 0
+	for _, order := range orders {
+		require.NotEqual(t, OrderStatusTypeNew, order.Status, order.String()) // none is left pending
+		if order.Side == SideTypeSell && order.Status == OrderStatusTypeFilled {
+			filledSells++
+		}
+	}
+	require.Greater(t, filledSells, 10)
+
+	results := bot.orderController.Results["BTCUSDT"]
+	require.NotNil(t, results)
+	require.NotEmpty(t, results.Win())
+	require.NotEmpty(t, results.Lose())
+	require.Equal(t, filledSells, len(results.Win())+len(results.Lose()))
+
+	// a win is the 3% target minus two 0.1% fees, a loss the 2% stop plus them
+	for _, profit := range results.WinPercent() {
+		require.InDelta(t, 0.028, profit, 0.0005)
+	}
+	for _, profit := range results.LosePercent() {
+		require.InDelta(t, -0.022, profit, 0.0005)
+	}
+
+	// the trade results add up to what the wallet made
+	asset, quote, err := paperWallet.Position("BTCUSDT")
+	require.NoError(t, err)
+	require.Equal(t, 0.0, asset)
+	require.InDelta(t, 10000+results.Profit(), quote, 0.001)
+}

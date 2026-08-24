@@ -61,3 +61,27 @@ func TestNumDecPlaces(t *testing.T) {
 		})
 	}
 }
+
+func TestSeries_Length(t *testing.T) {
+	require.Equal(t, 3, Series[float64]{1, 2, 3}.Length())
+	require.Equal(t, 0, Series[float64]{}.Length())
+}
+
+func TestSeries_Cross(t *testing.T) {
+	tests := []struct {
+		name   string
+		series Series[float64]
+		ref    Series[float64]
+		want   bool
+	}{
+		{"crossover", Series[float64]{1, 3}, Series[float64]{2, 2}, true},
+		{"crossunder", Series[float64]{3, 1}, Series[float64]{2, 2}, true},
+		{"no cross", Series[float64]{3, 4}, Series[float64]{1, 2}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, tt.series.Cross(tt.ref))
+		})
+	}
+}

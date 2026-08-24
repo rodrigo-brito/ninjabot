@@ -59,23 +59,21 @@ func (s *supertrend) Load(df *model.Dataframe) {
 		s.BasicUpperBand[i] = (df.High[i]+df.Low[i])/2.0 + atr[i]*s.Factor
 		s.BasicLowerBand[i] = (df.High[i]+df.Low[i])/2.0 - atr[i]*s.Factor
 
-		if i == 0 {
-			s.FinalUpperBand[i] = s.BasicUpperBand[i]
-		} else if s.BasicUpperBand[i] < s.FinalUpperBand[i-1] ||
+		if s.BasicUpperBand[i] < s.FinalUpperBand[i-1] ||
 			df.Close[i-1] > s.FinalUpperBand[i-1] {
 			s.FinalUpperBand[i] = s.BasicUpperBand[i]
 		} else {
 			s.FinalUpperBand[i] = s.FinalUpperBand[i-1]
 		}
 
-		if i == 0 || s.BasicLowerBand[i] > s.FinalLowerBand[i-1] ||
+		if s.BasicLowerBand[i] > s.FinalLowerBand[i-1] ||
 			df.Close[i-1] < s.FinalLowerBand[i-1] {
 			s.FinalLowerBand[i] = s.BasicLowerBand[i]
 		} else {
 			s.FinalLowerBand[i] = s.FinalLowerBand[i-1]
 		}
 
-		if i == 0 || s.FinalUpperBand[i-1] == s.SuperTrend[i-1] {
+		if s.FinalUpperBand[i-1] == s.SuperTrend[i-1] {
 			if df.Close[i] > s.FinalUpperBand[i] {
 				s.SuperTrend[i] = s.FinalLowerBand[i]
 			} else {
@@ -92,7 +90,6 @@ func (s *supertrend) Load(df *model.Dataframe) {
 
 	s.Time = df.Time[s.Period:]
 	s.SuperTrend = s.SuperTrend[s.Period:]
-
 }
 
 func (s supertrend) Metrics() []ui.IndicatorMetric {
