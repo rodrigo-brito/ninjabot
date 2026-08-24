@@ -2,7 +2,7 @@
 <head>
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<meta name=generator content="Hugo 0.88.1"><link rel=alternate type=application/rss+xml href=https://rodrigo-brito.github.io/ninjabot/docs/cli/index.xml>
+<meta name=generator content="Hugo 0.88.1"><link rel=alternate type=application/rss+xml href=https://rodrigo-brito.github.io/ninjabot/docs/tools/index.xml>
 <meta name=ROBOTS content="INDEX, FOLLOW">
 <link rel="shortcut icon" href=/ninjabot/favicons/favicon.ico>
 <link rel=apple-touch-icon href=/ninjabot/favicons/apple-touch-icon-180x180.png sizes=180x180>
@@ -14,19 +14,19 @@
 <link rel=icon type=image/png href=/ninjabot/favicons/android-96x96.png sizes=96x96>
 <link rel=icon type=image/png href=/ninjabot/favicons/android-144x144.png sizes=144x144>
 <link rel=icon type=image/png href=/ninjabot/favicons/android-192x192.png sizes=192x192>
-<title>Ninjabot CLI | Ninjabot</title>
-<meta name=description content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+<title>Tools | Ninjabot</title>
+<meta name=description content="This page describes the helpers available in the tools package - trailing stop and order scheduler.
 ">
-<meta property="og:title" content="Ninjabot CLI">
-<meta property="og:description" content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+<meta property="og:title" content="Tools">
+<meta property="og:description" content="This page describes the helpers available in the tools package - trailing stop and order scheduler.
 ">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://rodrigo-brito.github.io/ninjabot/docs/cli/">
-<meta itemprop=name content="Ninjabot CLI">
-<meta itemprop=description content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+<meta property="og:url" content="https://rodrigo-brito.github.io/ninjabot/docs/tools/">
+<meta itemprop=name content="Tools">
+<meta itemprop=description content="This page describes the helpers available in the tools package - trailing stop and order scheduler.
 "><meta name=twitter:card content="summary">
-<meta name=twitter:title content="Ninjabot CLI">
-<meta name=twitter:description content="This page describes how to install and use Ninjabot CLI to download historical data for backtesting.
+<meta name=twitter:title content="Tools">
+<meta name=twitter:description content="This page describes the helpers available in the tools package - trailing stop and order scheduler.
 ">
 <link rel=preload href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css as=style>
 <link href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css rel=stylesheet integrity>
@@ -78,12 +78,12 @@
 <a href=/ninjabot/docs/telegram/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstelegram><span>Telegram</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsexchanges-li>
 <a href=/ninjabot/docs/exchanges/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsexchanges><span>Exchanges</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstools-li>
-<a href=/ninjabot/docs/tools/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstools><span>Tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocstools-li>
+<a href=/ninjabot/docs/tools/ class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstools><span class=td-sidebar-nav-active-item>Tools</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
 <a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocscli-li>
-<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span class=td-sidebar-nav-active-item>Nijabot CLI</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
+<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
 </li>
 </ul>
 </li>
@@ -94,16 +94,6 @@
 <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
 <div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
 </div>
-<div class=td-toc><nav id=TableOfContents>
-<ul>
-<li><a href=#installation>Installation</a></li>
-<li><a href=#helper-ninjabot--h>Helper (<code>ninjabot -h</code>)</a>
-<ul>
-<li><a href=#download-command>Download Command</a></li>
-</ul>
-</li>
-</ul>
-</nav></div>
 <div class="taxonomy taxonomy-terms-cloud taxo-categories">
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
@@ -119,13 +109,13 @@
 <a href=https://rodrigo-brito.github.io/ninjabot/docs/>Documentation</a>
 </li>
 <li class="breadcrumb-item active" aria-current=page>
-<a href=https://rodrigo-brito.github.io/ninjabot/docs/cli/>Nijabot CLI</a>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/tools/>Tools</a>
 </li>
 </ol>
 </nav>
 <div class=td-content>
-<h1>Ninjabot CLI</h1>
-<div class=lead>This page describes how to install and use Ninjabot CLI to download historical data for backtesting.</div>
+<h1>Tools</h1>
+<div class=lead>This page describes the helpers available in the tools package - trailing stop and order scheduler.</div>
 <header class=article-meta>
 <div class="taxonomy taxonomy-terms-article taxo-categories">
 <h5 class=taxonomy-title>Categories:</h5>
@@ -134,59 +124,44 @@
 </ul>
 </div>
 </header>
-<p>Ninjabot CLI provides utilities commands to support backtesting and bot development.</p>
-<h2 id=installation>Installation</h2>
-<p>You can install CLI with the following command</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest
-</code></pre></div><p>Or downloading pre-build binaries in <a href=https://github.com/rodrigo-brito/ninjabot/releases>release page</a>.</p>
-<h2 id=helper-ninjabot--h>Helper (<code>ninjabot -h</code>)</h2>
-<pre tabindex=0><code>NAME:
-   ninjabot - Utilities for bot creation
+<p>The <code>tools</code> package has helpers commonly needed by strategies. They are plain structs, so you can keep one per pair inside your strategy.</p>
+<h2 id=trailing-stop>Trailing Stop</h2>
+<p>A trailing stop follows the price while it moves in your favour, and reports when the price falls back to the stop.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>import</span> <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/tools&#34;</span>
 
-USAGE:
-   ninjabot [global options] command [command options] [arguments...]
+<span style=color:#a6e22e>trailing</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>tools</span>.<span style=color:#a6e22e>NewTrailingStop</span>()
 
-COMMANDS:
-   download  Download historical data
-   help, h   Shows a list of commands or help for one command
+<span style=color:#75715e>// when a position is opened: current price and the initial stop
+</span><span style=color:#75715e></span><span style=color:#a6e22e>trailing</span>.<span style=color:#a6e22e>Start</span>(<span style=color:#a6e22e>currentPrice</span>, <span style=color:#a6e22e>currentPrice</span><span style=color:#f92672>*</span><span style=color:#ae81ff>0.95</span>)
 
-GLOBAL OPTIONS:
-   --help, -h  show help (default: false)
-</code></pre><p>We have the following commands:</p>
-<ul>
-<li><strong>download</strong>: Download historical data from the binace exchange.</li>
-</ul>
-<h3 id=download-command>Download Command</h3>
-<pre tabindex=0><code>NAME:
-   download - Download historical data
+<span style=color:#75715e>// on every candle
+</span><span style=color:#75715e></span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>trailing</span>.<span style=color:#a6e22e>Active</span>() <span style=color:#f92672>&amp;&amp;</span> <span style=color:#a6e22e>trailing</span>.<span style=color:#a6e22e>Update</span>(<span style=color:#a6e22e>candle</span>.<span style=color:#a6e22e>Close</span>) {
+	<span style=color:#75715e>// the stop was hit, close the position
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>CreateOrderMarket</span>(<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>SideTypeSell</span>, <span style=color:#a6e22e>pair</span>, <span style=color:#a6e22e>assetPosition</span>)
+	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>)
+	}
+	<span style=color:#a6e22e>trailing</span>.<span style=color:#a6e22e>Stop</span>()
+}
+</code></pre></div><p><code>Update</code> returns <code>true</code> only when the price reaches the stop. While the price rises, the stop rises with it, keeping the same distance. Combined with <code>OnPartialCandle</code>, the stop can be checked without waiting for the candle to close.</p>
+<p>A complete strategy using it is available in <a href=https://github.com/rodrigo-brito/ninjabot/blob/main/examples/strategies/trailingstop.go>examples/strategies/trailingstop.go</a>.</p>
+<h2 id=order-scheduler>Order Scheduler</h2>
+<p>The scheduler places a market order as soon as a condition over the dataframe becomes true. Once the order is created, the condition is removed from the queue.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>scheduler</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>tools</span>.<span style=color:#a6e22e>NewScheduler</span>(<span style=color:#e6db74>&#34;BTCUSDT&#34;</span>)
 
-USAGE:
-   download [command options] [arguments...]
+<span style=color:#75715e>// buy 1 BTC when the price drops below 30k
+</span><span style=color:#75715e></span><span style=color:#a6e22e>scheduler</span>.<span style=color:#a6e22e>BuyWhen</span>(<span style=color:#ae81ff>1</span>, <span style=color:#66d9ef>func</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>) <span style=color:#66d9ef>bool</span> {
+	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>.<span style=color:#a6e22e>Last</span>(<span style=color:#ae81ff>0</span>) &lt; <span style=color:#ae81ff>30000</span>
+})
 
-OPTIONS:
-   --pair value, -p value       eg. BTCUSDT
-   --days value, -d value       eg. 100 (default 30 days) (default: 0)
-   --start value, -s value      eg. 2021-12-01 (default: &lt;nil&gt;)
-   --end value, -e value        eg. 2020-12-31 (default: &lt;nil&gt;)
-   --timeframe value, -t value  eg. 1h
-   --output value, -o value     eg. ./btc.csv
-   --futures, -f                true or false (default: false)
-   --help, -h                   show help (default: false)
-</code></pre><p><code>--pair</code>, <code>--timeframe</code> and <code>--output</code> are required. <code>--start</code> and <code>--end</code> must be informed together, and they take precedence over <code>--days</code>. Without any of them, the last month is downloaded.</p>
-<p><strong>Examples of Usage</strong></p>
-<ul>
-<li>Downloading 30 days of historical data for the <strong>BTC/USDT</strong> pair with 1d timeframe:</li>
-</ul>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download --pair BTCUSDT --timeframe 1d --days <span style=color:#ae81ff>30</span> --output ./btc-1d.csv
-</code></pre></div><ul>
-<li>Downloading historical data for the <strong>BTC/USDT</strong> pair with 1h timeframe and from 2020-12-01 to 2020-12-31:</li>
-</ul>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download -p BTCUSDT -t 1h -s <span style=color:#e6db74>&#34;2020-12-01&#34;</span> -e <span style=color:#e6db74>&#34;2020-12-31&#34;</span> -o ./btc-1h.csv
-</code></pre></div><ul>
-<li>Downloading historical data from the <strong>futures</strong> market, with the <code>--futures</code> flag:</li>
-</ul>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>ninjabot download -p BTCUSDT -t 1h -d <span style=color:#ae81ff>30</span> -o ./btc-1h.csv --futures
-</code></pre></div><p>The generated CSV can be loaded with <code>exchange.NewCSVFeed</code>, and resampled to the timeframe of your strategy - a 1h dataset can feed a 4h strategy, for example.</p>
+<span style=color:#75715e>// sell 1 BTC when the price goes above 50k
+</span><span style=color:#75715e></span><span style=color:#a6e22e>scheduler</span>.<span style=color:#a6e22e>SellWhen</span>(<span style=color:#ae81ff>1</span>, <span style=color:#66d9ef>func</span>(<span style=color:#a6e22e>df</span> <span style=color:#f92672>*</span><span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>Dataframe</span>) <span style=color:#66d9ef>bool</span> {
+	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>df</span>.<span style=color:#a6e22e>Close</span>.<span style=color:#a6e22e>Last</span>(<span style=color:#ae81ff>0</span>) &gt; <span style=color:#ae81ff>50000</span>
+})
+
+<span style=color:#75715e>// on every candle, inside OnCandle
+</span><span style=color:#75715e></span><span style=color:#a6e22e>scheduler</span>.<span style=color:#a6e22e>Update</span>(<span style=color:#a6e22e>df</span>, <span style=color:#a6e22e>broker</span>)
+</code></pre></div><p>This is useful to prepare an exit without keeping the state in your strategy, or to break a large position into conditional orders.</p>
 <div class=section-index>
 </div>
 </div>

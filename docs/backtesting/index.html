@@ -1,0 +1,255 @@
+<!doctype html><html lang=en class=no-js>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
+<meta name=generator content="Hugo 0.88.1"><link rel=alternate type=application/rss+xml href=https://rodrigo-brito.github.io/ninjabot/docs/backtesting/index.xml>
+<meta name=ROBOTS content="INDEX, FOLLOW">
+<link rel="shortcut icon" href=/ninjabot/favicons/favicon.ico>
+<link rel=apple-touch-icon href=/ninjabot/favicons/apple-touch-icon-180x180.png sizes=180x180>
+<link rel=icon type=image/png href=/ninjabot/favicons/favicon-16x16.png sizes=16x16>
+<link rel=icon type=image/png href=/ninjabot/favicons/favicon-32x32.png sizes=32x32>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-36x36.png sizes=36x36>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-48x48.png sizes=48x48>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-72x72.png sizes=72x72>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-96x96.png sizes=96x96>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-144x144.png sizes=144x144>
+<link rel=icon type=image/png href=/ninjabot/favicons/android-192x192.png sizes=192x192>
+<title>Backtesting | Ninjabot</title>
+<meta name=description content="This page describes the paper wallet used in backtesting and paper trading, the trading fees, the short positions and how to read the results.
+">
+<meta property="og:title" content="Backtesting">
+<meta property="og:description" content="This page describes the paper wallet used in backtesting and paper trading, the trading fees, the short positions and how to read the results.
+">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rodrigo-brito.github.io/ninjabot/docs/backtesting/">
+<meta itemprop=name content="Backtesting">
+<meta itemprop=description content="This page describes the paper wallet used in backtesting and paper trading, the trading fees, the short positions and how to read the results.
+"><meta name=twitter:card content="summary">
+<meta name=twitter:title content="Backtesting">
+<meta name=twitter:description content="This page describes the paper wallet used in backtesting and paper trading, the trading fees, the short positions and how to read the results.
+">
+<link rel=preload href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css as=style>
+<link href=/ninjabot/scss/main.min.c7864c5e11ce29b0d7fb95d2fbbc92f0cd7d92caacfebfa74a46b09df7d22072.css rel=stylesheet integrity>
+<script src=https://code.jquery.com/jquery-3.5.1.min.js integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin=anonymous></script>
+</head>
+<body class=td-section>
+<header>
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+<a class=navbar-brand href=/ninjabot/>
+<span class=navbar-logo></span><span class="text-uppercase font-weight-bold">Ninjabot</span>
+</a>
+<div class="td-navbar-nav-scroll ml-md-auto" id=main_navbar>
+<ul class="navbar-nav mt-2 mt-lg-0">
+<li class="nav-item mr-4 mb-2 mb-lg-0">
+<a class=nav-link href=/ninjabot/docs/><i class="fa fa-book"></i><span>Documentation</span></a>
+</li>
+<li class="nav-item mr-4 mb-2 mb-lg-0">
+<a class=nav-link href=https://github.com/rodrigo-brito/ninjabot target=_blank><i class="fab fa-github"></i><span>Github</span></a>
+</li>
+</ul>
+</div>
+<div class="navbar-nav d-none d-lg-block">
+</div>
+</nav>
+</header>
+<div class="container-fluid td-outer">
+<div class=td-main>
+<div class="row flex-xl-nowrap">
+<aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+<div id=td-sidebar-menu class=td-sidebar__inner>
+<form class="td-sidebar__search d-flex align-items-center">
+<button class="btn btn-link td-sidebar__toggle d-md-none p-0 ml-3 fas fa-bars" type=button data-toggle=collapse data-target=#td-section-nav aria-controls=td-docs-nav aria-expanded=false aria-label="Toggle section navigation">
+</button>
+</form>
+<nav class="collapse td-sidebar-nav" id=td-section-nav>
+<ul class="td-sidebar-nav__section pr-md-3 ul-0">
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
+<a href=/ninjabot/docs/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span>Documentation</span></a>
+<ul class=ul-1>
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
+<a href=/ninjabot/docs/getting-started/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span>Getting Started</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
+<a href=/ninjabot/docs/strategy/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocsbacktesting-li>
+<a href=/ninjabot/docs/backtesting/ class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsbacktesting><span class=td-sidebar-nav-active-item>Backtesting</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsdashboard-li>
+<a href=/ninjabot/docs/dashboard/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsdashboard><span>Dashboard</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstelegram-li>
+<a href=/ninjabot/docs/telegram/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstelegram><span>Telegram</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsexchanges-li>
+<a href=/ninjabot/docs/exchanges/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsexchanges><span>Exchanges</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstools-li>
+<a href=/ninjabot/docs/tools/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstools><span>Tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
+<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
+<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</aside>
+<aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+<div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
+</div>
+<div class=td-toc><nav id=TableOfContents>
+<ul>
+<li><a href=#paper-wallet>Paper Wallet</a></li>
+<li><a href=#trading-fees>Trading Fees</a></li>
+<li><a href=#short-positions>Short positions</a></li>
+<li><a href=#reading-the-results>Reading the results</a>
+<ul>
+<li><a href=#exporting-the-returns>Exporting the returns</a></li>
+</ul>
+</li>
+</ul>
+</nav></div>
+<div class="taxonomy taxonomy-terms-cloud taxo-categories">
+<h5 class=taxonomy-title>Categories</h5>
+<ul class=taxonomy-terms>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>1</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>8</span></a></li>
+</ul>
+</div>
+</aside>
+<main class="col-12 col-md-9 col-xl-8 pl-md-5" role=main>
+<nav aria-label=breadcrumb class="d-none d-md-block d-print-none">
+<ol class="breadcrumb spb-1">
+<li class=breadcrumb-item>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/>Documentation</a>
+</li>
+<li class="breadcrumb-item active" aria-current=page>
+<a href=https://rodrigo-brito.github.io/ninjabot/docs/backtesting/>Backtesting</a>
+</li>
+</ol>
+</nav>
+<div class=td-content>
+<h1>Backtesting</h1>
+<div class=lead>This page describes the paper wallet used in backtesting and paper trading, the trading fees, the short positions and how to read the results.</div>
+<header class=article-meta>
+<div class="taxonomy taxonomy-terms-article taxo-categories">
+<h5 class=taxonomy-title>Categories:</h5>
+<ul class=taxonomy-terms>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span></a></li>
+</ul>
+</div>
+</header>
+<h2 id=paper-wallet>Paper Wallet</h2>
+<p>The paper wallet is a virtual exchange: it fills your orders against the candles of a data feed, keeping balances, positions and trade results, without touching a real account. It powers both <strong>backtesting</strong> (historical data from CSV) and <strong>paper trading</strong> (live data, fake money).</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>wallet</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>NewPaperWallet</span>(
+	<span style=color:#a6e22e>ctx</span>,
+	<span style=color:#e6db74>&#34;USDT&#34;</span>, <span style=color:#75715e>// quote currency
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithPaperAsset</span>(<span style=color:#e6db74>&#34;USDT&#34;</span>, <span style=color:#ae81ff>10000</span>), <span style=color:#75715e>// initial balance
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithPaperFee</span>(<span style=color:#ae81ff>0.001</span>, <span style=color:#ae81ff>0.001</span>),    <span style=color:#75715e>// maker and taker fees
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithDataFeed</span>(<span style=color:#a6e22e>csvFeed</span>),         <span style=color:#75715e>// csvFeed for backtest, or a Binance instance for paper trading
+</span><span style=color:#75715e></span>)
+</code></pre></div><p>For backtesting, the wallet must also be informed to the bot with <code>ninjabot.WithBacktest(wallet)</code>, which optimizes the CSV reading and processes the candles in chronological order. In paper trading, use <code>ninjabot.WithPaperWallet(wallet)</code> instead.</p>
+<h2 id=trading-fees>Trading Fees</h2>
+<p><code>WithPaperFee(maker, taker)</code> charges the exchange fees on every fill, so your results are net of costs. <code>0.001</code> (0.1%) is the Binance spot default.</p>
+<ul>
+<li>Orders that rest on the book - <strong>limit</strong> and take profit orders - pay the <strong>maker</strong> fee.</li>
+<li>Orders that cross the spread - <strong>market</strong> orders and triggered stops - pay the <strong>taker</strong> fee.</li>
+</ul>
+<p>The fee is charged in quote currency, stored in <code>Order.Fee</code>, and deducted from the profit of each trade. The results table, the dashboard and the <code>NET PROFIT</code> line all report returns after costs.</p>
+<p>An order sized with the entire available balance leaves no room for its fee. Instead of rejecting it, the wallet fills a slightly smaller quantity.</p>
+<div class="pageinfo pageinfo-primary">
+<p>Without <code>WithPaperFee</code> no fee is charged, and the simulation will look better than reality. Always backtest with the fees of the exchange you intend to use.</p>
+</div>
+<h2 id=short-positions>Short positions</h2>
+<p>A sell bigger than your asset balance opens a <strong>short position</strong>, so strategies for the futures market can be simulated. The short is modelled as a negative asset balance backed by collateral taken from the quote balance:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#75715e>// with no BTC in the wallet, this opens a short of 1 BTC
+</span><span style=color:#75715e></span><span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>broker</span>.<span style=color:#a6e22e>CreateOrderMarket</span>(<span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>SideTypeSell</span>, <span style=color:#e6db74>&#34;BTCUSDT&#34;</span>, <span style=color:#ae81ff>1</span>)
+</code></pre></div><p>The collateral is <code>price * quantity</code>, so a wallet with 200 USDT can short 2 BTC at 100 USDT - the quote balance goes to zero while the position is open. The buy that covers the short liquidates the position, returning the collateral plus the profit (or minus the loss) of the move: covering those 2 BTC at 50 USDT returns 300 USDT.</p>
+<p>Limit and stop orders open and close shorts the same way, locking the collateral until they fill. An order that only partially covers an open short is settled in two parts: the covering share against the short, the remainder as a new position. The equity displayed by the dashboard, the <code>/balance</code> command and the final summary all account for the open short at the current price.</p>
+<h2 id=reading-the-results>Reading the results</h2>
+<p><code>bot.Summary()</code> prints the results table, the distribution of the trade returns and a bootstrapped 95% confidence interval for the return, payoff and profit factor of each pair.</p>
+<pre tabindex=0><code>+---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | PR FACT. | SQN |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| BTCUSDT |     21 |   7 |   14 | 33.3 % |  5.743 |    2.871 | 1.4 | 12759.66 | 437832.11 |
+| ETHUSDT |      9 |   5 |    4 | 55.6 % |  4.803 |    6.004 | 1.3 | 20454.68 | 393786.29 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|   TOTAL |     30 |  12 |   18 | 40.0 % |  5.461 |    3.811 | 1.3 | 33214.34 | 831618.40 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+</code></pre><table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TRADES</code>, <code>WIN</code>, <code>LOSS</code>, <code>% WIN</code></td>
+<td>Number of closed trades and the hit rate.</td>
+</tr>
+<tr>
+<td><code>PAYOFF</code></td>
+<td>Average win divided by the average loss, in percentage of the position.</td>
+</tr>
+<tr>
+<td><code>PR FACT.</code></td>
+<td>Profit factor: sum of the winning returns divided by the sum of the losing ones.</td>
+</tr>
+<tr>
+<td><code>SQN</code></td>
+<td>System Quality Number (Van Tharp): <code>sqrt(trades) * mean / stddev</code> of the trade results. Needs at least two trades with distinct results, and is <code>0</code> otherwise.</td>
+</tr>
+<tr>
+<td><code>PROFIT</code></td>
+<td>Net profit of the pair, after fees, in quote currency.</td>
+</tr>
+<tr>
+<td><code>VOLUME</code></td>
+<td>Total traded volume, in quote currency.</td>
+</tr>
+</tbody>
+</table>
+<p>The wallet summary that follows reports the final balances, and the returns of the portfolio:</p>
+<pre tabindex=0><code>----- RETURNS -----
+START PORTFOLIO     = 10000.00 USDT
+FINAL PORTFOLIO     = 43214.33 USDT
+GROSS PROFIT        =  34045.951221 USDT (340.46%)
+TRADING FEES        =  831.618401 USDT
+NET PROFIT          =  33214.332820 USDT (332.14%)
+MARKET CHANGE (B&amp;H) =  407.09%
+
+------ RISK -------
+MAX DRAWDOWN = -11.76 %
+</code></pre><p><code>MARKET CHANGE (B&H)</code> is the buy and hold return of the same period - if your strategy is below it, simply buying the asset at the start would have performed better. <code>MAX DRAWDOWN</code> is the largest drop from a peak of the equity curve.</p>
+<h3 id=exporting-the-returns>Exporting the returns</h3>
+<p>The raw data of every trade is available in <code>bot.Controller().Results</code>, and <code>bot.SaveReturns(dir)</code> writes one file per pair with the return of each trade, one per line, ready to be analysed elsewhere. The directory must already exist.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a6e22e>bot</span>.<span style=color:#a6e22e>Summary</span>()
+
+<span style=color:#75715e>// ./returns/BTCUSDT.csv, ./returns/ETHUSDT.csv
+</span><span style=color:#75715e></span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>bot</span>.<span style=color:#a6e22e>SaveReturns</span>(<span style=color:#e6db74>&#34;./returns&#34;</span>); <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+	<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
+}
+</code></pre></div><p>The orders of each pair can also be downloaded from the dashboard, in <code>GET /api/{pair}/orders.csv</code>.</p>
+<div class=section-index>
+</div>
+</div>
+</main>
+</div>
+</div>
+<footer class="bg-dark py-5 row d-print-none">
+<div class="container-fluid mx-sm-5">
+<div class=row>
+<div class="col-6 col-sm-4 text-xs-center order-sm-2">
+</div>
+<div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+</div>
+<div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+</div>
+</div>
+</div>
+</footer>
+</div>
+<script src=https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js integrity=sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js integrity=sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF crossorigin=anonymous></script>
+<script src=/ninjabot/js/tabpane-persist.js></script>
+<script src=/ninjabot/js/main.min.762669fd9611b5c9b8a5321a86dc2884c90a18b059e1790f1bb83526a4b381f0.js integrity="sha256-diZp/ZYRtcm4pTIahtwohMkKGLBZ4XkPG7g1JqSzgfA=" crossorigin=anonymous></script>
+</body>
+</html>

@@ -66,18 +66,24 @@
 <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
 <a href=/ninjabot/docs/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span>Documentation</span></a>
 <ul class=ul-1>
-<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
-<a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocsgetting-started-li>
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocsgetting-started-li>
 <a href=/ninjabot/docs/getting-started/ class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span class=td-sidebar-nav-active-item>Getting Started</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
-<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsploting-li>
-<a href=/ninjabot/docs/ploting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsploting><span>Plotting</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
-<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
+<a href=/ninjabot/docs/strategy/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsbacktesting-li>
+<a href=/ninjabot/docs/backtesting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsbacktesting><span>Backtesting</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsdashboard-li>
+<a href=/ninjabot/docs/dashboard/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsdashboard><span>Dashboard</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstelegram-li>
 <a href=/ninjabot/docs/telegram/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstelegram><span>Telegram</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsexchanges-li>
+<a href=/ninjabot/docs/exchanges/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsexchanges><span>Exchanges</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstools-li>
+<a href=/ninjabot/docs/tools/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstools><span>Tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
+<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
+<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
 </li>
 </ul>
 </li>
@@ -93,13 +99,14 @@
 <li><a href=#install-cli>Install CLI</a></li>
 <li><a href=#creating-a-new-project>Creating a new project</a></li>
 <li><a href=#creating-a-backtesting-script>Creating a backtesting script</a></li>
+<li><a href=#next-steps>Next steps</a></li>
 </ul>
 </nav></div>
 <div class="taxonomy taxonomy-terms-cloud taxo-categories">
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
 <li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>1</span></a></li>
-<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>5</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>8</span></a></li>
 </ul>
 </div>
 </aside>
@@ -143,13 +150,13 @@
 
 <span style=color:#f92672>import</span> (
 	<span style=color:#e6db74>&#34;context&#34;</span>
-	<span style=color:#e6db74>&#34;fmt&#34;</span>
 
 	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot&#34;</span>
 	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/examples/strategies&#34;</span>
 	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/exchange&#34;</span>
-	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/plot&#34;</span>
 	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/storage&#34;</span>
+	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/ui&#34;</span>
+	<span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/ui/indicator&#34;</span>
 
 	<span style=color:#a6e22e>log</span> <span style=color:#e6db74>&#34;github.com/sirupsen/logrus&#34;</span>
 )
@@ -192,17 +199,19 @@
 		<span style=color:#a6e22e>ctx</span>,
 		<span style=color:#e6db74>&#34;USDT&#34;</span>,
 		<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithPaperAsset</span>(<span style=color:#e6db74>&#34;USDT&#34;</span>, <span style=color:#ae81ff>10000</span>),
+		<span style=color:#75715e>// maker and taker fees charged on every fill, 0.1% is the Binance spot default
+</span><span style=color:#75715e></span>		<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithPaperFee</span>(<span style=color:#ae81ff>0.001</span>, <span style=color:#ae81ff>0.001</span>),
 		<span style=color:#a6e22e>exchange</span>.<span style=color:#a6e22e>WithDataFeed</span>(<span style=color:#a6e22e>csvFeed</span>),
 	)
 
 	<span style=color:#75715e>// Initialize a chart to plot trading results
-</span><span style=color:#75715e></span>	<span style=color:#a6e22e>chart</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>NewChart</span>(
-		<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithStrategyIndicators</span>(<span style=color:#a6e22e>strategy</span>), <span style=color:#75715e>// load indicators from strategy
-</span><span style=color:#75715e></span>		<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithCustomIndicators</span>( <span style=color:#75715e>// you can specify additiona indicators
+</span><span style=color:#75715e></span>	<span style=color:#a6e22e>chart</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ui</span>.<span style=color:#a6e22e>New</span>(
+		<span style=color:#a6e22e>ui</span>.<span style=color:#a6e22e>WithStrategyIndicators</span>(<span style=color:#a6e22e>strategy</span>), <span style=color:#75715e>// load indicators from strategy
+</span><span style=color:#75715e></span>		<span style=color:#a6e22e>ui</span>.<span style=color:#a6e22e>WithCustomIndicators</span>( <span style=color:#75715e>// you can specify additional indicators
 </span><span style=color:#75715e></span>			<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>RSI</span>(<span style=color:#ae81ff>14</span>, <span style=color:#e6db74>&#34;purple&#34;</span>),
 			<span style=color:#a6e22e>indicator</span>.<span style=color:#a6e22e>Stoch</span>(<span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>3</span>, <span style=color:#e6db74>&#34;red&#34;</span>, <span style=color:#e6db74>&#34;blue&#34;</span>),
 		),
-		<span style=color:#a6e22e>plot</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>), <span style=color:#75715e>// necessary to display the equity chart
+		<span style=color:#a6e22e>ui</span>.<span style=color:#a6e22e>WithPaperWallet</span>(<span style=color:#a6e22e>wallet</span>), <span style=color:#75715e>// necessary to display the equity chart
 </span><span style=color:#75715e></span>	)
 	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
 		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
@@ -238,43 +247,83 @@
 		<span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Fatal</span>(<span style=color:#a6e22e>err</span>)
 	}
 }
-</code></pre></div><p>To execute your strategy, just run:</p>
+</code></pre></div>
+<div class="pageinfo pageinfo-primary">
+<p>Up to <code>v0.5.0</code> the chart lived in the <code>plot</code> package and was created with <code>plot.NewChart</code>. It is now the <code>ui</code> package, created with <code>ui.New</code>, and the indicators moved from <code>plot/indicator</code> to <code>ui/indicator</code>.</p>
+</div>
+<p>To execute your strategy, just run:</p>
 <div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go run main.go
 </code></pre></div><p>Output:</p>
-<pre tabindex=0><code>INFO[2021-10-31 18:13] [SETUP] Using paper wallet
-INFO[2021-10-31 18:13] [SETUP] Initial Portfolio = 10000.000000 USDT
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | SQN |  PROFIT  |  VOLUME   |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-| BTCUSDT |     14 |   6 |    8 | 42.9 % |  5.929 | 1.5 | 13511.66 | 448030.05 |
-| ETHUSDT |      9 |   6 |    3 | 66.7 % |  3.407 | 1.3 | 21748.41 | 407769.64 |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
-|   TOTAL |     23 |  12 |   11 | 52.2 % |  4.942 | 1.4 | 35260.07 | 855799.68 |
-+---------+--------+-----+------+--------+--------+-----+----------+-----------+
+<pre tabindex=0><code>INFO[2026-08-24 07:21] [SETUP] Using paper wallet
+INFO[2026-08-24 07:21] [SETUP] Initial Portfolio = 10000.000000 USDT
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|  PAIR   | TRADES | WIN | LOSS | % WIN  | PAYOFF | PR FACT. | SQN |  PROFIT  |  VOLUME   |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| BTCUSDT |     21 |   7 |   14 | 33.3 % |  5.743 |    2.871 | 1.4 | 12759.66 | 437832.11 |
+| ETHUSDT |      9 |   5 |    4 | 55.6 % |  4.803 |    6.004 | 1.3 | 20454.68 | 393786.29 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+|   TOTAL |     30 |  12 |   18 | 40.0 % |  5.461 |    3.811 | 1.3 | 33214.34 | 831618.40 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
 
--- FINAL WALLET --
-0.0000 BTC = 0.0000 USDT
+------ RETURN -------
+-9.134--4.507  20%    ████▋        6
+-4.507-0.1201  43.3%  ██████████▏  13
+0.1201-4.747   3.33%  ▊            1
+4.747-9.374    3.33%  ▊            1
+9.374-14       10%    ██▍          3
+14-18.63       3.33%  ▊            1
+18.63-23.25    6.67%  █▋           2
+23.25-27.88    0%     ▏
+27.88-32.51    3.33%  ▊            1
+32.51-37.14    0%     ▏
+37.14-41.76    0%     ▏
+41.76-46.39    0%     ▏
+46.39-51.02    0%     ▏
+51.02-55.64    3.33%  ▊            1
+55.64-60.27    3.33%  ▊            1
+
+------ CONFIDENCE INTERVAL (95%) -------
+| BTCUSDT |
+RETURN:      4.41% (-1.37% ~ 11.46%)
+PAYOFF:      5.99 (2.09 ~ 11.70)
+PROF.FACTOR: 3.24 (0.54 ~ 8.48)
+| ETHUSDT |
+RETURN:      9.42% (-1.03% ~ 24.07%)
+PAYOFF:      17.22 (1.10 ~ 23.17)
+PROF.FACTOR: 65.16 (0.66 ~ 47.16)
+
+----- FINAL WALLET -----
+0.0000 BTC = 0.0185 USDT
 0.0000 ETH = 0.0000 USDT
-45260.0735 USDT
+43214.3144 USDT
 
 ----- RETURNS -----
 START PORTFOLIO     = 10000.00 USDT
-FINAL PORTFOLIO     = 45260.07 USDT
-GROSS PROFIT        =  35260.073493 USDT (352.60%)
+FINAL PORTFOLIO     = 43214.33 USDT
+GROSS PROFIT        =  34045.951221 USDT (340.46%)
+TRADING FEES        =  831.618401 USDT
+NET PROFIT          =  33214.332820 USDT (332.14%)
 MARKET CHANGE (B&amp;H) =  407.09%
 
 ------ RISK -------
 MAX DRAWDOWN = -11.76 %
 
 ------ VOLUME -----
-ETHUSDT         = 407769.64 USDT
-BTCUSDT         = 448030.05 USDT
-TOTAL           = 855799.68 USDT
-COSTS (0.001*V) = 855.80 USDT (ESTIMATION)
+BTCUSDT         = 437832.11 USDT
+ETHUSDT         = 393786.29 USDT
+TOTAL           = 831618.40 USDT
 -------------------
-Chart available at http://localhost:8080
+Dashboard available at http://localhost:8080
 
-</code></pre><p><img src=https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png alt=SignatureJohnLennon></p>
+</code></pre><p>The meaning of each column, and how to export the raw returns, is described in <a href=/ninjabot/docs/backtesting/>Backtesting</a>.</p>
+<p><img src=https://user-images.githubusercontent.com/7620947/139601478-7b1d826c-f0f3-4766-951e-b11b1e1c9aa5.png alt=Dashboard></p>
+<h2 id=next-steps>Next steps</h2>
+<ul>
+<li><a href=/ninjabot/docs/strategy/>Create your own strategy</a></li>
+<li><a href=/ninjabot/docs/backtesting/>Backtesting, fees and results</a></li>
+<li><a href=/ninjabot/docs/dashboard/>Dashboard and live controls</a></li>
+<li><a href=/ninjabot/docs/telegram/>Telegram and notifications</a></li>
+</ul>
 <div class=section-index>
 </div>
 </div>

@@ -66,18 +66,24 @@ This software is for educational purposes only. Do not risk money which you are 
 <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
 <a href=/ninjabot/docs/ class="align-left pl-0 active td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span class=td-sidebar-nav-active-item>Documentation</span></a>
 <ul class=ul-1>
-<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
-<a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
 <a href=/ninjabot/docs/getting-started/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span>Getting Started</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
-<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsploting-li>
-<a href=/ninjabot/docs/ploting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsploting><span>Plotting</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
-<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
+<a href=/ninjabot/docs/strategy/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsbacktesting-li>
+<a href=/ninjabot/docs/backtesting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsbacktesting><span>Backtesting</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsdashboard-li>
+<a href=/ninjabot/docs/dashboard/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsdashboard><span>Dashboard</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstelegram-li>
 <a href=/ninjabot/docs/telegram/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstelegram><span>Telegram</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsexchanges-li>
+<a href=/ninjabot/docs/exchanges/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsexchanges><span>Exchanges</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstools-li>
+<a href=/ninjabot/docs/tools/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstools><span>Tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
+<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
+<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
 </li>
 </ul>
 </li>
@@ -92,7 +98,7 @@ This software is for educational purposes only. Do not risk money which you are 
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
 <li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>1</span></a></li>
-<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>5</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>8</span></a></li>
 </ul>
 </div>
 </aside>
@@ -114,20 +120,65 @@ This software is for educational purposes only. Do not risk money which you are 
 </div>
 <h2 id=features>Features</h2>
 <ul>
-<li>Create custom strategies</li>
-<li>Backtesting with historical data</li>
-<li>Plot trading results</li>
+<li>Create custom strategies for the spot and futures markets</li>
+<li>Backtesting with historical data, including maker/taker fees and short positions</li>
+<li>Paper trading: live data with a virtual wallet</li>
+<li>Web dashboard with candles, indicators, orders, equity curve and trade statistics</li>
+<li>Live control panel and HTTP API to start, stop and place manual orders</li>
+<li>Telegram integration, and e-mail notifications</li>
 <li>Heikin Ashi candle type</li>
-<li>Telegram integration</li>
+<li>Storage in memory, local file or SQL</li>
+<li>CLI to download historical data</li>
 </ul>
+<h2 id=where-to-start>Where to start</h2>
+<table>
+<thead>
+<tr>
+<th>Page</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href=/ninjabot/docs/getting-started/>Getting Started</a></td>
+<td>Install the CLI, download data and run your first backtest.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/strategy/>Custom Strategy</a></td>
+<td>Indicators, trading rules and the orders available.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/backtesting/>Backtesting</a></td>
+<td>Paper wallet, trading fees, short positions and how to read the results.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/dashboard/>Dashboard</a></td>
+<td>Chart, indicators, live control panel and HTTP API.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/telegram/>Telegram</a></td>
+<td>Commands, notifications and e-mail.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/exchanges/>Exchanges</a></td>
+<td>Binance spot and futures, testnet and leverage.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/storage/>Storage</a></td>
+<td>Memory, file and SQL.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/tools/>Tools</a></td>
+<td>Trailing stop and order scheduler.</td>
+</tr>
+<tr>
+<td><a href=/ninjabot/docs/cli/>Ninjabot CLI</a></td>
+<td>Downloading historical data.</td>
+</tr>
+</tbody>
+</table>
 <div class=section-index>
 <hr class=panel-line>
-<div class=entry>
-<h5>
-<a href=/ninjabot/docs/strategy/>Streategy</a>
-</h5>
-<p>This page describes how to create a custom strategy in Ninjabot</p>
-</div>
 <div class=entry>
 <h5>
 <a href=/ninjabot/docs/getting-started/>Getting Started</a>
@@ -136,15 +187,39 @@ This software is for educational purposes only. Do not risk money which you are 
 </div>
 <div class=entry>
 <h5>
-<a href=/ninjabot/docs/cli/>Ninjabot CLI</a>
+<a href=/ninjabot/docs/strategy/>Custom Strategy</a>
 </h5>
-<p>This page describes how to install and use Ninjabot CLI to download historical data for backtesting.</p>
+<p>This page describes how to create a custom strategy in Ninjabot</p>
 </div>
 <div class=entry>
 <h5>
-<a href=/ninjabot/docs/ploting/>Plotting</a>
+<a href=/ninjabot/docs/backtesting/>Backtesting</a>
 </h5>
-<p>This page describes how to set up Ninjabot chart.</p>
+<p>This page describes the paper wallet used in backtesting and paper trading, the trading fees, the short positions and how to read the results.</p>
+</div>
+<div class=entry>
+<h5>
+<a href=/ninjabot/docs/dashboard/>Dashboard</a>
+</h5>
+<p>This page describes how to set up the Ninjabot web dashboard, its indicators, the live control panel and the HTTP API.</p>
+</div>
+<div class=entry>
+<h5>
+<a href=/ninjabot/docs/telegram/>Telegram</a>
+</h5>
+<p>This page describes how to set up Telegram with Ninjabot.</p>
+</div>
+<div class=entry>
+<h5>
+<a href=/ninjabot/docs/exchanges/>Exchanges</a>
+</h5>
+<p>This page describes how to connect Ninjabot to Binance spot and futures, and the options available for each one.</p>
+</div>
+<div class=entry>
+<h5>
+<a href=/ninjabot/docs/tools/>Tools</a>
+</h5>
+<p>This page describes the helpers available in the tools package - trailing stop and order scheduler.</p>
 </div>
 <div class=entry>
 <h5>
@@ -154,9 +229,9 @@ This software is for educational purposes only. Do not risk money which you are 
 </div>
 <div class=entry>
 <h5>
-<a href=/ninjabot/docs/telegram/>Telegram</a>
+<a href=/ninjabot/docs/cli/>Ninjabot CLI</a>
 </h5>
-<p>This page describes how to set up Telegram with Ninjabot.</p>
+<p>This page describes how to install and use Ninjabot CLI to download historical data for backtesting.</p>
 </div>
 </div>
 </div>

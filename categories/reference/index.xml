@@ -1,4 +1,4 @@
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ninjabot – Reference</title><link>https://rodrigo-brito.github.io/ninjabot/categories/reference/</link><description>Recent content in Reference on Ninjabot</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://rodrigo-brito.github.io/ninjabot/categories/reference/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Streategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Ninjabot – Reference</title><link>https://rodrigo-brito.github.io/ninjabot/categories/reference/</link><description>Recent content in Reference on Ninjabot</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><atom:link href="https://rodrigo-brito.github.io/ninjabot/categories/reference/index.xml" rel="self" type="application/rss+xml"/><item><title>Docs: Custom Strategy</title><link>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/strategy/</guid><description>
 &lt;h2 id="strategy-functions">Strategy Functions&lt;/h2>
 &lt;p>To create a custom strategy, you need to create a &lt;code>Struct&lt;/code> that implements the following methods:&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Strategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
@@ -6,14 +6,18 @@
 &lt;span style="color:#a6e22e">WarmupPeriod&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span>
 &lt;span style="color:#a6e22e">Indicators&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) []&lt;span style="color:#a6e22e">ChartIndicator&lt;/span>
 &lt;span style="color:#a6e22e">OnCandle&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>)
-&lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) &lt;span style="color:#75715e">// Optional
-&lt;/span>&lt;span style="color:#75715e">&lt;/span>}
+}
+&lt;span style="color:#75715e">// Optional: implement it to also receive the partial candles
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">HighFrequencyStrategy&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;span style="color:#a6e22e">Strategy&lt;/span>
+&lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>)
+}
 &lt;/code>&lt;/pre>&lt;/div>&lt;ul>
 &lt;li>&lt;code>Timeframe&lt;/code>: specifies the strategy timeframe, eg: &amp;ldquo;15m&amp;rdquo;, &amp;ldquo;1h&amp;rdquo;, &amp;ldquo;1d&amp;rdquo;, &amp;ldquo;1w&amp;rdquo;.&lt;/li>
 &lt;li>&lt;code>WarmupPeriod&lt;/code>: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the &lt;code>WarmupPeriod&lt;/code> should be 9.&lt;/li>
 &lt;li>&lt;code>Indicators&lt;/code>: this function creates custom indicators, it is called for each new candle received. You can also return a list of indicators to display in the chart.&lt;/li>
 &lt;li>&lt;code>OnCandle&lt;/code>: this function is also called for each new &lt;strong>closed candle&lt;/strong>, after &lt;code>Indicators&lt;/code> execution. This function should contain your buy and sell rules. &lt;code>Dataframe&lt;/code> object contains indicators and indicators from candles. The buy and sell operations can be performed through the &lt;code>Broker&lt;/code> operator.&lt;/li>
-&lt;li>&lt;code>OnPartialCandle&lt;/code>: this functions is optional, it will be called with high frequency, usually called every 2 seconds with partial data of current candle.&lt;/li>
+&lt;li>&lt;code>OnPartialCandle&lt;/code>: this function is optional, and comes from the &lt;code>HighFrequencyStrategy&lt;/code> interface. It is called with high frequency, usually every 2 seconds, with the partial data of the current candle.&lt;/li>
 &lt;/ul>
 &lt;h2 id="example">Example&lt;/h2>
 &lt;p>The following code presents a strategy with a single indicator. We defined an Exponential Moving Average (EMA) of 9 periods. For each candle, we create a buy order when the price closes above the EMA, and sell when the price closes under the EMA.&lt;/p>
@@ -72,7 +76,59 @@
 }
 }
 }
-&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="heikin-ashi-candle-type-support">Heikin Ashi candle type support&lt;/h3>
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="placing-orders">Placing orders&lt;/h2>
+&lt;p>The &lt;code>broker&lt;/code> received by &lt;code>OnCandle&lt;/code> is the interface with the exchange - the real one, or the paper wallet in backtesting:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Method&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>Position(pair)&lt;/code>&lt;/td>
+&lt;td>Current asset and quote balances of the pair.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>Account()&lt;/code>&lt;/td>
+&lt;td>Balances of every asset.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>CreateOrderMarket(side, pair, size)&lt;/code>&lt;/td>
+&lt;td>Market order, size in &lt;strong>asset&lt;/strong> quantity.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>CreateOrderMarketQuote(side, pair, amount)&lt;/code>&lt;/td>
+&lt;td>Market order, amount in &lt;strong>quote&lt;/strong> currency.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>CreateOrderLimit(side, pair, size, limit)&lt;/code>&lt;/td>
+&lt;td>Limit order at a given price.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>CreateOrderStop(pair, quantity, limit)&lt;/code>&lt;/td>
+&lt;td>Stop order, to protect an open position.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>CreateOrderOCO(side, pair, size, price, stop, stopLimit)&lt;/code>&lt;/td>
+&lt;td>One-Cancels-the-Other: a take profit and a stop, where filling one cancels the other.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>Order(pair, id)&lt;/code>&lt;/td>
+&lt;td>Fetch one order by ID.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>Cancel(order)&lt;/code>&lt;/td>
+&lt;td>Cancel a pending order.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>Every order returns a &lt;code>model.Order&lt;/code>, and any error - insufficient balance, minimum notional not reached, bot stopped - is returned instead of stopping the bot, so always check it.&lt;/p>
+&lt;p>A sell bigger than your asset balance opens a &lt;strong>short position&lt;/strong> in the futures market, and in the paper wallet. See &lt;a href="https://rodrigo-brito.github.io/ninjabot/ninjabot/docs/backtesting/">Backtesting&lt;/a> for the details of how a short is settled.&lt;/p>
+&lt;h3 id="handy-tools">Handy tools&lt;/h3>
+&lt;p>The &lt;a href="https://rodrigo-brito.github.io/ninjabot/ninjabot/docs/tools/">tools package&lt;/a> has a trailing stop and an order scheduler, ready to be used inside a strategy.&lt;/p>
+&lt;h2 id="heikin-ashi-candle-type-support">Heikin Ashi candle type support&lt;/h2>
 &lt;p>&lt;!-- raw HTML omitted -->&lt;/p>
 &lt;ul>
 &lt;li>CSV Feed exchange
@@ -89,83 +145,177 @@
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinance&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceHeikinAshiCandle&lt;/span>())
 &lt;/code>&lt;/pre>&lt;/div>&lt;/li>
 &lt;/ul>
-&lt;h3 id="high-frequency-trading-hft">High Frequency Trading (HFT)&lt;/h3>
+&lt;h2 id="high-frequency-trading-hft">High Frequency Trading (HFT)&lt;/h2>
 &lt;p>You also have access to partial candle updates through the function &lt;code>OnPartialCandle&lt;/code>. This can be useful for handling high frequency logic, such as using trailing stop or scalping techniques. See an example of usage below. This function is usually called every 2 seconds and may have small time variations.&lt;/p>
+&lt;p>It is only called after the warmup period is filled. In backtesting, the partial candles come from the resampling of the CSV feed: a strategy on &lt;code>4h&lt;/code> fed by a &lt;code>1h&lt;/code> dataset receives three partial candles before each close.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">CrossEMA&lt;/span>) &lt;span style="color:#a6e22e">OnPartialCandle&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span> &lt;span style="color:#a6e22e">service&lt;/span>.&lt;span style="color:#a6e22e">Broker&lt;/span>) {
 &lt;span style="color:#75715e">// my logic here...
 &lt;/span>&lt;span style="color:#75715e">&lt;/span>}
-&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Ninjabot CLI</title><link>https://rodrigo-brito.github.io/ninjabot/docs/cli/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/cli/</guid><description>
-&lt;p>Ninjabot CLI provides utilities commands to support backtesting and bot development.&lt;/p>
-&lt;h2 id="installation">Installation&lt;/h2>
-&lt;p>You can install CLI with the following command&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or downloading pre-build binaries in &lt;a href="https://github.com/rodrigo-brito/ninjabot/releases">release page&lt;/a>.&lt;/p>
-&lt;h2 id="helper-ninjabot--h">Helper (&lt;code>ninjabot -h&lt;/code>)&lt;/h2>
-&lt;pre tabindex="0">&lt;code>NAME:
-ninjabot - Utilities for bot creation
-USAGE:
-ninjabot [global options] command [command options] [arguments...]
-COMMANDS:
-download Download historical data
-help, h Shows a list of commands or help for one command
-GLOBAL OPTIONS:
---help, -h show help (default: false)
-&lt;/code>&lt;/pre>&lt;p>We have the following commands:&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Backtesting</title><link>https://rodrigo-brito.github.io/ninjabot/docs/backtesting/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/backtesting/</guid><description>
+&lt;h2 id="paper-wallet">Paper Wallet&lt;/h2>
+&lt;p>The paper wallet is a virtual exchange: it fills your orders against the candles of a data feed, keeping balances, positions and trade results, without touching a real account. It powers both &lt;strong>backtesting&lt;/strong> (historical data from CSV) and &lt;strong>paper trading&lt;/strong> (live data, fake money).&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">wallet&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewPaperWallet&lt;/span>(
+&lt;span style="color:#a6e22e">ctx&lt;/span>,
+&lt;span style="color:#e6db74">&amp;#34;USDT&amp;#34;&lt;/span>, &lt;span style="color:#75715e">// quote currency
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithPaperAsset&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;USDT&amp;#34;&lt;/span>, &lt;span style="color:#ae81ff">10000&lt;/span>), &lt;span style="color:#75715e">// initial balance
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithPaperFee&lt;/span>(&lt;span style="color:#ae81ff">0.001&lt;/span>, &lt;span style="color:#ae81ff">0.001&lt;/span>), &lt;span style="color:#75715e">// maker and taker fees
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithDataFeed&lt;/span>(&lt;span style="color:#a6e22e">csvFeed&lt;/span>), &lt;span style="color:#75715e">// csvFeed for backtest, or a Binance instance for paper trading
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>For backtesting, the wallet must also be informed to the bot with &lt;code>ninjabot.WithBacktest(wallet)&lt;/code>, which optimizes the CSV reading and processes the candles in chronological order. In paper trading, use &lt;code>ninjabot.WithPaperWallet(wallet)&lt;/code> instead.&lt;/p>
+&lt;h2 id="trading-fees">Trading Fees&lt;/h2>
+&lt;p>&lt;code>WithPaperFee(maker, taker)&lt;/code> charges the exchange fees on every fill, so your results are net of costs. &lt;code>0.001&lt;/code> (0.1%) is the Binance spot default.&lt;/p>
 &lt;ul>
-&lt;li>&lt;strong>download&lt;/strong>: Download historical data from the binace exchange.&lt;/li>
+&lt;li>Orders that rest on the book - &lt;strong>limit&lt;/strong> and take profit orders - pay the &lt;strong>maker&lt;/strong> fee.&lt;/li>
+&lt;li>Orders that cross the spread - &lt;strong>market&lt;/strong> orders and triggered stops - pay the &lt;strong>taker&lt;/strong> fee.&lt;/li>
 &lt;/ul>
-&lt;h3 id="download-command">Download Command&lt;/h3>
-&lt;pre tabindex="0">&lt;code>NAME:
-download - Download historical data
-USAGE:
-download [command options] [arguments...]
-OPTIONS:
---pair value, -p value eg. BTCUSDT
---days value, -d value eg. 100 (default 30 days) (default: 0)
---start value, -s value eg. 2021-12-01 (default: &amp;lt;nil&amp;gt;)
---end value, -e value eg. 2020-12-31 (default: &amp;lt;nil&amp;gt;)
---timeframe value, -t value eg. 1h
---output value, -o value eg. ./btc.csv
---help, -h show help (default: false)
-&lt;/code>&lt;/pre>&lt;p>&lt;strong>Examples of Usage&lt;/strong>&lt;/p>
-&lt;ul>
-&lt;li>Downloading 30 days of historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1d timeframe:&lt;/li>
-&lt;/ul>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download --pair BTCUSDT --timeframe 1d --days &lt;span style="color:#ae81ff">30&lt;/span> --output ./btc-1d.csv
-&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
-&lt;li>Downloading historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1h timeframe and from 2020-12-01 to 2020-12-31:&lt;/li>
-&lt;/ul>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download -p BTCUSDT -t 1h -s &lt;span style="color:#e6db74">&amp;#34;2020-12-01&amp;#34;&lt;/span> -e &lt;span style="color:#e6db74">&amp;#34;2020-12-31&amp;#34;&lt;/span> -o ./btc-1h.csv
-&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Plotting</title><link>https://rodrigo-brito.github.io/ninjabot/docs/ploting/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/ploting/</guid><description>
+&lt;p>The fee is charged in quote currency, stored in &lt;code>Order.Fee&lt;/code>, and deducted from the profit of each trade. The results table, the dashboard and the &lt;code>NET PROFIT&lt;/code> line all report returns after costs.&lt;/p>
+&lt;p>An order sized with the entire available balance leaves no room for its fee. Instead of rejecting it, the wallet fills a slightly smaller quantity.&lt;/p>
+&lt;div class="pageinfo pageinfo-primary">
+&lt;p>Without &lt;code>WithPaperFee&lt;/code> no fee is charged, and the simulation will look better than reality. Always backtest with the fees of the exchange you intend to use.&lt;/p>
+&lt;/div>
+&lt;h2 id="short-positions">Short positions&lt;/h2>
+&lt;p>A sell bigger than your asset balance opens a &lt;strong>short position&lt;/strong>, so strategies for the futures market can be simulated. The short is modelled as a negative asset balance backed by collateral taken from the quote balance:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#75715e">// with no BTC in the wallet, this opens a short of 1 BTC
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarket&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeSell&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>The collateral is &lt;code>price * quantity&lt;/code>, so a wallet with 200 USDT can short 2 BTC at 100 USDT - the quote balance goes to zero while the position is open. The buy that covers the short liquidates the position, returning the collateral plus the profit (or minus the loss) of the move: covering those 2 BTC at 50 USDT returns 300 USDT.&lt;/p>
+&lt;p>Limit and stop orders open and close shorts the same way, locking the collateral until they fill. An order that only partially covers an open short is settled in two parts: the covering share against the short, the remainder as a new position. The equity displayed by the dashboard, the &lt;code>/balance&lt;/code> command and the final summary all account for the open short at the current price.&lt;/p>
+&lt;h2 id="reading-the-results">Reading the results&lt;/h2>
+&lt;p>&lt;code>bot.Summary()&lt;/code> prints the results table, the distribution of the trade returns and a bootstrapped 95% confidence interval for the return, payoff and profit factor of each pair.&lt;/p>
+&lt;pre tabindex="0">&lt;code>+---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| PAIR | TRADES | WIN | LOSS | % WIN | PAYOFF | PR FACT. | SQN | PROFIT | VOLUME |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| BTCUSDT | 21 | 7 | 14 | 33.3 % | 5.743 | 2.871 | 1.4 | 12759.66 | 437832.11 |
+| ETHUSDT | 9 | 5 | 4 | 55.6 % | 4.803 | 6.004 | 1.3 | 20454.68 | 393786.29 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+| TOTAL | 30 | 12 | 18 | 40.0 % | 5.461 | 3.811 | 1.3 | 33214.34 | 831618.40 |
++---------+--------+-----+------+--------+--------+----------+-----+----------+-----------+
+&lt;/code>&lt;/pre>&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Column&lt;/th>
+&lt;th>Meaning&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>TRADES&lt;/code>, &lt;code>WIN&lt;/code>, &lt;code>LOSS&lt;/code>, &lt;code>% WIN&lt;/code>&lt;/td>
+&lt;td>Number of closed trades and the hit rate.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>PAYOFF&lt;/code>&lt;/td>
+&lt;td>Average win divided by the average loss, in percentage of the position.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>PR FACT.&lt;/code>&lt;/td>
+&lt;td>Profit factor: sum of the winning returns divided by the sum of the losing ones.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>SQN&lt;/code>&lt;/td>
+&lt;td>System Quality Number (Van Tharp): &lt;code>sqrt(trades) * mean / stddev&lt;/code> of the trade results. Needs at least two trades with distinct results, and is &lt;code>0&lt;/code> otherwise.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>PROFIT&lt;/code>&lt;/td>
+&lt;td>Net profit of the pair, after fees, in quote currency.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>VOLUME&lt;/code>&lt;/td>
+&lt;td>Total traded volume, in quote currency.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>The wallet summary that follows reports the final balances, and the returns of the portfolio:&lt;/p>
+&lt;pre tabindex="0">&lt;code>----- RETURNS -----
+START PORTFOLIO = 10000.00 USDT
+FINAL PORTFOLIO = 43214.33 USDT
+GROSS PROFIT = 34045.951221 USDT (340.46%)
+TRADING FEES = 831.618401 USDT
+NET PROFIT = 33214.332820 USDT (332.14%)
+MARKET CHANGE (B&amp;amp;H) = 407.09%
+------ RISK -------
+MAX DRAWDOWN = -11.76 %
+&lt;/code>&lt;/pre>&lt;p>&lt;code>MARKET CHANGE (B&amp;amp;H)&lt;/code> is the buy and hold return of the same period - if your strategy is below it, simply buying the asset at the start would have performed better. &lt;code>MAX DRAWDOWN&lt;/code> is the largest drop from a peak of the equity curve.&lt;/p>
+&lt;h3 id="exporting-the-returns">Exporting the returns&lt;/h3>
+&lt;p>The raw data of every trade is available in &lt;code>bot.Controller().Results&lt;/code>, and &lt;code>bot.SaveReturns(dir)&lt;/code> writes one file per pair with the return of each trade, one per line, ready to be analysed elsewhere. The directory must already exist.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">bot&lt;/span>.&lt;span style="color:#a6e22e">Summary&lt;/span>()
+&lt;span style="color:#75715e">// ./returns/BTCUSDT.csv, ./returns/ETHUSDT.csv
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">bot&lt;/span>.&lt;span style="color:#a6e22e">SaveReturns&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;./returns&amp;#34;&lt;/span>); &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>The orders of each pair can also be downloaded from the dashboard, in &lt;code>GET /api/{pair}/orders.csv&lt;/code>.&lt;/p></description></item><item><title>Docs: Dashboard</title><link>https://rodrigo-brito.github.io/ninjabot/docs/dashboard/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/dashboard/</guid><description>
 &lt;h2 id="basic-usage">Basic Usage&lt;/h2>
-&lt;p>To create a chart, you need to import &lt;code>plot&lt;/code> packages.&lt;/p>
+&lt;p>The dashboard displays candles, indicators, orders, the equity curve and the trade statistics of your bot. In backtesting it is a report of the simulation; in paper and live trading it updates in real time.&lt;/p>
+&lt;p>To create a chart, you need to import the &lt;code>ui&lt;/code> packages.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
-&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot/indicator&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/ui&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/ui/indicator&amp;#34;&lt;/span>
 )
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, you can create a chart using &lt;code>plot.NewChart&lt;/code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the options &lt;code>WithCustomIndicators&lt;/code>, in which receives one or more idicators.&lt;/p>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Then, you can create a chart using &lt;code>ui.New&lt;/code>. The following example creates a chart with 3 indicators. To include indicators, you must pass the option &lt;code>WithCustomIndicators&lt;/code>, which receives one or more indicators.&lt;/p>
 &lt;p>Currently, Ninjabot supports the following indicators in charts:&lt;/p>
-&lt;ul>
-&lt;li>Exponential Moving Average (EMA)&lt;/li>
-&lt;li>Simple Moving Average (SMA)&lt;/li>
-&lt;li>Commodity Channel Index (CCI)&lt;/li>
-&lt;li>Relative Strength Index (RSI)&lt;/li>
-&lt;li>Stochastic Oscillator (STOCH)&lt;/li>
-&lt;li>Williams' %R&lt;/li>
-&lt;li>Bollinger Bands&lt;/li>
-&lt;li>Supertrend&lt;/li>
-&lt;/ul>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Indicator&lt;/th>
+&lt;th>Function&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>Exponential Moving Average (EMA)&lt;/td>
+&lt;td>&lt;code>indicator.EMA(period, color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Simple Moving Average (SMA)&lt;/td>
+&lt;td>&lt;code>indicator.SMA(period, color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Relative Strength Index (RSI)&lt;/td>
+&lt;td>&lt;code>indicator.RSI(period, color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Moving Average Convergence Divergence (MACD)&lt;/td>
+&lt;td>&lt;code>indicator.MACD(fast, slow, signal, colorMACD, colorSignal, colorHist)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Percentage Price Oscillator (PPO)&lt;/td>
+&lt;td>&lt;code>indicator.PPO(fast, slow, signal, colorPPO, colorSignal, colorHist)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Stochastic Oscillator (STOCH)&lt;/td>
+&lt;td>&lt;code>indicator.Stoch(fastK, slowK, slowD, colorK, colorD)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Bollinger Bands&lt;/td>
+&lt;td>&lt;code>indicator.BollingerBands(period, stdDeviation, upDnBandColor, midBandColor)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Supertrend&lt;/td>
+&lt;td>&lt;code>indicator.Spertrend(period, factor, color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Commodity Channel Index (CCI)&lt;/td>
+&lt;td>&lt;code>indicator.CCI(period, color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Williams' %R&lt;/td>
+&lt;td>&lt;code>indicator.WillR(period, color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>On Balance Volume (OBV)&lt;/td>
+&lt;td>&lt;code>indicator.OBV(color)&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
 &lt;p>For each indicator, you need to inform the parameters that are necessary and colors. We accept the color name and HEX code as bellow.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">chart&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">NewChart&lt;/span>(
-&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithCustomIndicators&lt;/span>( &lt;span style="color:#75715e">// Optional parameter to include indicators
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">chart&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">New&lt;/span>(
+&lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">WithCustomIndicators&lt;/span>( &lt;span style="color:#75715e">// Optional parameter to include indicators
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>),
 &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#ae81ff">21&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;#000&amp;#34;&lt;/span>),
 &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">RSI&lt;/span>(&lt;span style="color:#ae81ff">14&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;purple&amp;#34;&lt;/span>),
 &lt;span style="color:#a6e22e">indicator&lt;/span>.&lt;span style="color:#a6e22e">Stoch&lt;/span>(&lt;span style="color:#ae81ff">8&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#ae81ff">3&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;red&amp;#34;&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;blue&amp;#34;&lt;/span>),
 ),
-&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithStrategyIndicators&lt;/span>(&lt;span style="color:#a6e22e">strategy&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include indicators from your strategy
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">WithPort&lt;/span>(&lt;span style="color:#ae81ff">8080&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to customize the port number
+&lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">WithStrategyIndicators&lt;/span>(&lt;span style="color:#a6e22e">strategy&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include indicators from your strategy
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">WithPaperWallet&lt;/span>(&lt;span style="color:#a6e22e">wallet&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to include portfolio results (drawdown, equity evolution, etc)
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">WithPort&lt;/span>(&lt;span style="color:#ae81ff">8080&lt;/span>), &lt;span style="color:#75715e">// Optional parameter to customize the port number
 &lt;/span>&lt;span style="color:#75715e">&lt;/span>)
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
 &lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
@@ -184,20 +334,149 @@ OPTIONS:
 &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithOrderSubscription&lt;/span>(&lt;span style="color:#a6e22e">chart&lt;/span>),
 )
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>In this way, when Ninjabot receives a candle or process an order, it will be sent to the chart. Finally, we need to start the bot. This command will start a HTTP server and display the result in the browser.
-The default address are &lt;code>http://localhost:8080&lt;/code>. But you can change it by passing the &lt;code>plot.WithPort(portNumber)&lt;/code> option.&lt;/p>
+The default address are &lt;code>http://localhost:8080&lt;/code>. But you can change it by passing the &lt;code>ui.WithPort(portNumber)&lt;/code> option.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">chart&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>()
 &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
 &lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
 }
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>In live and paper trading, &lt;code>chart.Start()&lt;/code> blocks, so run it in a goroutine before &lt;code>bot.Run(ctx)&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">go&lt;/span> &lt;span style="color:#66d9ef">func&lt;/span>() {
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">chart&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(); &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+}()
+&lt;span style="color:#a6e22e">err&lt;/span> = &lt;span style="color:#a6e22e">bot&lt;/span>.&lt;span style="color:#a6e22e">Run&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>)
 &lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="final-result">Final Result&lt;/h3>
 &lt;p>&lt;img src="https://user-images.githubusercontent.com/7620947/150690553-1d1db358-2b05-42eb-8909-2bf254a2460b.png" alt="Chart Result">&lt;/p>
+&lt;h2 id="the-dashboard-bundle">The dashboard bundle&lt;/h2>
+&lt;p>The dashboard front-end is &lt;strong>not embedded&lt;/strong> in your binary. On the first start it is downloaded from the GitHub release that matches the Ninjabot version in your &lt;code>go.mod&lt;/code>, verified against the release checksums and cached in your user cache directory:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>OS&lt;/th>
+&lt;th>Cache directory&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>macOS&lt;/td>
+&lt;td>&lt;code>~/Library/Caches/ninjabot/ui&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Linux&lt;/td>
+&lt;td>&lt;code>~/.cache/ninjabot/ui&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Windows&lt;/td>
+&lt;td>&lt;code>%LocalAppData%\ninjabot\ui&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>After the first download it works offline. The behaviour can be customized with:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Override&lt;/th>
+&lt;th>Effect&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>NINJABOT_UI_DIR=/path/to/web/dist&lt;/code> or &lt;code>ui.WithUIDir(dir)&lt;/code>&lt;/td>
+&lt;td>Serve a local build of the dashboard, no download at all.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>NINJABOT_UI_VERSION=v1.2.3&lt;/code> / &lt;code>latest&lt;/code> or &lt;code>ui.WithUIVersion(v)&lt;/code>&lt;/td>
+&lt;td>Pin the release tag to download.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>ui.WithCacheDir(dir)&lt;/code>&lt;/td>
+&lt;td>Change where the bundles are cached.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>ui.WithHTTPClient(client)&lt;/code>&lt;/td>
+&lt;td>Use your own HTTP client (proxy, timeouts) for the download.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>By default the tag is the Ninjabot version in your &lt;code>go.mod&lt;/code>. For a commit hash (pseudo-version) the nearest release before it is used, and inside a local checkout (&lt;code>go run ./examples/...&lt;/code> or a &lt;code>replace&lt;/code> directive) the nearest &lt;code>git&lt;/code> tag. When no release can be inferred, the latest one is downloaded and a warning is logged, since that bundle may not match the API of your build.&lt;/p>
+&lt;p>If the bundle cannot be fetched, the bot keeps running, the HTTP API stays up, and &lt;code>http://localhost:8080&lt;/code> explains how to fix it.&lt;/p>
+&lt;h2 id="bot-control-panel">Bot control panel&lt;/h2>
+&lt;p>The dashboard can also drive the bot: start/stop and manual buy/sell orders, mirroring the &lt;a href="https://rodrigo-brito.github.io/ninjabot/ninjabot/docs/telegram/">Telegram commands&lt;/a>. Pass the bot controller to the chart before starting it:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">settings&lt;/span>, &lt;span style="color:#a6e22e">paperWallet&lt;/span>, &lt;span style="color:#a6e22e">strategy&lt;/span> &lt;span style="color:#75715e">/* , options... */&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;span style="color:#75715e">// enable the control panel
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">chart&lt;/span>.&lt;span style="color:#a6e22e">SetOrderController&lt;/span>(&lt;span style="color:#a6e22e">bot&lt;/span>.&lt;span style="color:#a6e22e">Controller&lt;/span>())
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Without a controller, the control endpoints report &lt;code>{&amp;quot;enabled&amp;quot;: false}&lt;/code> and the panel is hidden in the interface.&lt;/p>
+&lt;div class="pageinfo pageinfo-warning">
+&lt;p>Anyone with access to the dashboard port can operate your bot once the controller is set. Keep the port private - bind it to localhost, a VPN, or put an authenticating proxy in front of it.&lt;/p>
+&lt;/div>
+&lt;h2 id="http-api">HTTP API&lt;/h2>
+&lt;p>The JSON API is served even when the dashboard bundle is unavailable, so you can build your own interface or monitoring on top of it.&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Endpoint&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>GET /api/health&lt;/code>&lt;/td>
+&lt;td>Liveness probe.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>GET /api/pairs&lt;/code>&lt;/td>
+&lt;td>Pairs being traded.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>GET /api/{pair}/snapshot&lt;/code>&lt;/td>
+&lt;td>Candles, indicators, orders, equity curve and statistics of a pair.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>GET /api/{pair}/orders.csv&lt;/code>&lt;/td>
+&lt;td>Orders of a pair, in CSV.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>GET /api/events&lt;/code>&lt;/td>
+&lt;td>Server-Sent Events stream (&lt;code>candle&lt;/code>, &lt;code>order&lt;/code>, &lt;code>controls&lt;/code>).&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>GET /api/controls&lt;/code>&lt;/td>
+&lt;td>Control panel state, eg. &lt;code>{&amp;quot;enabled&amp;quot;: true, &amp;quot;status&amp;quot;: &amp;quot;running&amp;quot;}&lt;/code>.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>POST /api/controls/start&lt;/code>&lt;/td>
+&lt;td>Resume order placement.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>POST /api/controls/stop&lt;/code>&lt;/td>
+&lt;td>Pause order placement.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>POST /api/controls/order&lt;/code>&lt;/td>
+&lt;td>Create a manual market order.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>The order payload takes the amount in quote currency, or a percentage of the available balance (quote balance for buys, asset balance for sells):&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">&lt;span style="color:#75715e"># buy 100 USDT of BTC&lt;/span>
+curl -X POST localhost:8080/api/controls/order &lt;span style="color:#ae81ff">\
+&lt;/span>&lt;span style="color:#ae81ff">&lt;/span> -d &lt;span style="color:#e6db74">&amp;#39;{&amp;#34;pair&amp;#34;: &amp;#34;BTCUSDT&amp;#34;, &amp;#34;side&amp;#34;: &amp;#34;buy&amp;#34;, &amp;#34;amount&amp;#34;: 100}&amp;#39;&lt;/span>
+&lt;span style="color:#75715e"># sell 50% of the BTC balance&lt;/span>
+curl -X POST localhost:8080/api/controls/order &lt;span style="color:#ae81ff">\
+&lt;/span>&lt;span style="color:#ae81ff">&lt;/span> -d &lt;span style="color:#e6db74">&amp;#39;{&amp;#34;pair&amp;#34;: &amp;#34;BTCUSDT&amp;#34;, &amp;#34;side&amp;#34;: &amp;#34;sell&amp;#34;, &amp;#34;amount&amp;#34;: 50, &amp;#34;percent&amp;#34;: true}&amp;#39;&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Orders sent while the bot is stopped are rejected with &lt;code>409 Conflict&lt;/code>.&lt;/p>
 &lt;h2 id="custom-indicators">Custom Indicators&lt;/h2>
-&lt;p>You can create custom indicators. An indicator is a &lt;code>struct&lt;/code> that implements the &lt;code>plot.Indicator&lt;/code> interface.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Indicator&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;p>You can create custom indicators. An indicator is a &lt;code>struct&lt;/code> that implements the &lt;code>ui.CustomIndicator&lt;/code> interface.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">CustomIndicator&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
 &lt;span style="color:#a6e22e">Name&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> &lt;span style="color:#75715e">// indicator name
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Overlay&lt;/span>() &lt;span style="color:#66d9ef">bool&lt;/span> &lt;span style="color:#75715e">// set if the indicator overlay the candlestick chart
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Overlay&lt;/span>() &lt;span style="color:#66d9ef">bool&lt;/span> &lt;span style="color:#75715e">// set if the indicator overlays the candlestick chart
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Warmup&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span> &lt;span style="color:#75715e">// number of candles required before the indicator has values
 &lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Metrics&lt;/span>() []&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span> &lt;span style="color:#75715e">// returns the indicator metrics (lines, bars, etc) and styles
-&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Load&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) &lt;span style="color:#75715e">// constructor that initialize the indicator with a dataframe
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">Load&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) &lt;span style="color:#75715e">// initializes the indicator with a dataframe
 &lt;/span>&lt;span style="color:#75715e">&lt;/span>}
 &lt;/code>&lt;/pre>&lt;/div>&lt;p>The following example creates a custom indicator called &lt;code>EMA&lt;/code>.&lt;/p>
 &lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">indicator&lt;/span>
@@ -205,10 +484,10 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#e6db74">&amp;#34;fmt&amp;#34;&lt;/span>
 &lt;span style="color:#e6db74">&amp;#34;time&amp;#34;&lt;/span>
 &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/model&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/plot&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/ui&amp;#34;&lt;/span>
 &lt;span style="color:#e6db74">&amp;#34;github.com/markcheno/go-talib&amp;#34;&lt;/span>
 )
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#a6e22e">period&lt;/span> &lt;span style="color:#66d9ef">int&lt;/span>, &lt;span style="color:#a6e22e">color&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>) &lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">Indicator&lt;/span> {
+&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">EMA&lt;/span>(&lt;span style="color:#a6e22e">period&lt;/span> &lt;span style="color:#66d9ef">int&lt;/span>, &lt;span style="color:#a6e22e">color&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>) &lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">CustomIndicator&lt;/span> {
 &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">ema&lt;/span>{
 &lt;span style="color:#a6e22e">Period&lt;/span>: &lt;span style="color:#a6e22e">period&lt;/span>,
 &lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#a6e22e">color&lt;/span>,
@@ -217,7 +496,7 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span> &lt;span style="color:#66d9ef">struct&lt;/span> {
 &lt;span style="color:#a6e22e">Period&lt;/span> &lt;span style="color:#66d9ef">int&lt;/span>
 &lt;span style="color:#a6e22e">Color&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>
-&lt;span style="color:#a6e22e">Values&lt;/span> &lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Series&lt;/span>
+&lt;span style="color:#a6e22e">Values&lt;/span> &lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Series&lt;/span>[&lt;span style="color:#66d9ef">float64&lt;/span>]
 &lt;span style="color:#a6e22e">Time&lt;/span> []&lt;span style="color:#a6e22e">time&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>
 }
 &lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Name&lt;/span>() &lt;span style="color:#66d9ef">string&lt;/span> {
@@ -226,6 +505,9 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Overlay&lt;/span>() &lt;span style="color:#66d9ef">bool&lt;/span> {
 &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#66d9ef">true&lt;/span>
 }
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Warmup&lt;/span>() &lt;span style="color:#66d9ef">int&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>
+}
 &lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Load&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) {
 &lt;span style="color:#66d9ef">if&lt;/span> len(&lt;span style="color:#a6e22e">dataframe&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>) &amp;lt; &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span> {
 &lt;span style="color:#66d9ef">return&lt;/span>
@@ -233,8 +515,8 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Values&lt;/span> = &lt;span style="color:#a6e22e">talib&lt;/span>.&lt;span style="color:#a6e22e">Ema&lt;/span>(&lt;span style="color:#a6e22e">dataframe&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>, &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>)[&lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>:]
 &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span> = &lt;span style="color:#a6e22e">dataframe&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>[&lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Period&lt;/span>:]
 }
-&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Metrics&lt;/span>() []&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span> {
-&lt;span style="color:#66d9ef">return&lt;/span> []&lt;span style="color:#a6e22e">plot&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span>{
+&lt;span style="color:#66d9ef">func&lt;/span> (&lt;span style="color:#a6e22e">e&lt;/span> &lt;span style="color:#a6e22e">ema&lt;/span>) &lt;span style="color:#a6e22e">Metrics&lt;/span>() []&lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> []&lt;span style="color:#a6e22e">ui&lt;/span>.&lt;span style="color:#a6e22e">IndicatorMetric&lt;/span>{
 {
 &lt;span style="color:#a6e22e">Style&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;line&amp;#34;&lt;/span>,
 &lt;span style="color:#a6e22e">Color&lt;/span>: &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Color&lt;/span>,
@@ -242,45 +524,6 @@ The default address are &lt;code>http://localhost:8080&lt;/code>. But you can ch
 &lt;span style="color:#a6e22e">Time&lt;/span>: &lt;span style="color:#a6e22e">e&lt;/span>.&lt;span style="color:#a6e22e">Time&lt;/span>,
 },
 }
-}
-&lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Storage</title><link>https://rodrigo-brito.github.io/ninjabot/docs/storage/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/storage/</guid><description>
-&lt;h2 id="support">Support&lt;/h2>
-&lt;p>Currently it is possible to use different types of storage, to be a valid storage just sign the following interface:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Storage&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
-&lt;span style="color:#a6e22e">CreateOrder&lt;/span>(&lt;span style="color:#a6e22e">order&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
-&lt;span style="color:#a6e22e">UpdateOrder&lt;/span>(&lt;span style="color:#a6e22e">order&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
-&lt;span style="color:#a6e22e">Orders&lt;/span>(&lt;span style="color:#a6e22e">filters&lt;/span> &lt;span style="color:#f92672">...&lt;/span>&lt;span style="color:#a6e22e">OrderFilter&lt;/span>) ([]&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>)
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>A storage can be customized at bot startup time, with the option &lt;code>WithStorage(storage)&lt;/code>:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(
-&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
-&lt;span style="color:#75715e">// other options...
-&lt;/span>&lt;span style="color:#75715e">&lt;/span>)
-&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="memory-storage">Memory Storage&lt;/h3>
-&lt;p>An in-memory storage is recommended for backtesting and for situations where you don&amp;rsquo;t want to keep the data in the long term, all data is erased after finishing the execution.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
-&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromMemory&lt;/span>()
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="file-storage">File Storage&lt;/h3>
-&lt;p>A simple file storage format that saves your history in JSON format via BuntDB&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
-&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromFile&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;orders.db&amp;#34;&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="sql-storage">SQL Storage&lt;/h3>
-&lt;p>With SQL Storage you can use relational databases like MySQL, Postgress, SQLite and others. It uses Gorm and the configuration options can be checked &lt;a href="https://gorm.io/docs/connecting_to_the_database.html">here&lt;/a>.&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
-&lt;span style="color:#e6db74">&amp;#34;gorm.io/driver/mysql&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;gorm.io/gorm&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
-)
-&lt;span style="color:#a6e22e">dsn&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&amp;amp;parseTime=True&amp;amp;loc=Local&amp;#34;&lt;/span>
-&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromSQL&lt;/span>(&lt;span style="color:#a6e22e">mysql&lt;/span>.&lt;span style="color:#a6e22e">Open&lt;/span>(&lt;span style="color:#a6e22e">dsn&lt;/span>), &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">gorm&lt;/span>.&lt;span style="color:#a6e22e">Config&lt;/span>{})
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
 }
 &lt;/code>&lt;/pre>&lt;/div></description></item><item><title>Docs: Telegram</title><link>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/telegram/</guid><description>
 &lt;h2 id="installation">Installation&lt;/h2>
@@ -332,14 +575,294 @@ Lang: en&lt;/p>
 &lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="usage">Usage&lt;/h2>
 &lt;p>Telegram bot requires that your bot is &lt;code>running&lt;/code> to control and get information about your account.&lt;/p>
 &lt;p>We have the following commands:&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Command&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>/help&lt;/code>&lt;/td>
+&lt;td>Display help instructions.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/status&lt;/code>&lt;/td>
+&lt;td>Check bot status: &lt;code>running&lt;/code> or &lt;code>stopped&lt;/code>.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/balance&lt;/code>&lt;/td>
+&lt;td>Wallet balance, with the value of the open positions.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/profit&lt;/code>&lt;/td>
+&lt;td>Summary of the trade results so far.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/start&lt;/code>&lt;/td>
+&lt;td>Start buying and selling coins.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/stop&lt;/code>&lt;/td>
+&lt;td>Stop buying and selling coins.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/buy BTCUSDT 100&lt;/code>&lt;/td>
+&lt;td>Market buy of 100 USDT (the amount is in quote currency).&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/buy BTCUSDT 50%&lt;/code>&lt;/td>
+&lt;td>Market buy with 50% of the available quote balance.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/sell BTCUSDT 100&lt;/code>&lt;/td>
+&lt;td>Market sell of 100 USDT worth of the asset.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>/sell BTCUSDT 50%&lt;/code>&lt;/td>
+&lt;td>Market sell of 50% of the asset balance.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>&lt;img src="https://user-images.githubusercontent.com/7620947/150681951-f81c83ae-203e-4b48-8fba-14c59c08abb4.gif" alt="telegram">&lt;/p>
+&lt;h3 id="stopping-the-bot">Stopping the bot&lt;/h3>
+&lt;p>&lt;code>/stop&lt;/code> pauses &lt;strong>every&lt;/strong> new order, not only the entries of your strategy. The protective stops and take profits your strategy tries to place are rejected too, so an open position is left unprotected until you send &lt;code>/start&lt;/code>.&lt;/p>
+&lt;p>Orders rejected while the bot is stopped are reported back to you, instead of failing silently:&lt;/p>
+&lt;blockquote>
+&lt;p>Bot is stopped, no order was created. Send /start to resume.&lt;/p>
+&lt;/blockquote>
+&lt;p>The same start/stop control is available on the &lt;a href="https://rodrigo-brito.github.io/ninjabot/ninjabot/docs/dashboard/">dashboard control panel&lt;/a>.&lt;/p>
+&lt;h2 id="notifications">Notifications&lt;/h2>
+&lt;p>Besides answering commands, Telegram receives a notification for every order created, filled, canceled or rejected, and for the errors of the bot. Nothing else is needed: when &lt;code>Telegram.Enabled&lt;/code> is &lt;code>true&lt;/code> in the settings, &lt;code>NewBot&lt;/code> creates the Telegram client and registers it as the notifier of the bot.&lt;/p>
+&lt;h3 id="e-mail-notifications">E-mail notifications&lt;/h3>
+&lt;p>Any type that implements &lt;code>service.Notifier&lt;/code> can be used as the notifier of the bot, through the &lt;code>WithNotifier&lt;/code> option - for example, the e-mail notifier:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/notification&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">mail&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">notification&lt;/span>.&lt;span style="color:#a6e22e">NewMail&lt;/span>(&lt;span style="color:#a6e22e">notification&lt;/span>.&lt;span style="color:#a6e22e">MailParams&lt;/span>{
+&lt;span style="color:#a6e22e">SMTPServerAddress&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;smtp.gmail.com&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">SMTPServerPort&lt;/span>: &lt;span style="color:#ae81ff">587&lt;/span>,
+&lt;span style="color:#a6e22e">From&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;from@example.com&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">To&lt;/span>: &lt;span style="color:#e6db74">&amp;#34;to@example.com&amp;#34;&lt;/span>,
+&lt;span style="color:#a6e22e">Password&lt;/span>: &lt;span style="color:#a6e22e">os&lt;/span>.&lt;span style="color:#a6e22e">Getenv&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;SMTP_PASSWORD&amp;#34;&lt;/span>),
+})
+&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">settings&lt;/span>, &lt;span style="color:#a6e22e">exch&lt;/span>, &lt;span style="color:#a6e22e">strategy&lt;/span>, &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithNotifier&lt;/span>(&lt;span style="color:#a6e22e">mail&lt;/span>))
+&lt;/code>&lt;/pre>&lt;/div>
+&lt;div class="pageinfo pageinfo-warning">
+&lt;p>Only one notifier is active at a time. When Telegram is enabled, it takes precedence over the one registered with &lt;code>WithNotifier&lt;/code>, so use &lt;code>WithNotifier&lt;/code> for bots that do not use Telegram.&lt;/p>
+&lt;/div></description></item><item><title>Docs: Exchanges</title><link>https://rodrigo-brito.github.io/ninjabot/docs/exchanges/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/exchanges/</guid><description>
+&lt;p>Currently, Ninjabot supports the &lt;a href="https://www.binance.com/en?ref=35723227">Binance&lt;/a> exchange, in the spot and futures markets. Any other exchange can be added by implementing the &lt;code>service.Exchange&lt;/code> interface - the implementations in the &lt;a href="https://github.com/rodrigo-brito/ninjabot/tree/main/exchange">exchange&lt;/a> directory are good references.&lt;/p>
+&lt;h2 id="binance-spot">Binance Spot&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinance&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>,
+&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceCredentials&lt;/span>(&lt;span style="color:#a6e22e">apiKey&lt;/span>, &lt;span style="color:#a6e22e">secretKey&lt;/span>),
+)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>, &lt;span style="color:#a6e22e">settings&lt;/span>, &lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">strategy&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Option&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>WithBinanceCredentials(key, secret)&lt;/code>&lt;/td>
+&lt;td>API key and secret of your account. Without them, only public data (candles) is available.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithBinanceHeikinAshiCandle()&lt;/code>&lt;/td>
+&lt;td>Convert the candles to &lt;a href="https://rodrigo-brito.github.io/ninjabot/ninjabot/docs/strategy/">Heikin Ashi&lt;/a> before they reach your strategy.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithTestNet()&lt;/code>&lt;/td>
+&lt;td>Use the Binance testnet, with fake money, to validate a bot end to end before going live.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithMetadataFetcher(fetcher)&lt;/code>&lt;/td>
+&lt;td>Attach custom metadata to every candle, eg. data from an external API.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithCustomMainAPIEndpoint(api, ws, combined)&lt;/code>&lt;/td>
+&lt;td>Point the REST and websocket clients somewhere else, eg. a proxy.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithCustomTestnetAPIEndpoint(api, ws, combined)&lt;/code>&lt;/td>
+&lt;td>The same, for the testnet endpoints.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h2 id="binance-futures">Binance Futures&lt;/h2>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">binance&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">NewBinanceFuture&lt;/span>(&lt;span style="color:#a6e22e">ctx&lt;/span>,
+&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceFutureCredentials&lt;/span>(&lt;span style="color:#a6e22e">apiKey&lt;/span>, &lt;span style="color:#a6e22e">secretKey&lt;/span>),
+&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceFutureLeverage&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">MarginTypeIsolated&lt;/span>),
+&lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">WithBinanceFutureLeverage&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;ETHUSDT&amp;#34;&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#a6e22e">exchange&lt;/span>.&lt;span style="color:#a6e22e">MarginTypeIsolated&lt;/span>),
+)
+&lt;/code>&lt;/pre>&lt;/div>&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Option&lt;/th>
+&lt;th>Description&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>WithBinanceFutureCredentials(key, secret)&lt;/code>&lt;/td>
+&lt;td>API key and secret of your futures account.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithBinanceFutureLeverage(pair, leverage, marginType)&lt;/code>&lt;/td>
+&lt;td>Leverage and margin type of a pair. The margin type is &lt;code>exchange.MarginTypeIsolated&lt;/code> or &lt;code>exchange.MarginTypeCrossed&lt;/code>.&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>WithBinanceFuturesHeikinAshiCandle()&lt;/code>&lt;/td>
+&lt;td>Convert the candles to Heikin Ashi.&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>In the futures market you can also open &lt;strong>short positions&lt;/strong>, selling an asset you do not hold. The same is simulated by the paper wallet in &lt;a href="https://rodrigo-brito.github.io/ninjabot/ninjabot/docs/backtesting/">backtesting&lt;/a>.&lt;/p>
+&lt;div class="pageinfo pageinfo-warning">
+&lt;p>Leverage multiplies the losses as much as the profits. Validate your strategy in backtesting and paper trading before using real money, and never with money you cannot afford to lose.&lt;/p>
+&lt;/div>
+&lt;h2 id="trading-pairs">Trading pairs&lt;/h2>
+&lt;p>The pairs of your bot are informed in the settings, and must exist in the exchange you selected:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">settings&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Settings&lt;/span>{
+&lt;span style="color:#a6e22e">Pairs&lt;/span>: []&lt;span style="color:#66d9ef">string&lt;/span>{&lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>, &lt;span style="color:#e6db74">&amp;#34;ETHUSDT&amp;#34;&lt;/span>},
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Ninjabot splits the asset and the quote of a pair with &lt;code>exchange.SplitAssetQuote(pair)&lt;/code>, using the list of known quote currencies. All the balances, order sizes and results are reported in the quote currency of the pair - &lt;code>USDT&lt;/code> for &lt;code>BTCUSDT&lt;/code>.&lt;/p></description></item><item><title>Docs: Tools</title><link>https://rodrigo-brito.github.io/ninjabot/docs/tools/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/tools/</guid><description>
+&lt;p>The &lt;code>tools&lt;/code> package has helpers commonly needed by strategies. They are plain structs, so you can keep one per pair inside your strategy.&lt;/p>
+&lt;h2 id="trailing-stop">Trailing Stop&lt;/h2>
+&lt;p>A trailing stop follows the price while it moves in your favour, and reports when the price falls back to the stop.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/tools&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">trailing&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">tools&lt;/span>.&lt;span style="color:#a6e22e">NewTrailingStop&lt;/span>()
+&lt;span style="color:#75715e">// when a position is opened: current price and the initial stop
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">trailing&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#a6e22e">currentPrice&lt;/span>, &lt;span style="color:#a6e22e">currentPrice&lt;/span>&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#ae81ff">0.95&lt;/span>)
+&lt;span style="color:#75715e">// on every candle
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">trailing&lt;/span>.&lt;span style="color:#a6e22e">Active&lt;/span>() &lt;span style="color:#f92672">&amp;amp;&amp;amp;&lt;/span> &lt;span style="color:#a6e22e">trailing&lt;/span>.&lt;span style="color:#a6e22e">Update&lt;/span>(&lt;span style="color:#a6e22e">candle&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>) {
+&lt;span style="color:#75715e">// the stop was hit, close the position
+&lt;/span>&lt;span style="color:#75715e">&lt;/span> &lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">broker&lt;/span>.&lt;span style="color:#a6e22e">CreateOrderMarket&lt;/span>(&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">SideTypeSell&lt;/span>, &lt;span style="color:#a6e22e">pair&lt;/span>, &lt;span style="color:#a6e22e">assetPosition&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Error&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;span style="color:#a6e22e">trailing&lt;/span>.&lt;span style="color:#a6e22e">Stop&lt;/span>()
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;code>Update&lt;/code> returns &lt;code>true&lt;/code> only when the price reaches the stop. While the price rises, the stop rises with it, keeping the same distance. Combined with &lt;code>OnPartialCandle&lt;/code>, the stop can be checked without waiting for the candle to close.&lt;/p>
+&lt;p>A complete strategy using it is available in &lt;a href="https://github.com/rodrigo-brito/ninjabot/blob/main/examples/strategies/trailingstop.go">examples/strategies/trailingstop.go&lt;/a>.&lt;/p>
+&lt;h2 id="order-scheduler">Order Scheduler&lt;/h2>
+&lt;p>The scheduler places a market order as soon as a condition over the dataframe becomes true. Once the order is created, the condition is removed from the queue.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">scheduler&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">tools&lt;/span>.&lt;span style="color:#a6e22e">NewScheduler&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>)
+&lt;span style="color:#75715e">// buy 1 BTC when the price drops below 30k
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">scheduler&lt;/span>.&lt;span style="color:#a6e22e">BuyWhen&lt;/span>(&lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#66d9ef">func&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) &lt;span style="color:#66d9ef">bool&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Last&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>) &amp;lt; &lt;span style="color:#ae81ff">30000&lt;/span>
+})
+&lt;span style="color:#75715e">// sell 1 BTC when the price goes above 50k
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">scheduler&lt;/span>.&lt;span style="color:#a6e22e">SellWhen&lt;/span>(&lt;span style="color:#ae81ff">1&lt;/span>, &lt;span style="color:#66d9ef">func&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">Dataframe&lt;/span>) &lt;span style="color:#66d9ef">bool&lt;/span> {
+&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">df&lt;/span>.&lt;span style="color:#a6e22e">Close&lt;/span>.&lt;span style="color:#a6e22e">Last&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>) &amp;gt; &lt;span style="color:#ae81ff">50000&lt;/span>
+})
+&lt;span style="color:#75715e">// on every candle, inside OnCandle
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>&lt;span style="color:#a6e22e">scheduler&lt;/span>.&lt;span style="color:#a6e22e">Update&lt;/span>(&lt;span style="color:#a6e22e">df&lt;/span>, &lt;span style="color:#a6e22e">broker&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>This is useful to prepare an exit without keeping the state in your strategy, or to break a large position into conditional orders.&lt;/p></description></item><item><title>Docs: Storage</title><link>https://rodrigo-brito.github.io/ninjabot/docs/storage/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/storage/</guid><description>
+&lt;h2 id="support">Support&lt;/h2>
+&lt;p>Currently it is possible to use different types of storage, to be a valid storage just sign the following interface:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#66d9ef">type&lt;/span> &lt;span style="color:#a6e22e">Storage&lt;/span> &lt;span style="color:#66d9ef">interface&lt;/span> {
+&lt;span style="color:#a6e22e">CreateOrder&lt;/span>(&lt;span style="color:#a6e22e">order&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
+&lt;span style="color:#a6e22e">UpdateOrder&lt;/span>(&lt;span style="color:#a6e22e">order&lt;/span> &lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>) &lt;span style="color:#66d9ef">error&lt;/span>
+&lt;span style="color:#a6e22e">Orders&lt;/span>(&lt;span style="color:#a6e22e">filters&lt;/span> &lt;span style="color:#f92672">...&lt;/span>&lt;span style="color:#a6e22e">OrderFilter&lt;/span>) ([]&lt;span style="color:#f92672">*&lt;/span>&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">Order&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>By default, when no storage is informed, the bot creates a local file called &lt;code>ninjabot.db&lt;/code>. The storage keeps the orders of the bot, so that pending orders survive a restart.&lt;/p>
+&lt;p>A storage can be customized at bot startup time, with the option &lt;code>WithStorage(storage)&lt;/code>:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">bot&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">NewBot&lt;/span>(
+&lt;span style="color:#a6e22e">ninjabot&lt;/span>.&lt;span style="color:#a6e22e">WithStorage&lt;/span>(&lt;span style="color:#a6e22e">storage&lt;/span>),
+&lt;span style="color:#75715e">// other options...
+&lt;/span>&lt;span style="color:#75715e">&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="memory-storage">Memory Storage&lt;/h3>
+&lt;p>An in-memory storage is recommended for backtesting and for situations where you don&amp;rsquo;t want to keep the data in the long term, all data is erased after finishing the execution.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromMemory&lt;/span>()
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="file-storage">File Storage&lt;/h3>
+&lt;p>A simple file storage format that saves your history in JSON format via BuntDB&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> &lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromFile&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;orders.db&amp;#34;&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h3 id="sql-storage">SQL Storage&lt;/h3>
+&lt;p>With SQL Storage you can use relational databases like MySQL, Postgress, SQLite and others. It uses Gorm and the configuration options can be checked &lt;a href="https://gorm.io/docs/connecting_to_the_database.html">here&lt;/a>.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
+&lt;span style="color:#e6db74">&amp;#34;gorm.io/driver/mysql&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;gorm.io/gorm&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
+)
+&lt;span style="color:#a6e22e">dsn&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&amp;amp;parseTime=True&amp;amp;loc=Local&amp;#34;&lt;/span>
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromSQL&lt;/span>(&lt;span style="color:#a6e22e">mysql&lt;/span>.&lt;span style="color:#a6e22e">Open&lt;/span>(&lt;span style="color:#a6e22e">dsn&lt;/span>), &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">gorm&lt;/span>.&lt;span style="color:#a6e22e">Config&lt;/span>{})
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>For SQLite, Ninjabot uses the pure Go driver &lt;code>github.com/glebarez/sqlite&lt;/code>, which requires no CGO:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">import&lt;/span> (
+&lt;span style="color:#e6db74">&amp;#34;github.com/glebarez/sqlite&amp;#34;&lt;/span>
+&lt;span style="color:#e6db74">&amp;#34;github.com/rodrigo-brito/ninjabot/storage&amp;#34;&lt;/span>
+)
+&lt;span style="color:#a6e22e">storage&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">FromSQL&lt;/span>(&lt;span style="color:#a6e22e">sqlite&lt;/span>.&lt;span style="color:#a6e22e">Open&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;ninjabot.db&amp;#34;&lt;/span>))
+&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;span style="color:#a6e22e">log&lt;/span>.&lt;span style="color:#a6e22e">Fatal&lt;/span>(&lt;span style="color:#a6e22e">err&lt;/span>)
+}
+&lt;/code>&lt;/pre>&lt;/div>&lt;h2 id="querying-orders">Querying orders&lt;/h2>
+&lt;p>The orders kept by any storage can be filtered with the helpers of the &lt;code>storage&lt;/code> package:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#a6e22e">orders&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">Orders&lt;/span>(
+&lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">WithPair&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;BTCUSDT&amp;#34;&lt;/span>),
+&lt;span style="color:#a6e22e">storage&lt;/span>.&lt;span style="color:#a6e22e">WithStatusIn&lt;/span>(&lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">OrderStatusTypeNew&lt;/span>, &lt;span style="color:#a6e22e">model&lt;/span>.&lt;span style="color:#a6e22e">OrderStatusTypePartiallyFilled&lt;/span>),
+)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>The available filters are &lt;code>WithPair&lt;/code>, &lt;code>WithStatus&lt;/code>, &lt;code>WithStatusIn&lt;/code> and &lt;code>WithUpdateAtBeforeOrEqual&lt;/code>.&lt;/p></description></item><item><title>Docs: Ninjabot CLI</title><link>https://rodrigo-brito.github.io/ninjabot/docs/cli/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://rodrigo-brito.github.io/ninjabot/docs/cli/</guid><description>
+&lt;p>Ninjabot CLI provides utilities commands to support backtesting and bot development.&lt;/p>
+&lt;h2 id="installation">Installation&lt;/h2>
+&lt;p>You can install CLI with the following command&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">go install github.com/rodrigo-brito/ninjabot/cmd/ninjabot@latest
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Or downloading pre-build binaries in &lt;a href="https://github.com/rodrigo-brito/ninjabot/releases">release page&lt;/a>.&lt;/p>
+&lt;h2 id="helper-ninjabot--h">Helper (&lt;code>ninjabot -h&lt;/code>)&lt;/h2>
+&lt;pre tabindex="0">&lt;code>NAME:
+ninjabot - Utilities for bot creation
+USAGE:
+ninjabot [global options] command [command options] [arguments...]
+COMMANDS:
+download Download historical data
+help, h Shows a list of commands or help for one command
+GLOBAL OPTIONS:
+--help, -h show help (default: false)
+&lt;/code>&lt;/pre>&lt;p>We have the following commands:&lt;/p>
 &lt;ul>
-&lt;li>&lt;code>/help&lt;/code> - Display help instructions&lt;/li>
-&lt;li>&lt;code>/stop&lt;/code> - Stop buy and sell coins&lt;/li>
-&lt;li>&lt;code>/start&lt;/code> - Start buy and sell coins&lt;/li>
-&lt;li>&lt;code>/status&lt;/code> - Check bot status&lt;/li>
-&lt;li>&lt;code>/balance&lt;/code> - Wallet balance&lt;/li>
-&lt;li>&lt;code>/profit&lt;/code> - Summary of last trade results&lt;/li>
-&lt;li>&lt;code>/buy&lt;/code> - open a buy order&lt;/li>
-&lt;li>&lt;code>/sell&lt;/code> - open a sell order&lt;/li>
+&lt;li>&lt;strong>download&lt;/strong>: Download historical data from the binace exchange.&lt;/li>
 &lt;/ul>
-&lt;p>&lt;img src="https://user-images.githubusercontent.com/7620947/150681951-f81c83ae-203e-4b48-8fba-14c59c08abb4.gif" alt="telegram">&lt;/p></description></item></channel></rss>
+&lt;h3 id="download-command">Download Command&lt;/h3>
+&lt;pre tabindex="0">&lt;code>NAME:
+download - Download historical data
+USAGE:
+download [command options] [arguments...]
+OPTIONS:
+--pair value, -p value eg. BTCUSDT
+--days value, -d value eg. 100 (default 30 days) (default: 0)
+--start value, -s value eg. 2021-12-01 (default: &amp;lt;nil&amp;gt;)
+--end value, -e value eg. 2020-12-31 (default: &amp;lt;nil&amp;gt;)
+--timeframe value, -t value eg. 1h
+--output value, -o value eg. ./btc.csv
+--futures, -f true or false (default: false)
+--help, -h show help (default: false)
+&lt;/code>&lt;/pre>&lt;p>&lt;code>--pair&lt;/code>, &lt;code>--timeframe&lt;/code> and &lt;code>--output&lt;/code> are required. &lt;code>--start&lt;/code> and &lt;code>--end&lt;/code> must be informed together, and they take precedence over &lt;code>--days&lt;/code>. Without any of them, the last month is downloaded.&lt;/p>
+&lt;p>&lt;strong>Examples of Usage&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>Downloading 30 days of historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1d timeframe:&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download --pair BTCUSDT --timeframe 1d --days &lt;span style="color:#ae81ff">30&lt;/span> --output ./btc-1d.csv
+&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
+&lt;li>Downloading historical data for the &lt;strong>BTC/USDT&lt;/strong> pair with 1h timeframe and from 2020-12-01 to 2020-12-31:&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download -p BTCUSDT -t 1h -s &lt;span style="color:#e6db74">&amp;#34;2020-12-01&amp;#34;&lt;/span> -e &lt;span style="color:#e6db74">&amp;#34;2020-12-31&amp;#34;&lt;/span> -o ./btc-1h.csv
+&lt;/code>&lt;/pre>&lt;/div>&lt;ul>
+&lt;li>Downloading historical data from the &lt;strong>futures&lt;/strong> market, with the &lt;code>--futures&lt;/code> flag:&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-bash" data-lang="bash">ninjabot download -p BTCUSDT -t 1h -d &lt;span style="color:#ae81ff">30&lt;/span> -o ./btc-1h.csv --futures
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>The generated CSV can be loaded with &lt;code>exchange.NewCSVFeed&lt;/code>, and resampled to the timeframe of your strategy - a 1h dataset can feed a 4h strategy, for example.&lt;/p></description></item></channel></rss>

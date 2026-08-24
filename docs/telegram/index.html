@@ -66,18 +66,24 @@
 <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id=m-ninjabotdocs-li>
 <a href=/ninjabot/docs/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id=m-ninjabotdocs><span>Documentation</span></a>
 <ul class=ul-1>
-<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
-<a href=/ninjabot/docs/strategy/ title=Streategy class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
+<li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsgetting-started-li>
 <a href=/ninjabot/docs/getting-started/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsgetting-started><span>Getting Started</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
-<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsploting-li>
-<a href=/ninjabot/docs/ploting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsploting><span>Plotting</span></a>
-</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
-<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstrategy-li>
+<a href=/ninjabot/docs/strategy/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstrategy><span>Custom Strategy</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsbacktesting-li>
+<a href=/ninjabot/docs/backtesting/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsbacktesting><span>Backtesting</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsdashboard-li>
+<a href=/ninjabot/docs/dashboard/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsdashboard><span>Dashboard</span></a>
 </li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child active-path" id=m-ninjabotdocstelegram-li>
 <a href=/ninjabot/docs/telegram/ class="align-left pl-0 active td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstelegram><span class=td-sidebar-nav-active-item>Telegram</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsexchanges-li>
+<a href=/ninjabot/docs/exchanges/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsexchanges><span>Exchanges</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocstools-li>
+<a href=/ninjabot/docs/tools/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocstools><span>Tools</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocsstorage-li>
+<a href=/ninjabot/docs/storage/ class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocsstorage><span>Storage</span></a>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id=m-ninjabotdocscli-li>
+<a href=/ninjabot/docs/cli/ title="Ninjabot CLI" class="align-left pl-0 td-sidebar-link td-sidebar-link__section" id=m-ninjabotdocscli><span>Nijabot CLI</span></a>
 </li>
 </ul>
 </li>
@@ -97,14 +103,23 @@
 <li><a href=#setup-ninjabot>Setup NinjaBot</a></li>
 </ul>
 </li>
-<li><a href=#usage>Usage</a></li>
+<li><a href=#usage>Usage</a>
+<ul>
+<li><a href=#stopping-the-bot>Stopping the bot</a></li>
+</ul>
+</li>
+<li><a href=#notifications>Notifications</a>
+<ul>
+<li><a href=#e-mail-notifications>E-mail notifications</a></li>
+</ul>
+</li>
 </ul>
 </nav></div>
 <div class="taxonomy taxonomy-terms-cloud taxo-categories">
 <h5 class=taxonomy-title>Categories</h5>
 <ul class=taxonomy-terms>
 <li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/guides/ data-taxonomy-term=guides><span class=taxonomy-label>Guides</span><span class=taxonomy-count>1</span></a></li>
-<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>5</span></a></li>
+<li><a class=taxonomy-term href=https://rodrigo-brito.github.io/ninjabot/categories/reference/ data-taxonomy-term=reference><span class=taxonomy-label>Reference</span><span class=taxonomy-count>8</span></a></li>
 </ul>
 </div>
 </aside>
@@ -179,17 +194,83 @@ Lang: en</p>
 </code></pre></div><h2 id=usage>Usage</h2>
 <p>Telegram bot requires that your bot is <code>running</code> to control and get information about your account.</p>
 <p>We have the following commands:</p>
-<ul>
-<li><code>/help</code> - Display help instructions</li>
-<li><code>/stop</code> - Stop buy and sell coins</li>
-<li><code>/start</code> - Start buy and sell coins</li>
-<li><code>/status</code> - Check bot status</li>
-<li><code>/balance</code> - Wallet balance</li>
-<li><code>/profit</code> - Summary of last trade results</li>
-<li><code>/buy</code> - open a buy order</li>
-<li><code>/sell</code> - open a sell order</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/help</code></td>
+<td>Display help instructions.</td>
+</tr>
+<tr>
+<td><code>/status</code></td>
+<td>Check bot status: <code>running</code> or <code>stopped</code>.</td>
+</tr>
+<tr>
+<td><code>/balance</code></td>
+<td>Wallet balance, with the value of the open positions.</td>
+</tr>
+<tr>
+<td><code>/profit</code></td>
+<td>Summary of the trade results so far.</td>
+</tr>
+<tr>
+<td><code>/start</code></td>
+<td>Start buying and selling coins.</td>
+</tr>
+<tr>
+<td><code>/stop</code></td>
+<td>Stop buying and selling coins.</td>
+</tr>
+<tr>
+<td><code>/buy BTCUSDT 100</code></td>
+<td>Market buy of 100 USDT (the amount is in quote currency).</td>
+</tr>
+<tr>
+<td><code>/buy BTCUSDT 50%</code></td>
+<td>Market buy with 50% of the available quote balance.</td>
+</tr>
+<tr>
+<td><code>/sell BTCUSDT 100</code></td>
+<td>Market sell of 100 USDT worth of the asset.</td>
+</tr>
+<tr>
+<td><code>/sell BTCUSDT 50%</code></td>
+<td>Market sell of 50% of the asset balance.</td>
+</tr>
+</tbody>
+</table>
 <p><img src=https://user-images.githubusercontent.com/7620947/150681951-f81c83ae-203e-4b48-8fba-14c59c08abb4.gif alt=telegram></p>
+<h3 id=stopping-the-bot>Stopping the bot</h3>
+<p><code>/stop</code> pauses <strong>every</strong> new order, not only the entries of your strategy. The protective stops and take profits your strategy tries to place are rejected too, so an open position is left unprotected until you send <code>/start</code>.</p>
+<p>Orders rejected while the bot is stopped are reported back to you, instead of failing silently:</p>
+<blockquote>
+<p>Bot is stopped, no order was created. Send /start to resume.</p>
+</blockquote>
+<p>The same start/stop control is available on the <a href=/ninjabot/docs/dashboard/>dashboard control panel</a>.</p>
+<h2 id=notifications>Notifications</h2>
+<p>Besides answering commands, Telegram receives a notification for every order created, filled, canceled or rejected, and for the errors of the bot. Nothing else is needed: when <code>Telegram.Enabled</code> is <code>true</code> in the settings, <code>NewBot</code> creates the Telegram client and registers it as the notifier of the bot.</p>
+<h3 id=e-mail-notifications>E-mail notifications</h3>
+<p>Any type that implements <code>service.Notifier</code> can be used as the notifier of the bot, through the <code>WithNotifier</code> option - for example, the e-mail notifier:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>import</span> <span style=color:#e6db74>&#34;github.com/rodrigo-brito/ninjabot/notification&#34;</span>
+
+<span style=color:#a6e22e>mail</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>notification</span>.<span style=color:#a6e22e>NewMail</span>(<span style=color:#a6e22e>notification</span>.<span style=color:#a6e22e>MailParams</span>{
+	<span style=color:#a6e22e>SMTPServerAddress</span>: <span style=color:#e6db74>&#34;smtp.gmail.com&#34;</span>,
+	<span style=color:#a6e22e>SMTPServerPort</span>:    <span style=color:#ae81ff>587</span>,
+	<span style=color:#a6e22e>From</span>:              <span style=color:#e6db74>&#34;from@example.com&#34;</span>,
+	<span style=color:#a6e22e>To</span>:                <span style=color:#e6db74>&#34;to@example.com&#34;</span>,
+	<span style=color:#a6e22e>Password</span>:          <span style=color:#a6e22e>os</span>.<span style=color:#a6e22e>Getenv</span>(<span style=color:#e6db74>&#34;SMTP_PASSWORD&#34;</span>),
+})
+
+<span style=color:#a6e22e>bot</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>NewBot</span>(<span style=color:#a6e22e>ctx</span>, <span style=color:#a6e22e>settings</span>, <span style=color:#a6e22e>exch</span>, <span style=color:#a6e22e>strategy</span>, <span style=color:#a6e22e>ninjabot</span>.<span style=color:#a6e22e>WithNotifier</span>(<span style=color:#a6e22e>mail</span>))
+</code></pre></div>
+<div class="pageinfo pageinfo-warning">
+<p>Only one notifier is active at a time. When Telegram is enabled, it takes precedence over the one registered with <code>WithNotifier</code>, so use <code>WithNotifier</code> for bots that do not use Telegram.</p>
+</div>
 <div class=section-index>
 </div>
 </div>
