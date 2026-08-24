@@ -1,5 +1,5 @@
 ---
-title: "Streategy"
+title: "Custom Strategy"
 linkTitle: "Custom Strategy"
 categories: ["Reference"]
 weight: 2
@@ -17,7 +17,12 @@ type Strategy interface {
 	WarmupPeriod() int
 	Indicators(dataframe *model.Dataframe) []ChartIndicator
 	OnCandle(dataframe *model.Dataframe, broker service.Broker)
-	OnPartialCandle(df *model.Dataframe, broker service.Broker) // Optional
+}
+
+// Optional: implement it to also receive the partial candles
+type HighFrequencyStrategy interface {
+	Strategy
+	OnPartialCandle(df *model.Dataframe, broker service.Broker)
 }
 ```
 
@@ -25,7 +30,7 @@ type Strategy interface {
 - `WarmupPeriod`: specifies the number of candles necessary to pre-load before the bot start. For example, if you use a 9-period moving average strategy, the `WarmupPeriod` should be 9.
 - `Indicators`: this function creates custom indicators, it is called for each new candle received. You can also return a list of indicators to display in the chart.
 - `OnCandle`: this function is also called for each new **closed candle**, after `Indicators` execution. This function should contain your buy and sell rules. `Dataframe` object contains indicators and indicators from candles. The buy and sell operations can be performed through the `Broker` operator.
-- `OnPartialCandle`: this functions is optional, it will be called with high frequency, usually called every 2 seconds with partial data of current candle.
+- `OnPartialCandle`: this function is optional, and comes from the `HighFrequencyStrategy` interface. It is called with high frequency, usually every 2 seconds, with the partial data of the current candle.
 
 ## Example
 
@@ -99,7 +104,31 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 }
 ```
 
-### Heikin Ashi candle type support
+## Placing orders
+
+The `broker` received by `OnCandle` is the interface with the exchange - the real one, or the paper wallet in backtesting:
+
+| Method | Description |
+|---|---|
+| `Position(pair)` | Current asset and quote balances of the pair. |
+| `Account()` | Balances of every asset. |
+| `CreateOrderMarket(side, pair, size)` | Market order, size in **asset** quantity. |
+| `CreateOrderMarketQuote(side, pair, amount)` | Market order, amount in **quote** currency. |
+| `CreateOrderLimit(side, pair, size, limit)` | Limit order at a given price. |
+| `CreateOrderStop(pair, quantity, limit)` | Stop order, to protect an open position. |
+| `CreateOrderOCO(side, pair, size, price, stop, stopLimit)` | One-Cancels-the-Other: a take profit and a stop, where filling one cancels the other. |
+| `Order(pair, id)` | Fetch one order by ID. |
+| `Cancel(order)` | Cancel a pending order. |
+
+Every order returns a `model.Order`, and any error - insufficient balance, minimum notional not reached, bot stopped - is returned instead of stopping the bot, so always check it.
+
+A sell bigger than your asset balance opens a **short position** in the futures market, and in the paper wallet. See [Backtesting]({{< relref "/docs/backtesting" >}}) for the details of how a short is settled.
+
+### Handy tools
+
+The [tools package]({{< relref "/docs/tools" >}}) has a trailing stop and an order scheduler, ready to be used inside a strategy.
+
+## Heikin Ashi candle type support
 
 <img width="100%"  src="https://i.ibb.co/N6sTVd6/Screenshot-2022-05-01-at-08-02-05.png" />
 
@@ -119,9 +148,11 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
   binance, err := exchange.NewBinance(ctx, exchange.WithBinanceHeikinAshiCandle())
   ```
 
-### High Frequency Trading (HFT)
+## High Frequency Trading (HFT)
 
 You also have access to partial candle updates through the function `OnPartialCandle`. This can be useful for handling high frequency logic, such as using trailing stop or scalping techniques. See an example of usage below. This function is usually called every 2 seconds and may have small time variations.
+
+It is only called after the warmup period is filled. In backtesting, the partial candles come from the resampling of the CSV feed: a strategy on `4h` fed by a `1h` dataset receives three partial candles before each close.
 
 ```go
 func (e *CrossEMA) OnPartialCandle(df *model.Dataframe, broker service.Broker) {
