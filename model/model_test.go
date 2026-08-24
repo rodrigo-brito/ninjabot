@@ -139,3 +139,53 @@ func TestDataframe_Sample(t *testing.T) {
 	sample.Metadata["test"] = []float64{10, 11, 12, 13, 14}
 	require.Equal(t, df.Metadata["test"], Series[float64]([]float64{1, 2, 3, 4, 5, 6, 7, 8, 9}))
 }
+
+func TestDataframe_SampleSmallerThanRequested(t *testing.T) {
+	df := Dataframe{
+		Pair:  "BTCUSDT",
+		Close: Series[float64]{1, 2},
+		Time:  []time.Time{time.Now(), time.Now()},
+	}
+
+	sample := df.Sample(10)
+
+	require.Equal(t, df, sample, "asking for more candles than available returns the whole dataframe")
+}
+
+func TestCandle_ToHeikinAshi(t *testing.T) {
+	ha := NewHeikinAshi()
+	candle := Candle{
+		Pair: "BTCUSDT", Time: time.Now(), UpdatedAt: time.Now(),
+		Open: 100, High: 110, Low: 90, Close: 105, Volume: 10, Complete: true,
+	}
+
+	converted := candle.ToHeikinAshi(ha)
+
+	require.Equal(t, candle.Pair, converted.Pair)
+	require.Equal(t, candle.Volume, converted.Volume)
+	require.Equal(t, candle.Time, converted.Time)
+	require.True(t, converted.Complete)
+	require.Equal(t, 101.25, converted.Close, "the HA close averages the OHLC values")
+	require.Equal(t, 102.5, converted.Open, "the first HA open averages the open and the close")
+}
+
+// Candles of the same period are ordered by the time of their last update.
+func TestCandle_LessSameTime(t *testing.T) {
+	now := time.Now()
+	candle := Candle{Pair: "BTCUSDT", Time: now, UpdatedAt: now}
+
+	older := Candle{Pair: "BTCUSDT", Time: now, UpdatedAt: now.Add(-time.Minute)}
+	newer := Candle{Pair: "BTCUSDT", Time: now, UpdatedAt: now.Add(time.Minute)}
+
+	require.False(t, candle.Less(older), "an older update does not come first")
+	require.True(t, candle.Less(newer))
+}
+
+func TestAccount_Equity(t *testing.T) {
+	account := Account{Balances: []Balance{
+		{Asset: "BTC", Free: 1, Lock: 0.5},
+		{Asset: "USDT", Free: 1000, Lock: 100},
+	}}
+
+	require.Equal(t, 1101.5, account.Equity())
+}

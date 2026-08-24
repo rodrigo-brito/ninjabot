@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -418,4 +419,234 @@ func TestNewestCached(t *testing.T) {
 	b, ok := newestCached(cacheDir)
 	require.True(t, ok)
 	assert.Equal(t, "v1.10.0", b.version)
+}
+
+func TestSourceDir(t *testing.T) {
+	dir := sourceDir()
+
+	require.NotEmpty(t, dir, "the tests run from the checkout, so bundle.go is on disk")
+	require.FileExists(t, filepath.Join(dir, "bundle.go"))
+}
+
+func TestDetectVersion(t *testing.T) {
+	// The test binary is built from this module, so detectVersion always has
+	// build info to work with; the outcome depends on the checkout.
+	detected := detectVersion()
+
+	require.NotEmpty(t, detected.reason)
+	if detected.version != "" {
+		require.True(t, isReleaseTag(detected.version))
+	}
+}
+
+func TestResolveBundleDefaults(t *testing.T) {
+	bundleData := makeTarGz(t, map[string]string{"app.js": "console.log(1)"})
+	releases := newFakeReleases(t, "v0.9.0", map[string][]byte{"v0.9.0": bundleData})
+
+	t.Run("falls back to the user cache dir", func(t *testing.T) {
+		home := t.TempDir()
+		t.Setenv("HOME", home)
+		t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+
+		cfg := releases.config("")
+		cfg.version = "v0.9.0"
+
+		b, err := resolveBundle(context.Background(), cfg)
+
+		require.NoError(t, err)
+		require.FileExists(t, filepath.Join(b.dir, "app.js"))
+		require.Contains(t, b.dir, "ninjabot")
+	})
+
+	t.Run("detects the version when none is configured", func(t *testing.T) {
+		// The version comes from the build info of the test binary, or from
+		// the latest release when nothing can be inferred.
+		want := detectVersion().version
+		if want == "" {
+			want = "v0.9.0"
+		}
+
+		detected := newFakeReleases(t, "v0.9.0", map[string][]byte{want: bundleData})
+		cfg := detected.config(t.TempDir())
+
+		b, err := resolveBundle(context.Background(), cfg)
+
+		require.NoError(t, err)
+		require.Equal(t, want, b.version)
+	})
+}
+
+func TestResolveLatestErrors(t *testing.T) {
+	newConfig := func(t *testing.T, handler http.HandlerFunc) downloader {
+		t.Helper()
+
+		server := httptest.NewServer(handler)
+		t.Cleanup(server.Close)
+
+		cfg := defaultBundleConfig()
+		cfg.releaseURL = server.URL + "/releases"
+
+		return downloader{cfg: cfg, cacheDir: t.TempDir()}
+	}
+
+	t.Run("fails without a redirect", func(t *testing.T) {
+		d := newConfig(t, func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		})
+
+		_, err := d.resolveLatest(context.Background())
+
+		require.ErrorContains(t, err, "unexpected response")
+	})
+
+	t.Run("fails when the tag cannot be parsed", func(t *testing.T) {
+		d := newConfig(t, func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/releases/download/not-a-tag/"+bundleAsset, http.StatusFound)
+		})
+
+		_, err := d.resolveLatest(context.Background())
+
+		require.ErrorContains(t, err, "cannot parse release tag")
+	})
+
+	t.Run("fails when the request cannot be built", func(t *testing.T) {
+		cfg := defaultBundleConfig()
+		cfg.releaseURL = "http://\x7f"
+		d := downloader{cfg: cfg, cacheDir: t.TempDir()}
+
+		_, err := d.resolveLatest(context.Background())
+
+		require.Error(t, err)
+	})
+
+	t.Run("fails when the server is unreachable", func(t *testing.T) {
+		cfg := defaultBundleConfig()
+		cfg.releaseURL = "http://127.0.0.1:1/releases"
+		d := downloader{cfg: cfg, cacheDir: t.TempDir()}
+
+		_, err := d.resolveLatest(context.Background())
+
+		require.Error(t, err)
+	})
+}
+
+func TestFetchInvalidURL(t *testing.T) {
+	cfg := defaultBundleConfig()
+	d := downloader{cfg: cfg, cacheDir: t.TempDir()}
+
+	_, err := d.fetch(context.Background(), "http://\x7f")
+
+	require.Error(t, err)
+}
+
+func TestDownloadErrors(t *testing.T) {
+	t.Run("fails when the cache dir cannot be created", func(t *testing.T) {
+		bundleData := makeTarGz(t, map[string]string{"app.js": "console.log(1)"})
+		releases := newFakeReleases(t, "v1.0.0", map[string][]byte{"v1.0.0": bundleData})
+
+		// A regular file where the cache dir should be makes MkdirAll fail.
+		blocker := filepath.Join(t.TempDir(), "cache")
+		require.NoError(t, os.WriteFile(blocker, []byte("not a dir"), 0o600))
+
+		cfg := releases.config(blocker)
+		cfg.version = "v1.0.0"
+
+		_, err := resolveBundle(context.Background(), cfg)
+
+		require.Error(t, err)
+	})
+
+	t.Run("fails when the archive is not a valid gzip", func(t *testing.T) {
+		releases := newFakeReleases(t, "v1.0.0", map[string][]byte{"v1.0.0": []byte("not a gzip")})
+
+		cfg := releases.config(t.TempDir())
+		cfg.version = "v1.0.0"
+
+		_, err := resolveBundle(context.Background(), cfg)
+
+		require.ErrorContains(t, err, "extracting")
+	})
+}
+
+func TestExtractTarGz(t *testing.T) {
+	// tarGz builds an archive from raw headers, so the tests can exercise
+	// entries makeTarGz does not produce.
+	tarGz := func(t *testing.T, write func(*tar.Writer)) *bytes.Reader {
+		t.Helper()
+
+		var buffer bytes.Buffer
+		gz := gzip.NewWriter(&buffer)
+		tw := tar.NewWriter(gz)
+		write(tw)
+		require.NoError(t, tw.Close())
+		require.NoError(t, gz.Close())
+
+		return bytes.NewReader(buffer.Bytes())
+	}
+
+	t.Run("creates directories and files", func(t *testing.T) {
+		archive := tarGz(t, func(tw *tar.Writer) {
+			require.NoError(t, tw.WriteHeader(&tar.Header{Name: "assets/", Typeflag: tar.TypeDir, Mode: 0o755}))
+			require.NoError(t, tw.WriteHeader(&tar.Header{
+				Name: "assets/app.js", Typeflag: tar.TypeReg, Mode: 0o644, Size: 3,
+			}))
+			_, err := tw.Write([]byte("abc"))
+			require.NoError(t, err)
+		})
+
+		dir := t.TempDir()
+		require.NoError(t, extractTarGz(archive, dir))
+
+		require.DirExists(t, filepath.Join(dir, "assets"))
+		content, err := os.ReadFile(filepath.Join(dir, "assets", "app.js"))
+		require.NoError(t, err)
+		require.Equal(t, "abc", string(content))
+	})
+
+	t.Run("skips the archive root and unsupported entries", func(t *testing.T) {
+		archive := tarGz(t, func(tw *tar.Writer) {
+			require.NoError(t, tw.WriteHeader(&tar.Header{Name: "./", Typeflag: tar.TypeDir, Mode: 0o755}))
+			require.NoError(t, tw.WriteHeader(&tar.Header{
+				Name: "link.js", Typeflag: tar.TypeSymlink, Linkname: "/etc/passwd", Mode: 0o777,
+			}))
+		})
+
+		dir := t.TempDir()
+		require.NoError(t, extractTarGz(archive, dir))
+
+		entries, err := os.ReadDir(dir)
+		require.NoError(t, err)
+		require.Empty(t, entries, "symlinks are never extracted")
+	})
+
+	t.Run("rejects an oversized archive", func(t *testing.T) {
+		previous := maxBundleSize
+		maxBundleSize = 1024
+		t.Cleanup(func() { maxBundleSize = previous })
+
+		archive := tarGz(t, func(tw *tar.Writer) {
+			content := strings.Repeat("x", 2048)
+			require.NoError(t, tw.WriteHeader(&tar.Header{
+				Name: "app.js", Typeflag: tar.TypeReg, Mode: 0o644, Size: int64(len(content)),
+			}))
+			_, err := tw.Write([]byte(content))
+			require.NoError(t, err)
+		})
+
+		err := extractTarGz(archive, t.TempDir())
+
+		require.ErrorContains(t, err, "larger than")
+	})
+
+	t.Run("fails on a truncated archive", func(t *testing.T) {
+		err := extractTarGz(bytes.NewReader([]byte("not a gzip")), t.TempDir())
+
+		require.Error(t, err)
+	})
+}
+
+func TestNewestCachedMissingDir(t *testing.T) {
+	_, ok := newestCached(filepath.Join(t.TempDir(), "does-not-exist"))
+
+	require.False(t, ok)
 }

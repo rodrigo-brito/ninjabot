@@ -102,7 +102,14 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 			return nil, err
 		}
 		// register telegram as notifier
-		WithNotifier(bot.telegram)(bot)
+		bot.notifier = bot.telegram
+	}
+
+	// the notifier, from WithNotifier or from telegram, can only be wired once
+	// the order controller exists
+	if bot.notifier != nil {
+		bot.orderController.SetNotifier(bot.notifier)
+		bot.SubscribeOrder(bot.notifier)
 	}
 
 	return bot, nil
@@ -132,12 +139,11 @@ func WithLogLevel(level log.Level) Option {
 	}
 }
 
-// WithNotifier registers a notifier to the bot, currently only email and telegram are supported
+// WithNotifier registers a notifier to the bot, currently only email and telegram are supported.
+// The notifier is wired to the order controller by NewBot, once it exists.
 func WithNotifier(notifier service.Notifier) Option {
 	return func(bot *NinjaBot) {
 		bot.notifier = notifier
-		bot.orderController.SetNotifier(notifier)
-		bot.SubscribeOrder(notifier)
 	}
 }
 
