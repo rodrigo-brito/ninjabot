@@ -2,15 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchControls,
   fetchPairs,
+  fetchPortfolio,
   fetchSnapshot,
   subscribeEvents,
   UI_VERSION,
 } from "./api/client";
-import type { ControlsResponse, Snapshot } from "./api/types";
+import type { ControlsResponse, PortfolioView, Snapshot } from "./api/types";
 import { ControlPanel } from "./components/ControlPanel";
 import { EquityChart } from "./components/EquityChart";
 import { Header } from "./components/Header";
 import { OrdersTable } from "./components/OrdersTable";
+import { PortfolioPanel } from "./components/Portfolio";
 import { PriceChart } from "./components/PriceChart";
 import { StatisticsPanel } from "./components/Statistics";
 import { StatsBar } from "./components/StatsBar";
@@ -37,6 +39,7 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [controls, setControls] = useState<ControlsResponse | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioView | null>(null);
   const pairRef = useRef<string | null>(pair);
   pairRef.current = pair;
 
@@ -69,6 +72,17 @@ export function App() {
       controller.abort();
       if (timer) window.clearTimeout(timer);
     };
+  }, []);
+
+  // A portfolio backtest, when the dashboard serves one. It does not change.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchPortfolio(controller.signal)
+      .then(setPortfolio)
+      .catch(() => {
+        // no portfolio: the pair view is all there is
+      });
+    return () => controller.abort();
   }, []);
 
   // Load the snapshot of the selected pair.
@@ -142,10 +156,16 @@ export function App() {
         onThemeToggle={toggleTheme}
         connected={connected}
         version={UI_VERSION}
+        hidePairs={portfolio !== null && pairs.length === 0}
       />
       <main>
         {error && <div className="banner error">{error}</div>}
-        {!snapshot && !error && (
+        {portfolio && (
+          <div className="content">
+            <PortfolioPanel portfolio={portfolio} theme={theme} />
+          </div>
+        )}
+        {!snapshot && !error && !portfolio && (
           <div className="banner">
             {pairs.length === 0 ? "Waiting for the first candle…" : "Loading…"}
           </div>

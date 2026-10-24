@@ -30,6 +30,7 @@ func (c *Chart) router(b bundle, bundleErr error) http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", c.handleHealth)
 		r.Get("/pairs", c.handlePairs)
+		r.Get("/portfolio", c.handlePortfolio)
 		r.Get("/events", c.handleEvents)
 		r.Get("/controls", c.handleControls)
 		r.Post("/controls/start", c.handleControlStart)

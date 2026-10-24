@@ -8,6 +8,8 @@ interface Props {
   onThemeToggle: () => void;
   connected: boolean;
   version: string;
+  /** Hide the pair selector, e.g. when the dashboard only shows a portfolio. */
+  hidePairs?: boolean;
 }
 
 export function Header({
@@ -18,6 +20,7 @@ export function Header({
   onThemeToggle,
   connected,
   version,
+  hidePairs = false,
 }: Props) {
   return (
     <header className="header">
@@ -29,21 +32,23 @@ export function Header({
         <span className="version">{version}</span>
       </div>
       <div className="controls">
-        <label className="pair-select">
-          <span>Pair</span>
-          <select
-            value={pair ?? ""}
-            onChange={(e) => onPairChange(e.target.value)}
-            disabled={pairs.length === 0}
-          >
-            {pairs.length === 0 && <option value="">waiting for data…</option>}
-            {pairs.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!hidePairs && (
+          <label className="pair-select">
+            <span>Pair</span>
+            <select
+              value={pair ?? ""}
+              onChange={(e) => onPairChange(e.target.value)}
+              disabled={pairs.length === 0}
+            >
+              {pairs.length === 0 && <option value="">waiting for data…</option>}
+              {pairs.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <span
           className={`status ${connected ? "on" : "off"}`}
           title={connected ? "Live updates connected" : "Reconnecting…"}

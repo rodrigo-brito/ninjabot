@@ -62,6 +62,7 @@ type Chart struct {
 	streams   map[string][]*streamState // stream indicators, per pair
 	plotted   map[string]*plotted       // strategy indicators, per pair
 	observing bool                      // the strategy reports its indicators
+	portfolio *PortfolioView            // immutable once set
 
 	events *broker
 	bundle bundleConfig
