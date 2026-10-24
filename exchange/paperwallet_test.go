@@ -708,3 +708,136 @@ func TestPaperWallet_Fees(t *testing.T) {
 		require.Equal(t, 0.0, wallet.feesPaid)
 	})
 }
+
+func TestPaperWallet_MaxDrawdown_PeakToTrough(t *testing.T) {
+	day := func(d int) time.Time { return time.Date(2019, time.January, d, 0, 0, 0, 0, time.UTC) }
+
+	// a decline interrupted by a small rebound is still one drawdown: 10 -> 6
+	wallet := PaperWallet{equityValues: []AssetValue{
+		{Time: day(1), Value: 10},
+		{Time: day(2), Value: 8},
+		{Time: day(3), Value: 9},
+		{Time: day(4), Value: 6},
+		{Time: day(5), Value: 7},
+	}}
+
+	value, start, end := wallet.MaxDrawdown()
+	require.InDelta(t, -0.4, value, 1e-12)
+	require.Equal(t, day(1), start)
+	require.Equal(t, day(4), end)
+
+	t.Run("never declines", func(t *testing.T) {
+		wallet := PaperWallet{equityValues: []AssetValue{{Time: day(1), Value: 1}, {Time: day(2), Value: 2}}}
+		value, _, _ := wallet.MaxDrawdown()
+		require.Zero(t, value)
+	})
+}
+
+func TestPaperWallet_EquityValues_OnePointPerTimestamp(t *testing.T) {
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 1000))
+	start := time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+	for i := 0; i < 3; i++ {
+		ts := start.Add(time.Duration(i) * time.Hour)
+		wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Time: ts, Close: 100 + float64(i), Complete: true})
+		if i == 0 {
+			_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+			require.NoError(t, err)
+		}
+		wallet.OnCandle(model.Candle{Pair: "ETHUSDT", Time: ts, Close: 10, Complete: true})
+		// partial candles never add points
+		wallet.OnCandle(model.Candle{Pair: "ETHUSDT", Time: ts, Close: 11})
+	}
+
+	equity := wallet.EquityValues()
+	require.Len(t, equity, 3)
+	for i, point := range equity {
+		require.Equal(t, start.Add(time.Duration(i)*time.Hour), point.Time)
+	}
+	// the last point is priced with the last BTC close: 900 USDT + 1 BTC * 102
+	require.InDelta(t, 1002.0, equity[2].Value, 1e-9)
+	require.InDelta(t, 1002.0, wallet.Equity(), 1e-9)
+	require.Len(t, wallet.AssetValues("BTC"), 3)
+}
+
+func TestPaperWallet_TakeFills(t *testing.T) {
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 1000))
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100, High: 100, Low: 100, Complete: true})
+
+	_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 2)
+	require.NoError(t, err)
+	require.Empty(t, wallet.TakeFills(), "market orders fill on creation and are not reported")
+
+	orders, err := wallet.CreateOrderOCO(model.SideTypeSell, "BTCUSDT", 2, 110, 95, 95)
+	require.NoError(t, err)
+	require.Len(t, orders, 2)
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 105, High: 106, Low: 104, Complete: true})
+	require.Empty(t, wallet.TakeFills())
+
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 108, High: 111, Low: 104, Complete: true})
+	fills := wallet.TakeFills()
+	require.Len(t, fills, 2)
+	require.Equal(t, model.OrderStatusTypeCanceled, fills[0].Status)
+	require.Equal(t, model.OrderTypeStopLoss, fills[0].Type)
+	require.Equal(t, model.OrderStatusTypeFilled, fills[1].Status)
+	require.Equal(t, model.OrderTypeLimitMaker, fills[1].Type)
+	require.Empty(t, wallet.TakeFills(), "fills are drained")
+}
+
+func TestPaperWallet_ConcurrentAccess(t *testing.T) {
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 1e6))
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100, High: 100, Low: 100, Complete: true})
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		start := time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC)
+		for i := 0; i < 200; i++ {
+			wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Time: start.Add(time.Duration(i) * time.Hour),
+				Close: 100, High: 101, Low: 99, Complete: true})
+			_, _ = wallet.CreateOrderLimit(model.SideTypeBuy, "BTCUSDT", 1, 99)
+		}
+	}()
+
+	for i := 0; i < 200; i++ {
+		_, _ = wallet.Order("BTCUSDT", int64(i))
+		_, _ = wallet.Account()
+		_ = wallet.EquityValues()
+		_ = wallet.AssetValues("BTC")
+		_, _, _ = wallet.MaxDrawdown()
+		_ = wallet.TakeFills()
+		_ = wallet.Pairs()
+	}
+	<-done
+}
+
+func TestPaperWallet_SellWithRoundingResidue(t *testing.T) {
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 1000))
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 100, Complete: true})
+	_, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 0.7)
+	require.NoError(t, err)
+	_, err = wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 0.1)
+	require.NoError(t, err)
+
+	// the wallet holds 0.7 + 0.1 = 0.7999999999999999 BTC: selling 0.8 is
+	// selling everything
+	_, err = wallet.CreateOrderMarket(model.SideTypeSell, "BTCUSDT", 0.8)
+	require.NoError(t, err)
+	asset, quote, err := wallet.Position("BTCUSDT")
+	require.NoError(t, err)
+	require.Zero(t, asset, "a liquidation never opens a short for the residue")
+	require.InDelta(t, 1000.0, quote, 1e-9)
+}
+
+func TestPaperWallet_AllInWithoutFee(t *testing.T) {
+	wallet := NewPaperWallet(context.Background(), "USDT", WithPaperAsset("USDT", 1000))
+	wallet.OnCandle(model.Candle{Pair: "BTCUSDT", Close: 3, Complete: true})
+	// 1000/3*3 rounds above 1000: the order takes the whole balance anyway
+	order, err := wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1000.0/3)
+	require.NoError(t, err)
+	require.InDelta(t, 1000.0/3, order.Quantity, 1e-9)
+
+	_, err = wallet.CreateOrderMarket(model.SideTypeBuy, "BTCUSDT", 1)
+	require.Error(t, err, "a real shortfall still fails")
+}

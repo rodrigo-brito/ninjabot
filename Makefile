@@ -1,4 +1,4 @@
-.PHONY: generate generate-check lint test release ui-install ui-build ui-dev ui-check ui-bundle
+.PHONY: generate generate-check lint test bench release ui-install ui-build ui-dev ui-check ui-bundle
 
 generate:
 	go generate ./...
@@ -6,13 +6,18 @@ generate:
 # Fails when web/src/api/types.ts is out of date with ui/dto.go.
 generate-check:
 	cd ui && go generate .
-	git diff --exit-code -- web/src/api/types.ts
+	git diff --exit-code -- web/src/api/types.ts web/src/api/report.ts
 
 lint:
 	golangci-lint run --fix
 
 test:
 	go test -race -cover ./...
+
+# Benchmarks, without tests. Compare two runs with benchstat:
+#   make bench > old.txt; (change code); make bench > new.txt; benchstat old.txt new.txt
+bench:
+	go test -run '^$$' -bench . -benchmem -count 6 ./...
 
 release:
 	goreleaser build --snapshot

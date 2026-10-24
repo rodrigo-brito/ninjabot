@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -212,13 +213,26 @@ const (
 	StatusError   Status = "error"
 )
 
+// Result is a closed trade: the (partial) close of a position.
 type Result struct {
-	Pair          string
-	ProfitPercent float64
-	ProfitValue   float64
-	Side          model.SideType
-	Duration      time.Duration
-	CreatedAt     time.Time
+	Pair string `json:"pair"`
+	// Tag is the strategy that sent the orders, when several share an
+	// account.
+	Tag string `json:"tag,omitempty"`
+	// ProfitPercent is the profit as a fraction of the entry value.
+	ProfitPercent float64 `json:"profit_percent"`
+	// ProfitValue is the profit in quote currency, net of fees.
+	ProfitValue float64        `json:"profit_value"`
+	Side        model.SideType `json:"side"`
+	// Duration is the time between the opening of the position and the
+	// creation of the closing order.
+	Duration time.Duration `json:"duration"`
+	// CreatedAt is the creation time of the closing order.
+	CreatedAt time.Time `json:"created_at"`
+	// ClosedAt is the time the closing order was filled.
+	ClosedAt time.Time `json:"closed_at"`
+	// OrderID is the ID of the closing order.
+	OrderID int64 `json:"order_id"`
 }
 
 type Position struct {
@@ -271,7 +285,10 @@ func (p *Position) Update(order *model.Order) (result *Result, finished bool) {
 	}
 
 	result = &Result{
+		Tag:           order.Tag,
 		CreatedAt:     order.CreatedAt,
+		ClosedAt:      order.UpdatedAt,
+		OrderID:       order.ID,
 		Pair:          order.Pair,
 		Duration:      order.CreatedAt.Sub(p.CreatedAt),
 		ProfitPercent: order.Profit,
@@ -310,7 +327,18 @@ type Controller struct {
 	finish         chan bool
 	status         Status
 
-	position map[string]*Position
+	position map[string]*Position // by positionKey
+	trades   []Result
+	ledgers  map[string]*ledger // by tag, for strategies sharing the account
+}
+
+// positionKey indexes positions and results: the pair, prefixed by the tag
+// when several strategies share the account.
+func positionKey(tag, pair string) string {
+	if tag == "" {
+		return pair
+	}
+	return tag + "|" + pair
 }
 
 func NewController(ctx context.Context, exchange service.Exchange, storage storage.Storage,
@@ -334,14 +362,52 @@ func (c *Controller) SetNotifier(notifier service.Notifier) {
 }
 
 func (c *Controller) OnCandle(candle model.Candle) {
+	c.mtx.Lock()
 	c.lastPrice[candle.Pair] = candle.Close
+	c.mtx.Unlock()
+}
+
+// Trades returns a copy of every closed trade, in the order they were closed.
+func (c *Controller) Trades() []Result {
+	c.mtx.RLock()
+	defer c.mtx.RUnlock()
+
+	trades := make([]Result, len(c.trades))
+	copy(trades, c.trades)
+	return trades
+}
+
+// Orders returns every order in the storage, sorted by ID.
+func (c *Controller) Orders() ([]model.Order, error) {
+	stored, err := c.storage.Orders()
+	if err != nil {
+		return nil, err
+	}
+
+	orders := make([]model.Order, len(stored))
+	for i, o := range stored {
+		orders[i] = *o
+	}
+	sort.SliceStable(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
+	return orders, nil
+}
+
+// publish delivers an order to the feed: inline for synchronous feeds, in a
+// goroutine otherwise so a slow consumer never blocks order creation.
+func (c *Controller) publish(order model.Order) {
+	if c.orderFeed.Synchronous() {
+		c.orderFeed.Publish(order, true)
+		return
+	}
+	go c.orderFeed.Publish(order, true)
 }
 
 func (c *Controller) updatePosition(o *model.Order) {
 	// get filled orders before the current order
-	position, ok := c.position[o.Pair]
+	key := positionKey(o.Tag, o.Pair)
+	position, ok := c.position[key]
 	if !ok {
-		c.position[o.Pair] = &Position{
+		c.position[key] = &Position{
 			AvgPrice:  o.Price,
 			Quantity:  o.Quantity,
 			Fee:       o.Fee,
@@ -353,12 +419,12 @@ func (c *Controller) updatePosition(o *model.Order) {
 
 	result, closed := position.Update(o)
 	if closed {
-		delete(c.position, o.Pair)
+		delete(c.position, key)
 	}
 
 	if result != nil {
-		// TODO: replace by a slice of Result
-		summary := c.Results[o.Pair]
+		c.trades = append(c.trades, *result)
+		summary := c.Results[key]
 		summary.invalidateCache() // Invalidate cache when modifying
 		if result.ProfitPercent >= 0 {
 			if result.Side == model.SideTypeBuy {
@@ -378,15 +444,24 @@ func (c *Controller) updatePosition(o *model.Order) {
 			}
 		}
 
+		if !c.notifying() {
+			return
+		}
 		_, quote := exchange.SplitAssetQuote(o.Pair)
 		c.notify(fmt.Sprintf(
 			"[PROFIT] %f %s (%f %%)\n`%s`",
 			result.ProfitValue,
 			quote,
 			result.ProfitPercent*100,
-			c.Results[o.Pair].String(),
+			c.Results[key].String(),
 		))
 	}
+}
+
+// notifying reports whether a notification would reach anyone, so callers
+// can skip building expensive messages in backtests.
+func (c *Controller) notifying() bool {
+	return c.notifier != nil || log.IsLevelEnabled(log.InfoLevel)
 }
 
 func (c *Controller) notify(message string) {
@@ -409,15 +484,25 @@ func (c *Controller) processTrade(order *model.Order) {
 	}
 
 	// initializer results map if needed
-	if _, ok := c.Results[order.Pair]; !ok {
-		c.Results[order.Pair] = &summary{Pair: order.Pair}
+	key := positionKey(order.Tag, order.Pair)
+	if _, ok := c.Results[key]; !ok {
+		c.Results[key] = &summary{Pair: order.Pair}
 	}
 
 	// register order volume
-	c.Results[order.Pair].Volume += order.Price * order.Quantity
+	c.Results[key].Volume += order.Price * order.Quantity
+	c.book(order)
 
 	// update position size / avg price
 	c.updatePosition(order)
+}
+
+// Sync fetches the state of the pending orders from the exchange and turns
+// the fills into trades. Live bots call it periodically after Start; a
+// backtest engine calls it right after the exchange reports a fill, so trades
+// are applied in candle order.
+func (c *Controller) Sync() {
+	c.updateOrders()
 }
 
 func (c *Controller) updateOrders() {
@@ -447,6 +532,7 @@ func (c *Controller) updateOrders() {
 		}
 
 		excOrder.ID = order.ID
+		excOrder.Tag = order.Tag
 		err = c.storage.UpdateOrder(&excOrder)
 		if err != nil {
 			c.notifyError(err)
@@ -457,13 +543,26 @@ func (c *Controller) updateOrders() {
 		updatedOrders = append(updatedOrders, excOrder)
 	}
 
+	// apply the changes in the order they happened on the exchange
+	sort.SliceStable(updatedOrders, func(i, j int) bool {
+		return updatedOrders[i].UpdatedAt.Before(updatedOrders[j].UpdatedAt)
+	})
+
 	// Lock only when updating internal state
 	c.mtx.Lock()
-	for _, processOrder := range updatedOrders {
-		c.processTrade(&processOrder)
-		c.orderFeed.Publish(processOrder, false)
+	for i := range updatedOrders {
+		c.processTrade(&updatedOrders[i])
+		if c.orderFeed.Synchronous() {
+			c.orderFeed.Publish(updatedOrders[i], false)
+		}
 	}
 	c.mtx.Unlock()
+
+	if !c.orderFeed.Synchronous() {
+		for _, order := range updatedOrders {
+			c.orderFeed.Publish(order, false)
+		}
+	}
 }
 
 func (c *Controller) Status() Status {
@@ -550,6 +649,11 @@ func (c *Controller) Order(pair string, id int64) (model.Order, error) {
 
 func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, price, stop,
 	stopLimit float64) ([]model.Order, error) {
+	return c.createOrderOCO("", side, pair, size, price, stop, stopLimit)
+}
+
+func (c *Controller) createOrderOCO(tag string, side model.SideType, pair string, size, price, stop,
+	stopLimit float64) ([]model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
@@ -565,18 +669,23 @@ func (c *Controller) CreateOrderOCO(side model.SideType, pair string, size, pric
 	}
 
 	for i := range orders {
+		orders[i].Tag = tag
 		err := c.storage.CreateOrder(&orders[i])
 		if err != nil {
 			c.notifyError(err)
 			return nil, err
 		}
-		go c.orderFeed.Publish(orders[i], true)
+		c.publish(orders[i])
 	}
 
 	return orders, nil
 }
 
 func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, limit float64) (model.Order, error) {
+	return c.createOrderLimit("", side, pair, size, limit)
+}
+
+func (c *Controller) createOrderLimit(tag string, side model.SideType, pair string, size, limit float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
@@ -590,18 +699,24 @@ func (c *Controller) CreateOrderLimit(side model.SideType, pair string, size, li
 		c.notifyError(err)
 		return model.Order{}, err
 	}
+	order.Tag = tag
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
 		c.notifyError(err)
 		return model.Order{}, err
 	}
-	go c.orderFeed.Publish(order, true)
+	c.publish(order)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, nil
 }
 
 func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, amount float64) (model.Order, error) {
+	return c.createOrderMarketQuote("", side, pair, amount)
+}
+
+func (c *Controller) createOrderMarketQuote(tag string, side model.SideType, pair string,
+	amount float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
@@ -615,6 +730,7 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, am
 		c.notifyError(err)
 		return model.Order{}, err
 	}
+	order.Tag = tag
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
@@ -624,12 +740,16 @@ func (c *Controller) CreateOrderMarketQuote(side model.SideType, pair string, am
 
 	// calculate profit
 	c.processTrade(&order)
-	go c.orderFeed.Publish(order, true)
+	c.publish(order)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
 }
 
 func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size float64) (model.Order, error) {
+	return c.createOrderMarket("", side, pair, size)
+}
+
+func (c *Controller) createOrderMarket(tag string, side model.SideType, pair string, size float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
@@ -643,6 +763,7 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 		c.notifyError(err)
 		return model.Order{}, err
 	}
+	order.Tag = tag
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
@@ -652,12 +773,16 @@ func (c *Controller) CreateOrderMarket(side model.SideType, pair string, size fl
 
 	// calculate profit
 	c.processTrade(&order)
-	go c.orderFeed.Publish(order, true)
+	c.publish(order)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, err
 }
 
 func (c *Controller) CreateOrderStop(pair string, size float64, limit float64) (model.Order, error) {
+	return c.createOrderStop("", pair, size, limit)
+}
+
+func (c *Controller) createOrderStop(tag string, pair string, size float64, limit float64) (model.Order, error) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 
@@ -671,13 +796,14 @@ func (c *Controller) CreateOrderStop(pair string, size float64, limit float64) (
 		c.notifyError(err)
 		return model.Order{}, err
 	}
+	order.Tag = tag
 
 	err = c.storage.CreateOrder(&order)
 	if err != nil {
 		c.notifyError(err)
 		return model.Order{}, err
 	}
-	go c.orderFeed.Publish(order, true)
+	c.publish(order)
 	log.Infof("[ORDER CREATED] %s", order)
 	return order, nil
 }

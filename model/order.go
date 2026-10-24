@@ -46,6 +46,10 @@ type Order struct {
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 
+	// Tag names the strategy that sent the order when several strategies
+	// share an account. Empty for a single strategy.
+	Tag string `db:"tag" json:"tag,omitempty" gorm:"index"`
+
 	// OCO Orders only
 	Stop    *float64 `db:"stop" json:"stop"`
 	GroupID *int64   `db:"group_id" json:"group_id"`
