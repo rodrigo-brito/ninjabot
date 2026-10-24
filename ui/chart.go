@@ -59,6 +59,10 @@ type Chart struct {
 	controller  OrderController
 	lastUpdate  time.Time
 
+	streams   map[string][]*streamState // stream indicators, per pair
+	plotted   map[string]*plotted       // strategy indicators, per pair
+	observing bool                      // the strategy reports its indicators
+
 	events *broker
 	bundle bundleConfig
 }
@@ -126,6 +130,8 @@ func New(options ...Option) (*Chart, error) {
 		dataframe: make(map[string]*model.Dataframe),
 		orderIDs:  make(map[string]*set.LinkedHashSetINT64),
 		orderByID: make(map[int64]model.Order),
+		streams:   make(map[string][]*streamState),
+		plotted:   make(map[string]*plotted),
 		events:    newBroker(),
 		bundle:    defaultBundleConfig(),
 	}
@@ -201,6 +207,7 @@ func (c *Chart) OnCandle(candle model.Candle) {
 		df.Metadata[k] = append(df.Metadata[k], v)
 	}
 	c.lastUpdate = time.Now()
+	c.updateStreams(candle)
 
 	if c.events.hasSubscribers() {
 		c.events.publish("candle", c.candleEvent(candle.Pair, dto))
@@ -214,7 +221,7 @@ func (c *Chart) candleEvent(pair string, candle Candle) CandleEvent {
 		Indicators: make([]IndicatorUpdate, 0),
 	}
 
-	for _, indicator := range c.indicatorsByPair(pair) {
+	for _, indicator := range c.collectIndicators(pair, true) {
 		update := IndicatorUpdate{Name: indicator.Name, Metrics: make([]MetricUpdate, 0, len(indicator.Metrics))}
 		for _, metric := range indicator.Metrics {
 			if len(metric.Points) == 0 {
@@ -313,60 +320,111 @@ func toPoints(times []time.Time, values []float64) []Point {
 }
 
 func (c *Chart) indicatorsByPair(pair string) []Indicator {
+	return c.collectIndicators(pair, false)
+}
+
+// collectIndicators builds the indicators of a pair: every point, or only
+// the last one of each metric for the candle events. Stream indicators and
+// the indicators reported by the strategy are read from what was
+// accumulated; legacy custom indicators are reloaded over the history. The
+// caller holds the lock.
+func (c *Chart) collectIndicators(pair string, last bool) []Indicator {
 	indicators := make([]Indicator, 0)
 	df := c.dataframe[pair]
 	if df == nil {
 		return indicators
 	}
 
-	for _, i := range c.indicators {
-		i.Load(df)
+	states := c.streams[pair]
+	for n, i := range c.indicators {
+		indicator := Indicator{Name: i.Name(), Overlay: i.Overlay(), Metrics: make([]Metric, 0)}
+		if n < len(states) && states[n] != nil {
+			for m, metric := range i.Metrics() {
+				indicator.Metrics = append(indicator.Metrics, Metric{
+					Name:   metric.Name,
+					Color:  metric.Color,
+					Style:  metric.Style,
+					Points: copyPoints(states[n].points[m], last),
+				})
+			}
+		} else {
+			i.Load(df)
+			for _, metric := range i.Metrics() {
+				points := toPoints(metric.Time, metric.Values)
+				indicator.Metrics = append(indicator.Metrics, Metric{
+					Name:   metric.Name,
+					Color:  metric.Color,
+					Style:  metric.Style,
+					Points: copyPoints(points, last),
+				})
+			}
+		}
+		indicators = append(indicators, indicator)
+	}
+
+	if c.strategy == nil {
+		return indicators
+	}
+
+	if c.observing {
+		if state := c.plotted[pair]; state != nil {
+			for _, group := range state.groups {
+				indicator := Indicator{Name: group.Name, Overlay: group.Overlay, Metrics: make([]Metric, 0, len(group.Metrics))}
+				for _, metric := range group.Metrics {
+					if len(metric.Points) == 0 {
+						continue
+					}
+					metric.Points = copyPoints(metric.Points, last)
+					indicator.Metrics = append(indicator.Metrics, metric)
+				}
+				indicators = append(indicators, indicator)
+			}
+		}
+		return indicators
+	}
+
+	// without a controller reporting them, recompute the indicators of the
+	// strategy over the whole history
+	warmup := c.strategy.WarmupPeriod()
+	for _, i := range c.strategy.Indicators(df) {
 		indicator := Indicator{
-			Name:    i.Name(),
-			Overlay: i.Overlay(),
+			Name:    i.GroupName,
+			Overlay: i.Overlay,
 			Metrics: make([]Metric, 0),
 		}
-		for _, metric := range i.Metrics() {
+		// Values before the warmup period are not meaningful (usually zero)
+		// and would distort the price scale, so they are dropped.
+		start := i.Warmup
+		if warmup > start {
+			start = warmup
+		}
+		for _, metric := range i.Metrics {
+			if len(metric.Values) < start || len(i.Time) < start {
+				continue
+			}
 			indicator.Metrics = append(indicator.Metrics, Metric{
 				Name:   metric.Name,
 				Color:  metric.Color,
-				Style:  metric.Style,
-				Points: toPoints(metric.Time, metric.Values),
+				Style:  string(metric.Style),
+				Points: copyPoints(toPoints(i.Time[start:], metric.Values[start:]), last),
 			})
 		}
 		indicators = append(indicators, indicator)
 	}
 
-	if c.strategy != nil {
-		warmup := c.strategy.WarmupPeriod()
-		for _, i := range c.strategy.Indicators(df) {
-			indicator := Indicator{
-				Name:    i.GroupName,
-				Overlay: i.Overlay,
-				Metrics: make([]Metric, 0),
-			}
-			// Values before the warmup period are not meaningful (usually zero)
-			// and would distort the price scale, so they are dropped.
-			start := i.Warmup
-			if warmup > start {
-				start = warmup
-			}
-			for _, metric := range i.Metrics {
-				if len(metric.Values) < start || len(i.Time) < start {
-					continue
-				}
-				indicator.Metrics = append(indicator.Metrics, Metric{
-					Name:   metric.Name,
-					Color:  metric.Color,
-					Style:  string(metric.Style),
-					Points: toPoints(i.Time[start:], metric.Values[start:]),
-				})
-			}
-			indicators = append(indicators, indicator)
-		}
-	}
-
 	return indicators
+}
+
+// copyPoints copies a series so it can be encoded outside the lock, or only
+// its last point.
+func copyPoints(points []Point, last bool) []Point {
+	if last {
+		if len(points) == 0 {
+			return []Point{}
+		}
+		return []Point{points[len(points)-1]}
+	}
+	return append(make([]Point, 0, len(points)), points...)
 }
 
 // candleTimeFor returns the open time of the candle that contains t, or the
