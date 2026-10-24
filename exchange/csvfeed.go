@@ -74,80 +74,10 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	for _, feed := range feeds {
 		csvFeed.Feeds[feed.Pair] = feed
 
-		csvFile, err := os.Open(feed.File)
+		candles, err := ParseCSV(feed.File, feed.Pair, feed.HeikinAshi)
 		if err != nil {
 			return nil, err
 		}
-
-		csvLines, err := csv.NewReader(csvFile).ReadAll()
-		if err != nil {
-			return nil, err
-		}
-
-		var candles []model.Candle
-		ha := model.NewHeikinAshi()
-
-		// map each header label with its index
-		headerMap, additionalHeaders, hasCustomHeaders := parseHeaders(csvLines[0])
-		if hasCustomHeaders {
-			csvLines = csvLines[1:]
-		}
-
-		for _, line := range csvLines {
-			timestamp, err := strconv.Atoi(line[headerMap["time"]])
-			if err != nil {
-				return nil, err
-			}
-
-			candle := model.Candle{
-				Time:      time.Unix(int64(timestamp), 0).UTC(),
-				UpdatedAt: time.Unix(int64(timestamp), 0).UTC(),
-				Pair:      feed.Pair,
-				Complete:  true,
-			}
-
-			candle.Open, err = strconv.ParseFloat(line[headerMap["open"]], 64)
-			if err != nil {
-				return nil, err
-			}
-
-			candle.Close, err = strconv.ParseFloat(line[headerMap["close"]], 64)
-			if err != nil {
-				return nil, err
-			}
-
-			candle.Low, err = strconv.ParseFloat(line[headerMap["low"]], 64)
-			if err != nil {
-				return nil, err
-			}
-
-			candle.High, err = strconv.ParseFloat(line[headerMap["high"]], 64)
-			if err != nil {
-				return nil, err
-			}
-
-			candle.Volume, err = strconv.ParseFloat(line[headerMap["volume"]], 64)
-			if err != nil {
-				return nil, err
-			}
-
-			if hasCustomHeaders {
-				candle.Metadata = make(map[string]float64)
-				for _, header := range additionalHeaders {
-					candle.Metadata[header], err = strconv.ParseFloat(line[headerMap[header]], 64)
-					if err != nil {
-						return nil, err
-					}
-				}
-			}
-
-			if feed.HeikinAshi {
-				candle = candle.ToHeikinAshi(ha)
-			}
-
-			candles = append(candles, candle)
-		}
-
 		csvFeed.CandlePairTimeFrame[csvFeed.feedTimeframeKey(feed.Pair, feed.Timeframe)] = candles
 
 		err = csvFeed.resample(feed.Pair, feed.Timeframe, targetTimeframe)
@@ -157,6 +87,94 @@ func NewCSVFeed(targetTimeframe string, feeds ...PairFeed) (*CSVFeed, error) {
 	}
 
 	return csvFeed, nil
+}
+
+// ParseCSV reads the candles of a pair from a CSV file. The file either has
+// no header, with the columns time, open, close, low, high and volume, or a
+// header naming them in any order; extra columns become candle metadata.
+// Time is a Unix timestamp in seconds. Every candle is complete.
+//
+// ParseCSV has no side effects: it is safe to call concurrently.
+func ParseCSV(path, pair string, heikinAshi bool) ([]model.Candle, error) {
+	csvFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer csvFile.Close()
+
+	csvLines, err := csv.NewReader(csvFile).ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(csvLines) == 0 {
+		return nil, fmt.Errorf("%w: %s is empty", ErrInsufficientData, path)
+	}
+
+	ha := model.NewHeikinAshi()
+
+	// map each header label with its index
+	headerMap, additionalHeaders, hasCustomHeaders := parseHeaders(csvLines[0])
+	if hasCustomHeaders {
+		csvLines = csvLines[1:]
+	}
+
+	candles := make([]model.Candle, 0, len(csvLines))
+	for _, line := range csvLines {
+		timestamp, err := strconv.Atoi(line[headerMap["time"]])
+		if err != nil {
+			return nil, err
+		}
+
+		candle := model.Candle{
+			Time:      time.Unix(int64(timestamp), 0).UTC(),
+			UpdatedAt: time.Unix(int64(timestamp), 0).UTC(),
+			Pair:      pair,
+			Complete:  true,
+		}
+
+		candle.Open, err = strconv.ParseFloat(line[headerMap["open"]], 64)
+		if err != nil {
+			return nil, err
+		}
+
+		candle.Close, err = strconv.ParseFloat(line[headerMap["close"]], 64)
+		if err != nil {
+			return nil, err
+		}
+
+		candle.Low, err = strconv.ParseFloat(line[headerMap["low"]], 64)
+		if err != nil {
+			return nil, err
+		}
+
+		candle.High, err = strconv.ParseFloat(line[headerMap["high"]], 64)
+		if err != nil {
+			return nil, err
+		}
+
+		candle.Volume, err = strconv.ParseFloat(line[headerMap["volume"]], 64)
+		if err != nil {
+			return nil, err
+		}
+
+		if hasCustomHeaders {
+			candle.Metadata = make(map[string]float64)
+			for _, header := range additionalHeaders {
+				candle.Metadata[header], err = strconv.ParseFloat(line[headerMap[header]], 64)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		if heikinAshi {
+			candle = candle.ToHeikinAshi(ha)
+		}
+
+		candles = append(candles, candle)
+	}
+
+	return candles, nil
 }
 
 func (c CSVFeed) feedTimeframeKey(pair, timeframe string) string {
@@ -232,21 +250,38 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 	sourceKey := c.feedTimeframeKey(pair, sourceTimeframe)
 	targetKey := c.feedTimeframeKey(pair, targetTimeframe)
 
+	candles, err := Resample(c.CandlePairTimeFrame[sourceKey], sourceTimeframe, targetTimeframe)
+	if err != nil {
+		return err
+	}
+
+	c.CandlePairTimeFrame[targetKey] = candles
+	return nil
+}
+
+// Resample aggregates candles of the source timeframe into the target one.
+// Every source candle produces one output candle: the ones before the end of
+// a target period are partial (Complete false) and carry the open, high, low
+// and volume accumulated so far, with the time of the period start; the last
+// one of the period is complete. Leading candles before the first period
+// boundary and a trailing incomplete period are dropped.
+//
+// Resample does not modify its input and is safe to call concurrently.
+func Resample(source []model.Candle, sourceTimeframe, targetTimeframe string) ([]model.Candle, error) {
 	var i int
-	for ; i < len(c.CandlePairTimeFrame[sourceKey]); i++ {
-		if ok, err := isFistCandlePeriod(c.CandlePairTimeFrame[sourceKey][i].Time, sourceTimeframe,
-			targetTimeframe); err != nil {
-			return err
+	for ; i < len(source); i++ {
+		if ok, err := isFistCandlePeriod(source[i].Time, sourceTimeframe, targetTimeframe); err != nil {
+			return nil, err
 		} else if ok {
 			break
 		}
 	}
 
-	candles := make([]model.Candle, 0)
-	for ; i < len(c.CandlePairTimeFrame[sourceKey]); i++ {
-		candle := c.CandlePairTimeFrame[sourceKey][i]
+	candles := make([]model.Candle, 0, len(source)-i)
+	for ; i < len(source); i++ {
+		candle := source[i]
 		if last, err := isLastCandlePeriod(candle.Time, sourceTimeframe, targetTimeframe); err != nil {
-			return err
+			return nil, err
 		} else if last {
 			candle.Complete = true
 		} else {
@@ -265,13 +300,15 @@ func (c *CSVFeed) resample(pair, sourceTimeframe, targetTimeframe string) error 
 	}
 
 	// remove last candle if not complete
-	if !candles[len(candles)-1].Complete {
+	if len(candles) > 0 && !candles[len(candles)-1].Complete {
 		candles = candles[:len(candles)-1]
 	}
 
-	c.CandlePairTimeFrame[targetKey] = candles
+	if !lo.ContainsBy(candles, func(candle model.Candle) bool { return candle.Complete }) {
+		return nil, fmt.Errorf("%w: no complete %s candle", ErrInsufficientData, targetTimeframe)
+	}
 
-	return nil
+	return candles, nil
 }
 
 func (c CSVFeed) CandlesByPeriod(_ context.Context, pair, timeframe string,

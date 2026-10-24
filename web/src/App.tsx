@@ -12,9 +12,11 @@ import { EquityChart } from "./components/EquityChart";
 import { Header } from "./components/Header";
 import { OrdersTable } from "./components/OrdersTable";
 import { PriceChart } from "./components/PriceChart";
+import { StatisticsPanel } from "./components/Statistics";
 import { StatsBar } from "./components/StatsBar";
 import { applyCandleEvent, applyOrderEvent, computeStats } from "./lib/stats";
 import { loadTheme, saveTheme, type Theme } from "./lib/theme";
+import { useStatistics } from "./lib/useStatistics";
 
 function pairFromURL(): string | null {
   return new URLSearchParams(window.location.search).get("pair");
@@ -124,6 +126,10 @@ export function App() {
   }, []);
 
   const stats = useMemo(() => (snapshot ? computeStats(snapshot) : null), [snapshot]);
+
+  // The robustness report is served by the backend, which owns the resampling.
+  // It reloads when a new trade closes, not on every candle.
+  const statistics = useStatistics(pair, stats?.trades ?? 0);
   const toggleTheme = useCallback(() => setTheme((t) => (t === "dark" ? "light" : "dark")), []);
 
   return (
@@ -158,6 +164,11 @@ export function App() {
             )}
             <PriceChart snapshot={snapshot} theme={theme} />
             {snapshot.equity_values.length > 0 && <EquityChart snapshot={snapshot} theme={theme} />}
+            <StatisticsPanel
+              statistics={statistics.statistics}
+              loading={statistics.loading}
+              error={statistics.error}
+            />
             <OrdersTable pair={snapshot.pair} quote={snapshot.quote} orders={snapshot.orders} />
           </div>
         )}

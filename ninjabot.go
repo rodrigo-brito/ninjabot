@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/rodrigo-brito/ninjabot/backtest"
 	"github.com/rodrigo-brito/ninjabot/exchange"
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/notification"
@@ -55,8 +57,11 @@ type NinjaBot struct {
 	orderFeed             *order.Feed
 	dataFeed              *exchange.DataFeedSubscription
 	paperWallet           *exchange.PaperWallet
+	candleSubscribers     []CandleSubscriber
+	controllerOptions     []strategy.ControllerOption
 
-	backtest bool
+	backtest       bool
+	backtestResult *backtest.Result
 }
 
 type Option func(*NinjaBot)
@@ -93,6 +98,10 @@ func NewBot(ctx context.Context, settings model.Settings, exch service.Exchange,
 		}
 	}
 
+	if bot.backtest {
+		// keep orders in step with candles: subscribers receive them inline
+		bot.orderFeed.SetSynchronous(true)
+	}
 	bot.orderController = order.NewController(ctx, exch, bot.storage, bot.orderFeed)
 
 	if settings.Telegram.Enabled {
@@ -140,6 +149,14 @@ func WithNotifier(notifier service.Notifier) Option {
 	}
 }
 
+// WithStrategyOptions customizes the strategy controller of every pair, e.g.
+// strategy.WithMaxHistory to bound the memory of a long-running bot.
+func WithStrategyOptions(options ...strategy.ControllerOption) Option {
+	return func(bot *NinjaBot) {
+		bot.controllerOptions = append(bot.controllerOptions, options...)
+	}
+}
+
 // WithCandleSubscription subscribes a given struct to the candle feed
 func WithCandleSubscription(subscriber CandleSubscriber) Option {
 	return func(bot *NinjaBot) {
@@ -155,6 +172,7 @@ func WithPaperWallet(wallet *exchange.PaperWallet) Option {
 }
 
 func (n *NinjaBot) SubscribeCandle(subscriptions ...CandleSubscriber) {
+	n.candleSubscribers = append(n.candleSubscribers, subscriptions...)
 	for _, pair := range n.settings.Pairs {
 		for _, subscription := range subscriptions {
 			n.dataFeed.Subscribe(pair, n.strategy.Timeframe(), subscription.OnCandle, false)
@@ -331,38 +349,9 @@ func (n *NinjaBot) processCandles() {
 	}
 }
 
-// Start the backtest process and create a progress bar
-// backtestCandles will process candles from a prirority queue in chronological order
-func (n *NinjaBot) backtestCandles() {
-	log.Info("[SETUP] Starting backtesting")
-
-	progressBar := progressbar.Default(int64(n.priorityQueueCandle.Len()))
-	for n.priorityQueueCandle.Len() > 0 {
-		item := n.priorityQueueCandle.Pop()
-
-		candle := item.(model.Candle)
-		if n.paperWallet != nil {
-			n.paperWallet.OnCandle(candle)
-		}
-
-		n.strategiesControllers[candle.Pair].OnPartialCandle(candle)
-		if candle.Complete {
-			n.strategiesControllers[candle.Pair].OnCandle(candle)
-		}
-
-		if err := progressBar.Add(1); err != nil {
-			log.Warnf("update progressbar fail: %v", err)
-		}
-	}
-}
-
 // Before Ninjabot start, we need to load the necessary data to fill strategy indicators
 // Then, we need to get the time frame and warmup period to fetch the necessary candles
 func (n *NinjaBot) preload(ctx context.Context, pair string) error {
-	if n.backtest {
-		return nil
-	}
-
 	candles, err := n.exchange.CandlesByLimit(ctx, pair, n.strategy.Timeframe(), n.strategy.WarmupPeriod())
 	if err != nil {
 		return err
@@ -377,11 +366,94 @@ func (n *NinjaBot) preload(ctx context.Context, pair string) error {
 	return nil
 }
 
+// Result returns the outcome of the last backtest run, or nil when the bot
+// is not in backtest mode or has not run yet.
+func (n *NinjaBot) Result() *backtest.Result {
+	return n.backtestResult
+}
+
+// observeIndicators registers the candle subscribers that want the plotted
+// indicators of the strategy (the dashboard) with the controller of a pair.
+func (n *NinjaBot) observeIndicators(controller *strategy.Controller) {
+	for _, subscriber := range n.candleSubscribers {
+		if observer, ok := subscriber.(strategy.IndicatorObserver); ok {
+			controller.Subscribe(observer)
+		}
+	}
+}
+
+// runBacktest replays the candles of the paper wallet's feed with the
+// deterministic backtest engine.
+func (n *NinjaBot) runBacktest(ctx context.Context) error {
+	if n.paperWallet == nil {
+		return fmt.Errorf("backtest mode requires a paper wallet")
+	}
+
+	timeframe := n.strategy.Timeframe()
+	end := time.Date(9999, time.December, 31, 0, 0, 0, 0, time.UTC)
+	streams := make([][]model.Candle, 0, len(n.settings.Pairs))
+	total := 0
+	for _, pair := range n.settings.Pairs {
+		n.strategiesControllers[pair] = strategy.NewStrategyController(pair, n.strategy, n.orderController, n.controllerOptions...)
+		n.observeIndicators(n.strategiesControllers[pair])
+		candles, err := n.exchange.CandlesByPeriod(ctx, pair, timeframe, time.Time{}, end)
+		if err != nil {
+			return err
+		}
+		streams = append(streams, candles)
+		total += len(candles)
+	}
+
+	subscribers := make([]func(model.Candle), len(n.candleSubscribers))
+	for i, subscriber := range n.candleSubscribers {
+		subscribers[i] = subscriber.OnCandle
+	}
+
+	log.Info("[SETUP] Starting backtesting")
+	progressBar := progressbar.Default(int64(total))
+	engine := backtest.NewWithComponents(backtest.Components{
+		Wallet:            n.paperWallet,
+		Orders:            n.orderController,
+		Controllers:       n.strategiesControllers,
+		Streams:           streams,
+		CandleSubscribers: subscribers,
+		// the robustness reports cost more than the run itself; the dashboard
+		// and the CLI compute them on demand
+		NoStatistics: true,
+		Config: backtest.ConfigEcho{
+			Strategy:  fmt.Sprintf("%T", n.strategy),
+			Pairs:     n.settings.Pairs,
+			Timeframe: timeframe,
+		},
+		Progress: func(done, _ int) {
+			if err := progressBar.Set(done); err != nil {
+				log.Warnf("update progressbar fail: %v", err)
+			}
+		},
+	})
+
+	if n.telegram != nil {
+		n.telegram.Start()
+	}
+
+	result, err := engine.Run(ctx)
+	if err != nil {
+		return err
+	}
+	n.backtestResult = result
+	return nil
+}
+
 // Run will initialize the strategy controller, order controller, preload data and start the bot
 func (n *NinjaBot) Run(ctx context.Context) error {
+	if n.backtest {
+		return n.runBacktest(ctx)
+	}
+
 	for _, pair := range n.settings.Pairs {
 		// setup and subscribe strategy to data feed (candles)
-		n.strategiesControllers[pair] = strategy.NewStrategyController(pair, n.strategy, n.orderController)
+		n.strategiesControllers[pair] = strategy.NewStrategyController(pair, n.strategy, n.orderController, n.controllerOptions...)
+		n.observeIndicators(n.strategiesControllers[pair])
 
 		// preload candles for warmup period
 		err := n.preload(ctx, pair)
@@ -404,15 +476,9 @@ func (n *NinjaBot) Run(ctx context.Context) error {
 		n.telegram.Start()
 	}
 
-	// start data feed and receives new candles
-	n.dataFeed.Start(n.backtest)
-
-	// start processing new candles for production or backtesting environment
-	if n.backtest {
-		n.backtestCandles()
-	} else {
-		n.processCandles()
-	}
+	// start data feed and process new candles
+	n.dataFeed.Start(false)
+	n.processCandles()
 
 	return nil
 }
