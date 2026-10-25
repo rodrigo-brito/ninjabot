@@ -21,6 +21,7 @@
   --accent-soft: rgba(34, 211, 238, 0.14);
   --pos: #2dd4bf;
   --neg: #fb7185;
+  --warn: #fbbf24;
 
   /* type */
   --font-display: "Space Grotesk Variable", "Space Grotesk", -apple-system, "Segoe UI", sans-serif;
@@ -58,6 +59,7 @@
   --accent-soft: rgba(8, 145, 178, 0.12);
   --pos: #0d9488;
   --neg: #e11d48;
+  --warn: #b45309;
   color-scheme: light;
 }
 
@@ -809,10 +811,452 @@ tbody tr:last-child td {
 }
 
 /* ------------------------------------------------------------------ */
+/* Robustness panel                                                    */
+/* ------------------------------------------------------------------ */
+.statistics {
+  gap: var(--space-5);
+}
+
+.statistics-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.banner.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.statistics h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.statistics h3 small {
+  margin-left: var(--space-2);
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  text-transform: none;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.metric-value.warn,
+.interval-value.warn,
+.window-value.warn {
+  color: var(--warn);
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-5);
+}
+
+.panel {
+  min-width: 0;
+}
+
+.panel-note {
+  margin: 0 0 var(--space-4);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+/* Confidence intervals and simulated percentiles share the same rail. */
+.interval,
+.percentile {
+  margin-bottom: var(--space-4);
+}
+
+.interval-head,
+.percentile-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.interval-name {
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.interval-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.interval-track,
+.percentile-track {
+  position: relative;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.interval-range {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pos) 45%, transparent);
+}
+
+.interval-range.warn {
+  background: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.interval-mean {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--text);
+}
+
+.interval-threshold {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  border-left: 1px dashed var(--border-strong);
+}
+
+.interval-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.interval-note {
+  color: var(--muted);
+}
+
+.percentile-outer {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.percentile-inner {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.percentile-median {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent);
+}
+
+.percentile-observed {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -5px 0 0 -5px;
+  transform: rotate(45deg);
+  background: var(--text);
+  border: 1px solid var(--bg);
+}
+
+.simulation-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.simulation-summary strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Return distribution */
+.histogram-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 132px;
+  padding: 0 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.histogram-bar {
+  flex: 1;
+  min-height: 1px;
+  border-radius: 2px 2px 0 0;
+  background: color-mix(in srgb, var(--pos) 55%, transparent);
+}
+
+.histogram-bar.neg {
+  background: color-mix(in srgb, var(--neg) 55%, transparent);
+}
+
+.histogram-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.histogram-peak {
+  color: var(--muted);
+}
+
+/* Hypothesis tests */
+.tests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.test {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.test.pass {
+  border-left-color: var(--pos);
+}
+
+.test.warn {
+  border-left-color: var(--warn);
+}
+
+.test-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.test-name {
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.badge.pass {
+  color: var(--pos);
+  border-color: color-mix(in srgb, var(--pos) 45%, transparent);
+}
+
+.badge.warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent);
+}
+
+.badge.inconclusive {
+  color: var(--faint);
+}
+
+.test-hypothesis {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.test-verdict {
+  margin: var(--space-1) 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Stability windows */
+.windows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.window {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.window-plot {
+  position: relative;
+  height: 56px;
+}
+
+.window-bar {
+  position: absolute;
+  left: 25%;
+  width: 50%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--pos) 60%, transparent);
+}
+
+.window-bar.neg {
+  background: color-mix(in srgb, var(--neg) 60%, transparent);
+}
+
+.window-zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 1px dashed var(--border-strong);
+}
+
+.window-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.window-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--faint);
+}
+
+/* ------------------------------------------------------------------ */
+/* InfoTip: the "?" next to a metric                                   */
+/* ------------------------------------------------------------------ */
+.infotip {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.infotip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  cursor: help;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.infotip-trigger:hover,
+.infotip-trigger:focus-visible,
+.infotip-trigger.on {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Positioned in viewport coordinates by the component: the metrics live in
+   grids that clip, and a tooltip cut off by its own card is worse than none. */
+.infotip-balloon {
+  position: fixed;
+  z-index: 50;
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.35);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  white-space: normal;
+}
+
+.infotip-balloon strong {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 @media (max-width: 980px) {
   .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -849,4 +1293,31 @@ tbody tr:last-child td {
   .control-group {
     width: 100%;
   }
+
+  .statistics-meta {
+    display: none;
+  }
+
+  .histogram-bars {
+    height: 104px;
+  }
+}
+
+/* --- portfolio --- */
+.swatch {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.heatmap th,
+.heatmap td {
+  text-align: center;
+}
+
+.heatmap td {
+  min-width: 4.5rem;
 }

@@ -392,6 +392,18 @@ go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
 ```
 
+### Benchmarks
+
+Changes that claim a speed-up must show it. Benchmarks live next to the code
+(`Benchmark*` functions) and the baseline numbers are tracked in
+[ROADMAP.md](ROADMAP.md#benchmarks).
+
+```bash
+make bench > old.txt          # on the base branch
+make bench > new.txt          # with your change
+go run golang.org/x/perf/cmd/benchstat@latest old.txt new.txt
+```
+
 ### Writing Tests
 
 - **Unit tests** - Test individual functions in isolation

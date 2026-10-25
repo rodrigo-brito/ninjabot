@@ -1,0 +1,14 @@
+# The same run as emacross.json, in YAML.
+schema_version: 1
+name: emacross on BTC and ETH
+data:
+  - {pair: BTCUSDT, file: ../../testdata/btc-1h.csv, timeframe: 1h}
+  - {pair: ETHUSDT, file: ../../testdata/eth-1h.csv, timeframe: 1h}
+quote: USDT
+capital: 10000
+fees: {maker: 0.001, taker: 0.001}
+strategy: emacross
+params:
+  slow: 21
+  fast: 8
+  timeframe: 4h

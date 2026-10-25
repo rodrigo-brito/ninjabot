@@ -5,7 +5,9 @@ import type {
   Order,
   OrderEvent,
   PairsResponse,
+  PortfolioView,
   Snapshot,
+  Statistics,
 } from "./types";
 
 declare global {
@@ -51,6 +53,19 @@ export function fetchPairs(signal?: AbortSignal): Promise<string[]> {
 
 export function fetchSnapshot(pair: string, signal?: AbortSignal): Promise<Snapshot> {
   return getJSON<Snapshot>(`/${encodeURIComponent(pair)}/snapshot`, signal);
+}
+
+/** Portfolio backtest shown by the dashboard, or null when there is none. */
+export async function fetchPortfolio(signal?: AbortSignal): Promise<PortfolioView | null> {
+  const response = await fetch(`${API_BASE}/portfolio`, { signal });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`/portfolio: ${response.status} ${response.statusText}`);
+  return (await response.json()) as PortfolioView;
+}
+
+/** Robustness report of a pair: intervals, hypothesis tests and simulations. */
+export function fetchStatistics(pair: string, signal?: AbortSignal): Promise<Statistics> {
+  return getJSON<Statistics>(`/${encodeURIComponent(pair)}/statistics`, signal);
 }
 
 export function ordersCSVUrl(pair: string): string {

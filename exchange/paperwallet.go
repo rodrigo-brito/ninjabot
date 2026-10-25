@@ -14,6 +14,7 @@ import (
 	"github.com/rodrigo-brito/ninjabot/model"
 	"github.com/rodrigo-brito/ninjabot/service"
 	"github.com/rodrigo-brito/ninjabot/tools/log"
+	"github.com/rodrigo-brito/ninjabot/tools/metrics"
 )
 
 type assetInfo struct {
@@ -56,6 +57,7 @@ type PaperWallet struct {
 	fistCandle    map[string]model.Candle
 	assetValues   map[string][]AssetValue
 	equityValues  []AssetValue
+	fills         []model.Order // orders whose status changed in OnCandle, drained by TakeFills
 }
 
 func (p *PaperWallet) AssetsInfo(pair string) model.AssetInfo {
@@ -118,20 +120,34 @@ func NewPaperWallet(ctx context.Context, baseCoin string, options ...PaperWallet
 		option(&wallet)
 	}
 
+	if _, ok := wallet.assets[wallet.baseCoin]; !ok {
+		wallet.assets[wallet.baseCoin] = &assetInfo{}
+	}
 	wallet.initialValue = wallet.assets[wallet.baseCoin].Free
-	log.Info("[SETUP] Using paper wallet")
-	log.Infof("[SETUP] Initial Portfolio = %f %s", wallet.initialValue, wallet.baseCoin)
+	log.Debug("[SETUP] Using paper wallet")
+	log.Debugf("[SETUP] Initial Portfolio = %f %s", wallet.initialValue, wallet.baseCoin)
 
 	return &wallet
 }
 
+// ID returns a new sequential order ID.
 func (p *PaperWallet) ID() int64 {
+	p.Lock()
+	defer p.Unlock()
+	return p.id()
+}
+
+// id returns a new sequential order ID. The caller holds the lock.
+func (p *PaperWallet) id() int64 {
 	p.counter++
 	return p.counter
 }
 
 func (p *PaperWallet) Pairs() []string {
-	pairs := make([]string, 0)
+	p.Lock()
+	defer p.Unlock()
+
+	pairs := make([]string, 0, len(p.assets))
 	for pair := range p.assets {
 		pairs = append(pairs, pair)
 	}
@@ -142,54 +158,74 @@ func (p *PaperWallet) LastQuote(ctx context.Context, pair string) (float64, erro
 	return p.feeder.LastQuote(ctx, pair)
 }
 
-func (p *PaperWallet) AssetValues(pair string) []AssetValue {
-	return p.assetValues[pair]
+// AssetValues returns a copy of the value history, in quote currency, of an
+// asset held by the wallet. There is one point per candle timestamp.
+func (p *PaperWallet) AssetValues(asset string) []AssetValue {
+	p.Lock()
+	defer p.Unlock()
+
+	values := make([]AssetValue, len(p.assetValues[asset]))
+	copy(values, p.assetValues[asset])
+	return values
 }
 
+// EquityValues returns a copy of the equity curve of the wallet, in quote
+// currency. There is one point per candle timestamp, no matter how many pairs
+// are traded.
 func (p *PaperWallet) EquityValues() []AssetValue {
-	return p.equityValues
+	p.Lock()
+	defer p.Unlock()
+
+	values := make([]AssetValue, len(p.equityValues))
+	copy(values, p.equityValues)
+	return values
 }
 
+// MaxDrawdown returns the largest peak-to-trough decline of the equity curve,
+// as a negative fraction of the peak, with the time of the peak and of the
+// trough. It returns zero values when the curve never declines.
 func (p *PaperWallet) MaxDrawdown() (float64, time.Time, time.Time) {
-	if len(p.equityValues) < 1 {
+	p.Lock()
+	defer p.Unlock()
+
+	return maxDrawdown(p.equityValues)
+}
+
+func maxDrawdown(values []AssetValue) (float64, time.Time, time.Time) {
+	if len(values) == 0 {
 		return 0, time.Time{}, time.Time{}
 	}
 
-	localMin := math.MaxFloat64
-	localMinBase := p.equityValues[0].Value
-	localMinStart := p.equityValues[0].Time
-	localMinEnd := p.equityValues[0].Time
+	equity := make([]float64, len(values))
+	for i, value := range values {
+		equity[i] = value.Value
+	}
 
-	globalMin := localMin
-	globalMinBase := localMinBase
-	globalMinStart := localMinStart
-	globalMinEnd := localMinEnd
+	worst := metrics.MaxDrawdown(equity)
+	if worst == 0 {
+		return 0, values[0].Time, values[0].Time
+	}
 
-	for i := 1; i < len(p.equityValues); i++ {
-		diff := p.equityValues[i].Value - p.equityValues[i-1].Value
-
-		if localMin > 0 {
-			localMin = diff
-			localMinBase = p.equityValues[i-1].Value
-			localMinStart = p.equityValues[i-1].Time
-			localMinEnd = p.equityValues[i].Time
-		} else {
-			localMin += diff
-			localMinEnd = p.equityValues[i].Time
+	// locate the peak and the trough of the worst decline
+	peak := 0
+	var start, end time.Time
+	for i := range values {
+		if values[i].Value > values[peak].Value {
+			peak = i
 		}
-
-		if localMin < globalMin {
-			globalMin = localMin
-			globalMinBase = localMinBase
-			globalMinStart = localMinStart
-			globalMinEnd = localMinEnd
+		if values[peak].Value > 0 && (values[peak].Value-values[i].Value)/values[peak].Value == worst {
+			start, end = values[peak].Time, values[i].Time
+			break
 		}
 	}
 
-	return globalMin / globalMinBase, globalMinStart, globalMinEnd
+	return -worst, start, end
 }
 
 func (p *PaperWallet) Summary() {
+	p.Lock()
+	defer p.Unlock()
+
 	var (
 		total        float64
 		marketChange float64
@@ -220,7 +256,7 @@ func (p *PaperWallet) Summary() {
 	profit := total + baseCoinValue - p.initialValue
 	fmt.Printf("%.4f %s\n", baseCoinValue, p.baseCoin)
 	fmt.Println()
-	maxDrawDown, _, _ := p.MaxDrawdown()
+	maxDrawDown, _, _ := maxDrawdown(p.equityValues)
 	fmt.Println("----- RETURNS -----")
 	fmt.Printf("START PORTFOLIO     = %.2f %s\n", p.initialValue, p.baseCoin)
 	fmt.Printf("FINAL PORTFOLIO     = %.2f %s\n", total+baseCoinValue, p.baseCoin)
@@ -318,14 +354,14 @@ func (p *PaperWallet) checkFunds(side model.SideType, pair string, amount, price
 	var need, maxAmount float64
 	if side == model.SideTypeSell {
 		long := math.Max(p.assets[asset].Free, 0)
-		short := math.Max(amount-long, 0)
+		short := amount - closing(long, amount)
 		if short > 0 {
 			need = short*price + amount*price*feeRate
 		}
 		maxAmount = (free + long*price) / (price * (1 + feeRate))
 	} else {
 		short := math.Max(-p.assets[asset].Free, 0)
-		cover := math.Min(short, amount)
+		cover := closing(short, amount)
 		free += cover * (2*p.avgShortPrice[pair] - price) // liquidation of the covered short
 		need = (amount-cover)*price + amount*price*feeRate
 		maxAmount = (free + short*price) / (price * (1 + feeRate))
@@ -352,6 +388,11 @@ func (p *PaperWallet) checkFunds(side model.SideType, pair string, amount, price
 // the fee charged over the order, and returns 0 otherwise - the wallet is then
 // underfunded for reasons other than the fee, and the order must be rejected.
 func trimByFee(amount, maxAmount, feeRate float64) float64 {
+	// an order sized with the exact balance can exceed it by float rounding,
+	// with or without a fee
+	if maxAmount >= amount*(1-1e-9) {
+		return math.Min(amount, maxAmount)
+	}
 	if feeRate <= 0 {
 		return 0
 	}
@@ -365,6 +406,41 @@ func trimByFee(amount, maxAmount, feeRate float64) float64 {
 	return math.Min(amount, maxAmount)
 }
 
+// dust is the balance below which an amount is float rounding noise. It is
+// well below the step size of the paper wallet (1e-8): no order can trade it.
+const dust = 1e-9
+
+// closing returns the part of an order of the given amount that closes an
+// open position of size held (the long for a sell, the short for a buy). An
+// order matching the position give or take float rounding closes all of it:
+// it is a liquidation, not an entry on the other side for the residue.
+func closing(held, amount float64) float64 {
+	closed := math.Min(math.Max(held, 0), amount)
+	if amount-closed < dust {
+		closed = amount
+	}
+	return closed
+}
+
+// sweepDust zeroes the balances of the given assets that are rounding noise.
+// Without it, trimming an order by its fee can leave a residue such as
+// 7e-15 ETH and -1e-12 USDT: the strategy sees an open position it cannot
+// sell, and every attempt fails for insufficient funds.
+func (p *PaperWallet) sweepDust(assets ...string) {
+	for _, asset := range assets {
+		info, ok := p.assets[asset]
+		if !ok {
+			continue
+		}
+		if math.Abs(info.Free) < dust {
+			info.Free = 0
+		}
+		if math.Abs(info.Lock) < dust {
+			info.Lock = 0
+		}
+	}
+}
+
 // reserve moves the funds backing a pending order from Free to Lock and
 // records them under key: the asset sold out of a long position, and the quote
 // paying a buy or collateralizing a short entry. The share of a buy that covers
@@ -376,10 +452,9 @@ func (p *PaperWallet) reserve(key int64, side model.SideType, pair string, amoun
 	lock := &orderLock{}
 	if side == model.SideTypeSell {
 		lock.asset = math.Min(math.Max(p.assets[asset].Free, 0), amount)
-		lock.quote = (amount - lock.asset) * price
+		lock.quote = (amount - closing(p.assets[asset].Free, amount)) * price
 	} else {
-		cover := math.Min(math.Max(-p.assets[asset].Free, 0), amount)
-		lock.quote = (amount - cover) * price
+		lock.quote = (amount - closing(-p.assets[asset].Free, amount)) * price
 	}
 
 	p.assets[asset].Free -= lock.asset
@@ -405,6 +480,7 @@ func (p *PaperWallet) release(key int64, pair string) {
 	p.assets[asset].Free += lock.asset
 	p.assets[quote].Lock -= lock.quote
 	p.assets[quote].Free += lock.quote
+	p.sweepDust(asset, quote)
 }
 
 // settle applies a fill to the free balances and charges its fee, which is
@@ -418,20 +494,22 @@ func (p *PaperWallet) settle(side model.SideType, pair string, amount, price, fe
 	p.updateAveragePrice(side, pair, amount, price)
 
 	if side == model.SideTypeSell {
-		long := math.Min(math.Max(p.assets[asset].Free, 0), amount) // closes a long
-		short := amount - long                                      // opens a short
+		long := closing(p.assets[asset].Free, amount) // closes a long
+		short := amount - long                        // opens a short
 		p.assets[asset].Free -= amount
 		p.assets[quote].Free += long*price - short*price // proceeds minus collateral
 	} else {
-		cover := math.Min(math.Max(-p.assets[asset].Free, 0), amount) // closes a short
-		open := amount - cover                                        // opens a long
+		cover := closing(-p.assets[asset].Free, amount) // closes a short
+		open := amount - cover                          // opens a long
 		p.assets[asset].Free += amount
 		p.assets[quote].Free += cover*(2*p.avgShortPrice[pair]-price) - open*price
 	}
 
 	log.Debugf("%s -> LOCK = %f / FREE %f", asset, p.assets[asset].Lock, p.assets[asset].Free)
 
-	return p.chargeFee(quote, amount*price*feeRate)
+	fee := p.chargeFee(quote, amount*price*feeRate)
+	p.sweepDust(asset, quote)
+	return fee
 }
 
 // lockOrder checks the funds of a pending order and reserves them under key.
@@ -483,7 +561,7 @@ func (p *PaperWallet) updateAveragePrice(side model.SideType, pair string, amoun
 		closed := math.Min(amount, actualQty)
 		profitValue := closed*value - closed*p.avgLongPrice[pair]
 		percentage := profitValue / (closed * p.avgLongPrice[pair])
-		log.Infof("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100.0) // TODO: store profits
+		log.Debugf("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100.0)
 
 		if amount <= actualQty { // not enough quantity to close the position
 			return
@@ -507,7 +585,7 @@ func (p *PaperWallet) updateAveragePrice(side model.SideType, pair string, amoun
 		closed := math.Min(amount, -actualQty)
 		profitValue := closed*p.avgShortPrice[pair] - closed*value
 		percentage := profitValue / (closed * p.avgShortPrice[pair])
-		log.Infof("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100.0) // TODO: store profits
+		log.Debugf("PROFIT = %.4f %s (%.2f %%)", profitValue, quote, percentage*100.0)
 
 		if amount <= -actualQty { // not enough quantity to close the position
 			return
@@ -560,6 +638,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 					groupOrder.Status == model.OrderStatusTypeNew {
 					p.orders[j].Status = model.OrderStatusTypeCanceled
 					p.orders[j].UpdatedAt = candle.Time
+					p.fills = append(p.fills, p.orders[j])
 				}
 			}
 		}
@@ -575,6 +654,7 @@ func (p *PaperWallet) OnCandle(candle model.Candle) {
 		p.orders[i].Price = price
 		p.orders[i].Fee = fee
 		completedIndices = append(completedIndices, i)
+		p.fills = append(p.fills, p.orders[i])
 	}
 
 	// Remove completed orders from pending index
@@ -636,41 +716,127 @@ func (p *PaperWallet) removeCompletedOrders(pair string, completedIndices []int)
 	}
 }
 
-// updateEquityValues calculates and stores equity values for complete candles
+// InitialValue returns the initial balance of the base coin.
+func (p *PaperWallet) InitialValue() float64 {
+	p.Lock()
+	defer p.Unlock()
+	return p.initialValue
+}
+
+// FeesPaid returns the total of fees charged so far, in quote currency.
+func (p *PaperWallet) FeesPaid() float64 {
+	p.Lock()
+	defer p.Unlock()
+	return p.feesPaid
+}
+
+// Volume returns a copy of the traded volume per pair, in quote currency.
+func (p *PaperWallet) Volume() map[string]float64 {
+	p.Lock()
+	defer p.Unlock()
+
+	volume := make(map[string]float64, len(p.volume))
+	for pair, value := range p.volume {
+		volume[pair] = value
+	}
+	return volume
+}
+
+// TakeFills returns the orders filled or canceled by the wallet since the last
+// call, in the order the changes happened, and clears the list. A backtest
+// engine uses it to sync the order controller only when something changed.
+func (p *PaperWallet) TakeFills() []model.Order {
+	p.Lock()
+	defer p.Unlock()
+
+	fills := p.fills
+	p.fills = nil
+	return fills
+}
+
+// Equity returns the current value of the wallet in quote currency: the quote
+// balance plus every asset priced at the close of its last candle. Short
+// positions are valued at their liquidation price.
+func (p *PaperWallet) Equity() float64 {
+	p.Lock()
+	defer p.Unlock()
+
+	return p.equity()
+}
+
+// equity is Equity without the lock. The caller holds it.
+func (p *PaperWallet) equity() float64 {
+	var total float64
+	for asset, info := range p.assets {
+		if asset == p.baseCoin {
+			continue
+		}
+		total += p.assetValue(asset, info)
+	}
+
+	if baseCoinInfo, ok := p.assets[p.baseCoin]; ok {
+		total += baseCoinInfo.Lock + baseCoinInfo.Free
+	}
+	return total
+}
+
+// assetValue is the liquidation value of an asset in quote currency.
+func (p *PaperWallet) assetValue(asset string, info *assetInfo) float64 {
+	amount := info.Free + info.Lock
+	pair := strings.ToUpper(asset + p.baseCoin)
+	if amount < 0 {
+		v := math.Abs(amount)
+		return 2*v*p.avgShortPrice[pair] - v*p.lastCandle[pair].Close
+	}
+	return amount * p.lastCandle[pair].Close
+}
+
+// updateEquityValues records the equity and asset values for a complete
+// candle. Candles of different pairs share timestamps, so a point with the
+// same time as the last one replaces it: the curves keep one point per
+// timestamp, priced with the latest candles of every pair.
 func (p *PaperWallet) updateEquityValues(candle model.Candle) {
 	if !candle.Complete {
 		return
 	}
 
-	if candle.Complete {
-		var total float64
-		for asset, info := range p.assets {
-			amount := info.Free + info.Lock
-			pair := strings.ToUpper(asset + p.baseCoin)
-			if amount < 0 {
-				v := math.Abs(amount)
-				liquid := 2*v*p.avgShortPrice[pair] - v*p.lastCandle[pair].Close
-				total += liquid
-			} else {
-				total += amount * p.lastCandle[pair].Close
-			}
-
-			p.assetValues[asset] = append(p.assetValues[asset], AssetValue{
-				Time:  candle.Time,
-				Value: amount * p.lastCandle[pair].Close,
-			})
+	for asset, info := range p.assets {
+		if asset == p.baseCoin {
+			continue
 		}
-
-		baseCoinInfo := p.assets[p.baseCoin]
-		p.equityValues = append(p.equityValues, AssetValue{
+		pair := strings.ToUpper(asset + p.baseCoin)
+		p.assetValues[asset] = appendOrReplace(p.assetValues[asset], AssetValue{
 			Time:  candle.Time,
-			Value: total + baseCoinInfo.Lock + baseCoinInfo.Free,
+			Value: (info.Free + info.Lock) * p.lastCandle[pair].Close,
 		})
 	}
+
+	p.equityValues = appendOrReplace(p.equityValues, AssetValue{
+		Time:  candle.Time,
+		Value: p.equity(),
+	})
+}
+
+// appendOrReplace appends value to values, or replaces the last point when it
+// has the same time.
+func appendOrReplace(values []AssetValue, value AssetValue) []AssetValue {
+	if n := len(values); n > 0 && values[n-1].Time.Equal(value.Time) {
+		values[n-1] = value
+		return values
+	}
+	return append(values, value)
 }
 
 func (p *PaperWallet) Account() (model.Account, error) {
-	balances := make([]model.Balance, 0)
+	p.Lock()
+	defer p.Unlock()
+
+	return p.account()
+}
+
+// account is Account without the lock. The caller holds it.
+func (p *PaperWallet) account() (model.Account, error) {
+	balances := make([]model.Balance, 0, len(p.assets))
 	for pair, info := range p.assets {
 		balances = append(balances, model.Balance{
 			Asset: pair,
@@ -689,7 +855,7 @@ func (p *PaperWallet) Position(pair string) (asset, quote float64, err error) {
 	defer p.Unlock()
 
 	assetTick, quoteTick := SplitAssetQuote(pair)
-	acc, err := p.Account()
+	acc, err := p.account()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -709,14 +875,14 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 	}
 
 	// both legs share one reservation, released when either fills or cancels
-	groupID := p.ID()
+	groupID := p.id()
 	err := p.lockOrder(groupID, side, pair, size, price, p.feeRate(model.OrderTypeLimitMaker))
 	if err != nil {
 		return nil, err
 	}
 
 	limitMaker := model.Order{
-		ExchangeID: p.ID(),
+		ExchangeID: p.id(),
 		CreatedAt:  p.lastCandle[pair].Time,
 		UpdatedAt:  p.lastCandle[pair].Time,
 		Pair:       pair,
@@ -730,7 +896,7 @@ func (p *PaperWallet) CreateOrderOCO(side model.SideType, pair string,
 	}
 
 	stopOrder := model.Order{
-		ExchangeID: p.ID(),
+		ExchangeID: p.id(),
 		CreatedAt:  p.lastCandle[pair].Time,
 		UpdatedAt:  p.lastCandle[pair].Time,
 		Pair:       pair,
@@ -759,7 +925,7 @@ func (p *PaperWallet) CreateOrderLimit(side model.SideType, pair string,
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	id := p.ID()
+	id := p.id()
 	err := p.lockOrder(id, side, pair, size, limit, p.feeRate(model.OrderTypeLimit))
 	if err != nil {
 		return model.Order{}, err
@@ -794,7 +960,7 @@ func (p *PaperWallet) CreateOrderStop(pair string, size float64, limit float64) 
 		return model.Order{}, ErrInvalidQuantity
 	}
 
-	id := p.ID()
+	id := p.id()
 	err := p.lockOrder(id, model.SideTypeSell, pair, size, limit, p.feeRate(model.OrderTypeStopLossLimit))
 	if err != nil {
 		return model.Order{}, err
@@ -836,7 +1002,7 @@ func (p *PaperWallet) createOrderMarket(side model.SideType, pair string, size f
 	p.volume[pair] += price * filled
 
 	order := model.Order{
-		ExchangeID: p.ID(),
+		ExchangeID: p.id(),
 		CreatedAt:  p.lastCandle[pair].Time,
 		UpdatedAt:  p.lastCandle[pair].Time,
 		Pair:       pair,

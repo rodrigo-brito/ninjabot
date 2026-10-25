@@ -1,11 +1,30 @@
-# Generates the TypeScript types of the dashboard API from ui/dto.go.
-# Run `make generate` from the repository root.
+# Generates the TypeScript types of the dashboard API from ui/dto.go and the
+# report package it re-exports. Run `make generate` from the repository root.
 packages:
+  - path: "github.com/rodrigo-brito/ninjabot/report"
+    output_path: "../web/src/api/report.ts"
+    include_files:
+      - "report.go"
+    frontmatter: |
+      // Source: report/report.go — run `make generate` after changing the Go types.
+    type_mappings:
+      int64: "number"
   - path: "github.com/rodrigo-brito/ninjabot/ui"
     output_path: "../web/src/api/types.ts"
     include_files:
       - "dto.go"
     frontmatter: |
       // Source: ui/dto.go — run `make generate` after changing the Go types.
+      import type * as report from "./report";
     type_mappings:
       int64: "number"
+      report.Statistics: "report.Statistics"
+      report.Sample: "report.Sample"
+      report.PerformanceStats: "report.PerformanceStats"
+      report.RiskStats: "report.RiskStats"
+      report.Interval: "report.Interval"
+      report.HypothesisTest: "report.HypothesisTest"
+      report.MonteCarlo: "report.MonteCarlo"
+      report.Percentiles: "report.Percentiles"
+      report.HistogramBin: "report.HistogramBin"
+      report.TradeWindow: "report.TradeWindow"

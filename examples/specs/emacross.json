@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "name": "emacross on BTC and ETH",
+  "data": [
+    {"pair": "BTCUSDT", "file": "../../testdata/btc-1h.csv", "timeframe": "1h"},
+    {"pair": "ETHUSDT", "file": "../../testdata/eth-1h.csv", "timeframe": "1h"}
+  ],
+  "quote": "USDT",
+  "capital": 10000,
+  "fees": {"maker": 0.001, "taker": 0.001},
+  "strategy": "emacross",
+  "params": {"timeframe": "4h", "fast": 8, "slow": 21}
+}

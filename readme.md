@@ -20,7 +20,7 @@ Docs: https://rodrigo-brito.github.io/ninjabot/
 - [Examples of Usage](#examples-of-usage) - [CLI](#cli), [Backtesting](#backtesting-example)
 - [Creating a strategy](#creating-a-strategy)
 - [Trading Fees](#trading-fees)
-- [Dashboard](#dashboard) - [Bot control panel](#bot-control-panel), [HTTP API](#http-api)
+- [Dashboard](#dashboard) - [Bot control panel](#bot-control-panel), [Robustness report](#robustness-report), [HTTP API](#http-api)
 - [Indicators](#indicators)
 - [Telegram and notifications](#telegram-and-notifications)
 - [Short positions](#short-positions)
@@ -67,6 +67,53 @@ ninjabot download --pair BTCUSDT --timeframe 1h --start 2024-01-01 --end 2024-06
 | `--days`, `-d` | Number of days to download, counting back from today. Without `--days`, `--start` and `--end`, the last month is downloaded. |
 | `--start`, `-s` / `--end`, `-e` | Fixed period, `YYYY-MM-DD`. Both must be informed together, and they take precedence over `--days`. |
 | `--futures`, `-f` | Download from the futures market instead of spot. |
+
+### Backtests from a spec file
+
+The CLI also runs backtests described in a JSON or YAML file, with no Go code. It is the
+entry point for scripts and AI agents: every input is a file, every output is a versioned file.
+
+```bash
+ninjabot strategies                       # registered strategies and their parameters
+ninjabot validate --spec examples/specs/emacross.json
+ninjabot backtest --spec examples/specs/emacross.json --out runs/emacross
+ninjabot schema spec                      # JSON Schema of the spec (also: result, strategy <name>)
+```
+
+```json
+{
+  "schema_version": 1,
+  "data": [{"pair": "BTCUSDT", "file": "btc-1h.csv", "timeframe": "1h"}],
+  "quote": "USDT",
+  "capital": 10000,
+  "fees": {"maker": 0.001, "taker": 0.001},
+  "strategy": "emacross",
+  "params": {"timeframe": "4h", "fast": 8, "slow": 21}
+}
+```
+
+`--out <dir>` writes `result.json` (wallet summary, trades, orders, equity curve and the
+robustness reports per pair and for the whole run), `trades.csv`, `equity.csv`, `orders.csv`
+and the normalized `spec.json`; `--out -` prints `result.json` to stdout. Logs go to stderr.
+The exit code tells what went wrong: `0` ok, `1` runtime error, `2` invalid spec or arguments,
+`3` data error, `4` unknown strategy or invalid parameters.
+
+`ninjabot portfolio --spec examples/specs/portfolio.json --serve 8080` runs several strategies
+together and shows each one and the combination on the dashboard:
+
+![Portfolio dashboard](docs/images/portfolio-dashboard.png)
+
+The `ninjabot` binary knows the example strategies. To use your own, build a command line with
+package `cli`:
+
+```go
+func main() {
+	strategy.RegisterParams("mine", "my strategy", func(p MyParams) (strategy.Strategy, error) {
+		return NewMine(p), nil
+	})
+	cli.Main(strategy.Default)
+}
+```
 
 ### Backtesting Example
 
@@ -208,6 +255,10 @@ func (e *CrossEMA) OnCandle(df *ninjabot.Dataframe, broker service.Broker) {
 }
 ```
 
+Indicators can also be computed incrementally, in constant time per candle and over the whole
+history, by registering them once in `Setup`. See [docs/indicators.md](docs/indicators.md) for
+streaming strategies and how their values differ from the window-based `Indicators` above.
+
 The `broker` places market, limit, stop and OCO orders (`CreateOrderMarket`, `CreateOrderMarketQuote`, `CreateOrderLimit`, `CreateOrderStop`, `CreateOrderOCO`), cancels them (`Cancel`) and reports the current position (`Position`, `Account`).
 
 To also react **before** the candle closes, implement `strategy.HighFrequencyStrategy` - the same interface plus `OnPartialCandle(df, broker)`, called on every update of the open candle, once the warmup period is filled. In backtesting the partial candles come from the resampling of the CSV feed, so a strategy on `4h` fed with a `1h` CSV is called three times before each close.
@@ -234,7 +285,7 @@ An order sized with the entire available balance leaves no room for its fee - th
 
 ### Dashboard
 
-The `ui` package serves a web dashboard with candles, indicators, orders, equity curve and trade statistics, with live updates when running in paper/live mode:
+The `ui` package serves a web dashboard with candles, indicators, orders, equity curve, trade statistics and a [robustness report](#robustness-report), with live updates when running in paper/live mode:
 
 ```go
 chart, err := ui.New(
@@ -276,6 +327,31 @@ chart.SetOrderController(bot.Controller())
 
 Without a controller the endpoints report `{"enabled": false}` and the panel stays hidden. **Anyone with access to the dashboard port can operate the bot once this is set** - keep the port private (localhost, VPN or an authenticating proxy).
 
+#### Robustness report
+
+Below the charts the dashboard shows what an equity curve alone cannot: how much of the result is edge and how much is luck. It is served by `GET /api/{pair}/statistics` and computed by the `tools/metrics` package, so the same functions are available to your own code.
+
+**Risk-adjusted return** - Sharpe and Sortino (annualized from the candle spacing of the backtest), Calmar, per-trade Sharpe, SQN, alpha and beta against holding the asset, and the *probabilistic Sharpe ratio*: the probability that the true Sharpe is positive once the length, the skew and the fat tails of the sample are taken into account.
+
+**Tails and costs** - peak-to-trough drawdown, value at risk and expected shortfall of the trade returns, worst trade, longest losing streak, skew, excess kurtosis, lag-1 autocorrelation, and the *break-even fee*: the round-trip cost that would cancel the average trade. A strategy whose break-even fee is below the fee of the exchange only works on paper.
+
+**Confidence intervals (bootstrap, 95%)** - mean return, payoff and profit factor. An interval that still contains its threshold (zero for a return, one for a profit factor) cannot rule out a strategy with no edge at all.
+
+**Hypothesis tests** - two ask whether the edge is real, two check the assumption they rest on:
+
+| Test | Null hypothesis | Reading |
+|---|---|---|
+| Student's t | the average trade return is zero | a low p-value means the average is hard to explain by chance |
+| Bootstrap | the average trade return is zero | same question without assuming a bell curve |
+| Wald-Wolfowitz runs | wins and losses follow one another at random | a low p-value means they cluster, and every interval above is narrower than it should be |
+| Permutation on halves | both halves of the history have the same average return | a low p-value means the edge decayed or arrived late |
+
+**Monte Carlo** - the trades are resampled into thousands of new sequences and replayed over the initial equity, which gives the distribution of the final return and of the maximum drawdown, the share of runs that ended in profit and the share that went past a 20% drawdown. The backtest result is drawn against that distribution: when it sits at the top of the band, the reported number was the lucky end of it.
+
+**Sample and stability** - the report says how many closed trades it is based on and compares it with the *minimum track record length*, the number of trades the observed Sharpe needs to be credible at 95%. The trade history is also split into four slices, since an edge that lives in a single window is a fit to that window.
+
+Every resampling runs from a fixed seed, so the same backtest always reports the same numbers.
+
 #### HTTP API
 
 The JSON API is served even when the dashboard bundle is unavailable:
@@ -285,6 +361,7 @@ The JSON API is served even when the dashboard bundle is unavailable:
 | `GET /api/health` | Liveness probe. |
 | `GET /api/pairs` | Pairs being traded. |
 | `GET /api/{pair}/snapshot` | Candles, indicators, orders, equity curve and stats of a pair. |
+| `GET /api/{pair}/statistics` | Robustness report: intervals, hypothesis tests and Monte Carlo simulations. |
 | `GET /api/{pair}/orders.csv` | Orders of a pair as CSV. |
 | `GET /api/events` | Server-Sent Events stream (`candle`, `order`, `controls`) for live updates. |
 | `GET /api/controls` | `{"enabled": true, "status": "running"}` - control panel state. |
@@ -470,6 +547,7 @@ binanceFuture, err := exchange.NewBinanceFuture(ctx,
 - [x] Bot Utilities
   - [x] CLI to download historical data
   - [x] Web dashboard (Candles + Sell / Buy orders, Indicators, equity curve and stats)
+  - [x] Robustness report (bootstrap intervals, hypothesis tests and Monte Carlo)
   - [x] Web UI controller (start / stop and manual orders)
   - [x] Telegram Controller (Status, Balance, Buy, Sell, and Notification)
   - [x] E-mail notifications
@@ -479,7 +557,12 @@ binanceFuture, err := exchange.NewBinanceFuture(ctx,
   - [x] Storage in memory, local file or SQL
 
 ### Roadmap
+  - [ ] Portfolio backtesting, deterministic engine, incremental indicators and an agent-friendly CLI - [ROADMAP.md](ROADMAP.md)
   - [ ] Include more chart indicators - [Details](https://github.com/rodrigo-brito/ninjabot/issues/110)
+  - [x] Walk-forward analysis: refit on a rolling window and score only the periods that follow it (`ninjabot walkforward`)
+  - [x] Probability of backtest overfitting (CSCV) over a parameter sweep (`ninjabot sweep`)
+  - [ ] Reality check against a family of random strategies (White / Hansen SPA)
+  - [x] Slippage and fee sensitivity curves (`ninjabot sensitivity`)
 
 ### Exchanges
 

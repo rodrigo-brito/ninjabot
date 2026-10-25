@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "trend + breakout on BTC and ETH",
+  "data": [
+    {"pair": "BTCUSDT", "file": "../../testdata/btc-1h.csv", "timeframe": "1h"},
+    {"pair": "ETHUSDT", "file": "../../testdata/eth-1h.csv", "timeframe": "1h"}
+  ],
+  "quote": "USDT",
+  "capital": 10000,
+  "fees": {"maker": 0.001, "taker": 0.001},
+  "strategies": [
+    {"id": "trend", "strategy": "emacross", "params": {"timeframe": "4h"}, "weight": 0.5},
+    {"id": "breakout", "strategy": "turtle", "params": {"timeframe": "1d", "entry": 20, "exit": 10}, "pairs": ["BTCUSDT"], "weight": 0.3}
+  ]
+}

@@ -9,6 +9,8 @@ package ui
 
 //go:generate go run github.com/gzuidhof/tygo@v0.2.21 generate
 
+import "github.com/rodrigo-brito/ninjabot/report"
+
 // Candle is an OHLCV bar.
 type Candle struct {
 	Time   int64   `json:"time"`
@@ -141,3 +143,73 @@ type ControlOrderRequest struct {
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
+
+// PortfolioStrategy is one strategy of the portfolio view.
+type PortfolioStrategy struct {
+	ID       string  `json:"id"`
+	Strategy string  `json:"strategy"`
+	Weight   float64 `json:"weight"`
+	Capital  float64 `json:"capital"`
+	Trades   int     `json:"trades"`
+	// NetProfit is in quote currency; ReturnPct and MaxDrawdown are
+	// fractions of the capital of the strategy.
+	NetProfit    float64 `json:"net_profit"`
+	ReturnPct    float64 `json:"return_pct"`
+	MaxDrawdown  float64 `json:"max_drawdown"`
+	SharpeAnnual float64 `json:"sharpe_annual"`
+	// PnLShare is the fraction of the portfolio profit, and MarginalSharpe
+	// how much the portfolio Sharpe drops without the strategy.
+	PnLShare       float64 `json:"pnl_share"`
+	MarginalSharpe float64 `json:"marginal_sharpe"`
+	Equity         []Point `json:"equity"`
+}
+
+// PortfolioView is a portfolio backtest, served by GET /api/portfolio.
+type PortfolioView struct {
+	Name         string              `json:"name"`
+	Quote        string              `json:"quote"`
+	Initial      float64             `json:"initial"`
+	Final        float64             `json:"final"`
+	NetProfit    float64             `json:"net_profit"`
+	ReturnPct    float64             `json:"return_pct"`
+	MaxDrawdown  float64             `json:"max_drawdown"`
+	SharpeAnnual float64             `json:"sharpe_annual"`
+	Unallocated  float64             `json:"unallocated"`
+	Equity       []Point             `json:"equity"`
+	Strategies   []PortfolioStrategy `json:"strategies"`
+	// Correlation of the bar returns, in the order of Strategies.
+	Correlation [][]float64 `json:"correlation"`
+}
+
+// The robustness report is computed by the report package; the API exposes
+// its types unchanged. See report/report.go for the field documentation.
+
+// Statistics is the robustness report of a pair, served by GET /api/{pair}/statistics.
+type Statistics = report.Statistics
+
+// Sample describes what a report was computed from.
+type Sample = report.Sample
+
+// PerformanceStats holds the return side of a report.
+type PerformanceStats = report.PerformanceStats
+
+// RiskStats holds the loss side of a report.
+type RiskStats = report.RiskStats
+
+// Interval is a bootstrap confidence interval of one measure.
+type Interval = report.Interval
+
+// HypothesisTest is one statistical test of a report.
+type HypothesisTest = report.HypothesisTest
+
+// MonteCarlo is the simulation of resampled trade sequences.
+type MonteCarlo = report.MonteCarlo
+
+// Percentiles summarizes a simulated distribution.
+type Percentiles = report.Percentiles
+
+// HistogramBin is one bar of the trade return distribution.
+type HistogramBin = report.HistogramBin
+
+// TradeWindow is the performance of one slice of the trade history.
+type TradeWindow = report.TradeWindow

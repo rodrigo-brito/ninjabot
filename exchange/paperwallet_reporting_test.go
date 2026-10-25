@@ -85,7 +85,7 @@ func TestPaperWalletEquityTracking(t *testing.T) {
 
 	require.Len(t, wallet.EquityValues(), 1)
 	require.Equal(t, 1000.0, wallet.EquityValues()[0].Value)
-	require.Len(t, wallet.AssetValues("USDT"), 1)
+	require.Empty(t, wallet.AssetValues("USDT"), "the quote currency is the unit of the values, not an asset")
 }
 
 func TestPaperWalletSummary(t *testing.T) {

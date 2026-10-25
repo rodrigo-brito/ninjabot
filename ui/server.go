@@ -30,12 +30,14 @@ func (c *Chart) router(b bundle, bundleErr error) http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/health", c.handleHealth)
 		r.Get("/pairs", c.handlePairs)
+		r.Get("/portfolio", c.handlePortfolio)
 		r.Get("/events", c.handleEvents)
 		r.Get("/controls", c.handleControls)
 		r.Post("/controls/start", c.handleControlStart)
 		r.Post("/controls/stop", c.handleControlStop)
 		r.Post("/controls/order", c.handleControlOrder)
 		r.Get("/{pair}/snapshot", c.handleSnapshot)
+		r.Get("/{pair}/statistics", c.handleStatistics)
 		r.Get("/{pair}/orders.csv", c.handleOrdersCSV)
 	})
 
@@ -116,6 +118,30 @@ func (c *Chart) handleSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, c.snapshot(pair))
+}
+
+// handleStatistics serves the robustness report of a pair: the bootstrap
+// intervals, hypothesis tests and Monte Carlo simulations that say how much of
+// the backtest result is edge and how much is luck.
+func (c *Chart) handleStatistics(w http.ResponseWriter, r *http.Request) {
+	pair := strings.ToUpper(chi.URLParam(r, "pair"))
+
+	c.mu.Lock()
+	_, ok := c.candles[pair]
+	var input statisticsInput
+	if ok {
+		input = c.statisticsInput(pair)
+	}
+	c.mu.Unlock()
+
+	if !ok {
+		http.Error(w, "unknown pair", http.StatusNotFound)
+		return
+	}
+
+	// The resampling runs outside the lock: a few thousand simulations must
+	// not hold back the candle stream.
+	writeJSON(w, buildStatistics(input))
 }
 
 func (c *Chart) handleOrdersCSV(w http.ResponseWriter, r *http.Request) {
