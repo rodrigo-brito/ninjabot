@@ -25,7 +25,7 @@ require (
 	golang.org/x/mod v0.21.0
 	gonum.org/v1/gonum v0.16.0
 	gopkg.in/tucnak/telebot.v2 v2.5.0
-	gorm.io/gorm v1.31.1
+	gorm.io/gorm v1.31.2
 )
 
 require (
