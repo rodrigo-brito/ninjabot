@@ -464,7 +464,7 @@ func (b *BinanceFuture) CandlesSubscription(ctx context.Context, pair, period st
 		}
 
 		for {
-			done, _, err := futures.WsKlineServe(pair, period, func(event *futures.WsKlineEvent) {
+			done, stop, err := futures.WsKlineServe(pair, period, func(event *futures.WsKlineEvent) {
 				ba.Reset()
 				candle := FutureCandleFromWsKline(pair, event.Kline)
 
@@ -480,10 +480,17 @@ func (b *BinanceFuture) CandlesSubscription(ctx context.Context, pair, period st
 					}
 				}
 
-				ccandle <- candle
-
+				// A canceled context releases the handler, so it never
+				// blocks the stream shutdown below.
+				select {
+				case ccandle <- candle:
+				case <-ctx.Done():
+				}
 			}, func(err error) {
-				cerr <- err
+				select {
+				case cerr <- err:
+				case <-ctx.Done():
+				}
 			})
 			if err != nil {
 				cerr <- err
@@ -494,6 +501,10 @@ func (b *BinanceFuture) CandlesSubscription(ctx context.Context, pair, period st
 
 			select {
 			case <-ctx.Done():
+				// Stop the stream and wait for its handlers to return before
+				// closing the channels they write to.
+				close(stop)
+				<-done
 				close(cerr)
 				close(ccandle)
 				return

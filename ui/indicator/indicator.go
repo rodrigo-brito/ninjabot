@@ -176,6 +176,7 @@ func BollingerBands(period int, stdDeviation float64, upDnBandColor, midBandColo
 func Stoch(fastK, slowK, slowD int, colorK, colorD string) ui.CustomIndicator {
 	return &streamIndicator{
 		name:    fmt.Sprintf("STOCH(%d, %d, %d)", fastK, slowK, slowD),
+		skip:    slowK + slowD,
 		metrics: []metric{{"K", colorK, "line"}, {"D", colorD, "line"}},
 		factory: multi(func() stream.Multi { return stream.NewStoch(fastK, slowK, slowD) }),
 	}

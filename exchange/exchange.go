@@ -18,6 +18,10 @@ var (
 	ErrInvalidQuantity   = errors.New("invalid quantity")
 	ErrInsufficientFunds = errors.New("insufficient funds or locked")
 	ErrInvalidAsset      = errors.New("invalid asset")
+	ErrOrderNotFound     = errors.New("order not found")
+	// ErrOrderNotOpen is returned when an order can't be canceled because it
+	// has already been filled or canceled.
+	ErrOrderNotOpen = errors.New("order is not open")
 )
 
 type DataFeed struct {
@@ -45,6 +49,11 @@ type OrderError struct {
 
 func (o *OrderError) Error() string {
 	return fmt.Sprintf("order error: %v", o.Err)
+}
+
+// Unwrap exposes the underlying cause, so callers can match it with errors.Is.
+func (o *OrderError) Unwrap() error {
+	return o.Err
 }
 
 type DataFeedConsumer func(model.Candle)

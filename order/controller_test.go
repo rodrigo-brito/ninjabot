@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
@@ -70,7 +71,7 @@ func TestController_updatePosition(t *testing.T) {
 
 		// should execute previous order
 		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 1000, Close: 1000})
-		controller.updateOrders()
+		controller.UpdateOrders()
 
 		require.Equal(t, 1000.0, controller.position["BTCUSDT"].AvgPrice)
 		require.Equal(t, 1.0, controller.position["BTCUSDT"].Quantity)
@@ -80,7 +81,7 @@ func TestController_updatePosition(t *testing.T) {
 
 		// should execute previous order
 		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 2000, Close: 2000})
-		controller.updateOrders()
+		controller.UpdateOrders()
 
 		require.Nil(t, controller.position["BTCUSDT"])
 		require.Len(t, controller.Results["BTCUSDT"].WinLong, 1)
@@ -102,14 +103,14 @@ func TestController_updatePosition(t *testing.T) {
 
 		// should execute previous order
 		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 1000, Close: 1000})
-		controller.updateOrders()
+		controller.UpdateOrders()
 
 		_, err = controller.CreateOrderOCO(model.SideTypeSell, "BTCUSDT", 1, 2000, 500, 500)
 		require.NoError(t, err)
 
 		// should execute previous order
 		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", High: 2000, Close: 2000})
-		controller.updateOrders()
+		controller.UpdateOrders()
 
 		require.Nil(t, controller.position["BTCUSDT"])
 		require.Len(t, controller.Results["BTCUSDT"].WinLong, 1)
@@ -134,7 +135,7 @@ func TestController_updatePosition(t *testing.T) {
 
 		// should execute previous order
 		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", Close: 1000, Low: 1000})
-		controller.updateOrders()
+		controller.UpdateOrders()
 
 		assert.Equal(t, 1000.0, controller.position["BTCUSDT"].AvgPrice)
 		assert.Equal(t, 2.0, controller.position["BTCUSDT"].Quantity)
@@ -150,7 +151,7 @@ func TestController_updatePosition(t *testing.T) {
 
 		// should execute previous order
 		wallet.OnCandle(model.Candle{Time: time.Now(), Pair: "BTCUSDT", Close: 400, Low: 400})
-		controller.updateOrders()
+		controller.UpdateOrders()
 
 		assert.Equal(t, 1000.0, controller.position["BTCUSDT"].AvgPrice)
 		assert.Equal(t, 2.0, controller.position["BTCUSDT"].Quantity)
@@ -423,18 +424,72 @@ func TestPosition_Update(t *testing.T) {
 		assert.InDelta(t, 2.2, position.Fee, 1e-9)
 	})
 
-	t.Run("stop loss settles at the stop price", func(t *testing.T) {
-		stop := 950.0
+	t.Run("stop loss settles at the fill price reported by the exchange", func(t *testing.T) {
+		// live exchanges report the executed price in Price and don't return
+		// the stop; it must not be dereferenced
 		position := &Position{Side: model.SideTypeSell, AvgPrice: 1000, Quantity: 1, CreatedAt: base}
-		order := newOrder(model.SideTypeBuy, 1, 990)
+		order := newOrder(model.SideTypeBuy, 1, 950)
 		order.Type = model.OrderTypeStopLoss
-		order.Stop = &stop
+		order.Stop = nil
 
-		result, finished := position.Update(order)
+		var result *Result
+		var finished bool
+		require.NotPanics(t, func() { result, finished = position.Update(order) })
 
 		require.NotNil(t, result)
 		assert.True(t, finished)
 		assert.InDelta(t, 0.05, order.Profit, 1e-9)
 		assert.InDelta(t, 50.0, order.ProfitValue, 1e-9)
+	})
+
+	t.Run("rounding noise does not leave a dust position open", func(t *testing.T) {
+		position := &Position{Side: model.SideTypeBuy, AvgPrice: 1000, Quantity: 0.1, CreatedAt: base}
+		_, finished := position.Update(newOrder(model.SideTypeBuy, 0.2, 1000))
+		require.False(t, finished)
+		require.NotEqual(t, 0.3, position.Quantity) // 0.1 + 0.2 != 0.3 in floating point
+
+		result, finished := position.Update(newOrder(model.SideTypeSell, 0.3, 1100))
+		require.NotNil(t, result)
+		assert.True(t, finished)
+		assert.InDelta(t, 30.0, result.ProfitValue, 1e-9)
+	})
+}
+
+func TestSummary_Metrics(t *testing.T) {
+	t.Run("empty summary has no NaN", func(t *testing.T) {
+		s := summary{Pair: "BTCUSDT"}
+		assert.Equal(t, 0.0, s.SQN())
+		assert.Equal(t, 0.0, s.Payoff())
+		assert.Equal(t, 0.0, s.ProfitFactor())
+		assert.Equal(t, 0.0, s.WinPercentage())
+		assert.NotContains(t, s.String(), "NaN")
+	})
+
+	t.Run("single trade has a zero SQN", func(t *testing.T) {
+		s := summary{Pair: "BTCUSDT", WinLong: []float64{10}, WinLongPercent: []float64{0.1}}
+		assert.Equal(t, 0.0, s.SQN())
+	})
+
+	t.Run("sqn, payoff and profit factor", func(t *testing.T) {
+		s := summary{
+			Pair:             "BTCUSDT",
+			WinLong:          []float64{10, 20},
+			WinLongPercent:   []float64{0.10, 0.20},
+			LoseShort:        []float64{-5},
+			LoseShortPercent: []float64{-0.05},
+		}
+		// mean = 25/3, population stddev of {10, 20, -5}
+		mean := 25.0 / 3
+		variance := ((10-mean)*(10-mean) + (20-mean)*(20-mean) + (-5-mean)*(-5-mean)) / 3
+		assert.InDelta(t, math.Sqrt(3)*mean/math.Sqrt(variance), s.SQN(), 1e-9)
+		assert.InDelta(t, 3.0, s.Payoff(), 1e-9)       // avg win 0.15 / avg loss 0.05
+		assert.InDelta(t, 6.0, s.ProfitFactor(), 1e-9) // 0.30 / 0.05
+		assert.InDelta(t, 25.0, s.Profit(), 1e-9)
+		assert.InDelta(t, 200.0/3, s.WinPercentage(), 1e-9)
+
+		// the report prints the profit factor, not the payoff twice
+		out := s.String()
+		assert.Contains(t, out, "3.000")
+		assert.Contains(t, out, "6.000")
 	})
 }

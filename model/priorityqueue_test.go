@@ -42,3 +42,18 @@ func TestPriorityQueue_Len(t *testing.T) {
 	pq = NewPriorityQueue([]Item{Candle{Pair: "A"}})
 	require.Equal(t, 1, pq.Len())
 }
+
+func TestPriorityQueue_PopLock(t *testing.T) {
+	now := time.Now()
+	queue := NewPriorityQueue(nil)
+
+	items := queue.PopLock()
+	queue.Push(Candle{Pair: "B", Time: now.Add(time.Minute)})
+	queue.Push(Candle{Pair: "A", Time: now})
+
+	// The callbacks run in their own goroutines, so the pops are not ordered
+	// by push order; both candles must come out.
+	received := []string{(<-items).(Candle).Pair, (<-items).(Candle).Pair}
+	require.ElementsMatch(t, []string{"A", "B"}, received)
+	require.Zero(t, queue.Len())
+}

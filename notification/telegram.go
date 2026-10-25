@@ -20,6 +20,10 @@ import (
 var (
 	buyRegexp  = regexp.MustCompile(`/buy\s+(?P<pair>\w+)\s+(?P<amount>\d+(?:\.\d+)?)(?P<percent>%)?`)
 	sellRegexp = regexp.MustCompile(`/sell\s+(?P<pair>\w+)\s+(?P<amount>\d+(?:\.\d+)?)(?P<percent>%)?`)
+
+	// telegramAPIURL overrides the Telegram endpoint. Empty means the default
+	// api.telegram.org; the tests point it at a local server.
+	telegramAPIURL string
 )
 
 type telegram struct {
@@ -31,11 +35,10 @@ type telegram struct {
 
 type Option func(telegram *telegram)
 
-func NewTelegram(controller *order.Controller, settings model.Settings, options ...Option) (service.Telegram, error) {
-	menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true}
-	poller := &tb.LongPoller{Timeout: 10 * time.Second}
-
-	userMiddleware := tb.NewMiddlewarePoller(poller, func(u *tb.Update) bool {
+// authorizedUser filters out updates coming from anyone outside the user list
+// of the settings, so that only the bot owners can drive it.
+func authorizedUser(settings model.Settings) func(*tb.Update) bool {
+	return func(u *tb.Update) bool {
 		if u.Message == nil || u.Message.Sender == nil {
 			log.Error("no message, ", u)
 			return false
@@ -49,9 +52,17 @@ func NewTelegram(controller *order.Controller, settings model.Settings, options 
 
 		log.Error("invalid user, ", u.Message)
 		return false
-	})
+	}
+}
+
+func NewTelegram(controller *order.Controller, settings model.Settings, options ...Option) (service.Telegram, error) {
+	menu := &tb.ReplyMarkup{ResizeReplyKeyboard: true}
+	poller := &tb.LongPoller{Timeout: 10 * time.Second}
+
+	userMiddleware := tb.NewMiddlewarePoller(poller, authorizedUser(settings))
 
 	client, err := tb.NewBot(tb.Settings{
+		URL:       telegramAPIURL,
 		ParseMode: tb.ModeMarkdown,
 		Token:     settings.Telegram.Token,
 		Poller:    userMiddleware,

@@ -434,6 +434,9 @@ func (b *Binance) Order(pair string, id int64) (model.Order, error) {
 	return newOrder(order), nil
 }
 
+// newOrder maps an exchange order. Filled orders report their average
+// execution price, the others their requested price. The stop price and the
+// OCO group are kept, so that refreshing a stored order doesn't erase them.
 func newOrder(order *binance.Order) model.Order {
 	var price float64
 	cost, _ := strconv.ParseFloat(order.CummulativeQuoteQuantity, 64)
@@ -445,7 +448,7 @@ func newOrder(order *binance.Order) model.Order {
 		quantity, _ = strconv.ParseFloat(order.OrigQuantity, 64)
 	}
 
-	return model.Order{
+	result := model.Order{
 		ExchangeID: order.OrderID,
 		Pair:       order.Symbol,
 		CreatedAt:  time.Unix(0, order.Time*int64(time.Millisecond)),
@@ -456,6 +459,18 @@ func newOrder(order *binance.Order) model.Order {
 		Price:      price,
 		Quantity:   quantity,
 	}
+
+	if stop, _ := strconv.ParseFloat(order.StopPrice, 64); stop > 0 {
+		result.Stop = &stop
+	}
+
+	// the exchange reports -1 for orders outside an OCO list
+	if order.OrderListId > 0 {
+		groupID := order.OrderListId
+		result.GroupID = &groupID
+	}
+
+	return result
 }
 
 func (b *Binance) Account() (model.Account, error) {
@@ -510,7 +525,7 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 		}
 
 		for {
-			done, _, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
+			done, stop, err := binance.WsKlineServe(pair, period, func(event *binance.WsKlineEvent) {
 				ba.Reset()
 				candle := CandleFromWsKline(pair, event.Kline)
 
@@ -526,10 +541,17 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 					}
 				}
 
-				ccandle <- candle
-
+				// A canceled context releases the handler, so it never
+				// blocks the stream shutdown below.
+				select {
+				case ccandle <- candle:
+				case <-ctx.Done():
+				}
 			}, func(err error) {
-				cerr <- err
+				select {
+				case cerr <- err:
+				case <-ctx.Done():
+				}
 			})
 			if err != nil {
 				cerr <- err
@@ -540,6 +562,10 @@ func (b *Binance) CandlesSubscription(ctx context.Context, pair, period string) 
 
 			select {
 			case <-ctx.Done():
+				// Stop the stream and wait for its handlers to return before
+				// closing the channels they write to.
+				close(stop)
+				<-done
 				close(cerr)
 				close(ccandle)
 				return

@@ -73,6 +73,14 @@ reason, so a different result can be traced back to a deliberate correction.
 - `order.Controller` publishes orders outside its lock when the feed is asynchronous, and applies
   the fills found by one sync in the order they happened.
 
+- The fixes of #421 (per-order reservations in the paper wallet, short accounting, limit and
+  stop fill prices, pending orders tracked in memory by the order controller) are combined with
+  the synchronous engine: `Controller.Sync` is `Controller.UpdateOrders`, and the dust handling
+  above also applies to reservations and cancels. `Result.CreatedAt` remains the creation time of
+  the closing order; `Result.ClosedAt` and `Result.Duration` use its fill time.
+- The dashboard `Stoch` indicator skips its `slowK + slowD` warmup values, as its `Warmup()`
+  always reported.
+
 - `NewCSVFeed` closes the files it reads.
 - The order controller only builds the per-trade summary table when a notifier is set or the
   log level is Info or lower; backtests run ~3x faster end to end.

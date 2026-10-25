@@ -40,6 +40,9 @@ func (q *PriorityQueue) Push(item Item) {
 }
 
 func (q *PriorityQueue) PopLock() <-chan Item {
+	q.Lock()
+	defer q.Unlock()
+
 	ch := make(chan Item)
 	q.notifyCallbacks = append(q.notifyCallbacks, func(_ Item) {
 		ch <- q.Pop()

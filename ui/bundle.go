@@ -49,13 +49,15 @@ const (
 	// completeMarker is written after a successful extraction; a cache
 	// directory without it is considered corrupt and rebuilt.
 	completeMarker = ".complete"
-
-	// maxBundleSize protects against decompression bombs.
-	maxBundleSize = 64 << 20
 )
 
 var (
-	envUIDir     = "NINJABOT_UI_DIR"
+	// maxBundleSize protects against decompression bombs. It is a variable
+	// so that the tests can lower it instead of building a huge archive.
+	maxBundleSize int64 = 64 << 20
+
+	envUIDir = "NINJABOT_UI_DIR"
+
 	envUIVersion = "NINJABOT_UI_VERSION"
 
 	// pseudoVersionRe matches the timestamp-hash tail of pseudo-versions:
