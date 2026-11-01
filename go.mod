@@ -1,6 +1,6 @@
 module github.com/rodrigo-brito/ninjabot
 
-go 1.23.0
+go 1.24
 
 toolchain go1.24.3
 
@@ -9,7 +9,7 @@ require (
 	github.com/adshao/go-binance/v2 v2.8.12
 	github.com/aybabtme/uniplot v0.0.0-20151203143629-039c559e5e7e
 	github.com/glebarez/sqlite v1.11.0
-	github.com/go-chi/chi/v5 v5.3.2
+	github.com/go-chi/chi/v5 v5.5.0
 	github.com/jpillora/backoff v1.0.0
 	github.com/markcheno/go-talib v0.0.0-20190307022042-cd53a9264d70
 	github.com/olekukonko/tablewriter v1.1.4
